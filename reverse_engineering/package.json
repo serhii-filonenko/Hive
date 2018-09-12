@@ -1,0 +1,15 @@
+{
+  "name": "Hive",
+  "version": "1.0.0",
+  "description": "",
+  "author": "Hackolade",
+  "dependencies": {
+    "async": "^2.6.0",
+    "node-hive": "^0.1.1",
+    "lodash": "^4.17.5"
+  },
+  "systemKeyspaces": [
+    "system"
+  ],
+  "installed": false
+}

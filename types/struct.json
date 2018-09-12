@@ -1,0 +1,66 @@
+{
+	"name": "struct",
+	"erdAbbreviation": "<struct>",
+	"dtdAbbreviation": "{...}",
+	"parentType": "document",
+	"useSample": true,
+	"defaultValues": {
+		"subtype": "struct<str>",
+		"keyType": "string",
+		"dependencies": [],
+		"primaryKey": false,
+		"properties": [],
+		"minProperties": "",
+		"maxProperties": "",
+		"additionalProperties": false
+	},
+	"subtypes": {
+		"struct<str>": {
+			"childValueType": "text"
+		},
+		"struct<num>": {
+			"childValueType": "numeric"
+		},
+		"struct<ts>": {
+			"childValueType": "timestamp"
+		},
+		"struct<date>": {
+			"childValueType": "date"
+		},
+		"struct<intrvl>": {
+			"childValueType": "interval"
+		},
+		"struct<array>": {
+			"childValueType": "array"
+		},
+		"struct<map>": {
+			"childValueType": "map"
+		},
+		"struct<struct>": {
+			"childValueType": "struct"
+		},
+		"struct<union>": {
+			"childValueType": "union"
+		}
+	},
+	"keyTypes": {
+		"txt": {
+			"childValueName": "New column"
+		},
+		"numeric": {
+			"childValueName": "12345"
+		},
+		"blob": {
+			"childValueName": "0xFFFE"
+		},
+		"timestamp": {
+			"childValueName": "2011-02-03 04:05:00+0000"
+		},
+		"time": {
+			"childValueName": "08:45:12.123123"
+		},
+		"date": {
+			"childValueName": "2014-12-03"
+		}
+	}
+}

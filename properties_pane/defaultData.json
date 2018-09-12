@@ -1,0 +1,58 @@
+{
+	"model": {
+		"modelName": "New model",
+		"dbVersion": "3.x",
+		"dbVendor": "Hive"
+	},
+	"container": {
+		"name": "New database",
+		"indexes": [],
+		"replStrategy": "SimpleStrategy"
+	},
+	"collection": {
+		"collectionName": "New table",
+		"collectionUsers": [],
+		"collation": {},
+		"tableOptions": ""
+	},
+	"field": {
+		"name": "New column"
+	},
+	"patternField": {
+		"name": "^[a-zA-Z0-9_.-]+$"
+	},
+	"multipleField": {
+		"primaryKey": false
+	},
+	"subschema": {},
+	"arrayItem": {},
+	"choice": {},
+	"relationship": {},
+	"user": {},
+	"view": {
+		"viewOn": "",
+		"pipeline": ""
+	},
+	"UDFs": {
+		"name": "New UDF",
+		"udfID": "",
+		"udfDescription": "",
+		"udfFunction": "",
+		"udfComments": ""
+	},
+	"UDAs": {
+		"name": "New UDA",
+		"udfID": "",
+		"udfDescription": "",
+		"udfFunction": "",
+		"udfComments": ""
+	},
+	"SecIdxs": {
+		"name": "New Secondary Index",
+		"SecIndxKey": "",
+		"SecIndxID": "",
+		"SecIndxDescription": "",
+		"SecIndxFunction": "",
+		"SecIndxComments": ""
+	}
+}
