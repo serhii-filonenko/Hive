@@ -249,9 +249,32 @@ making sure that you maintain a proper JSON format.
 				"shouldValidate": false,
 				"propertyType": "select",
 				"options": [
+					"",
+					"text",
+					"numeric"
+				]
+			},
+			{
+				"propertyName": "Key subtype",
+				"propertyKeyword": "keySubtype",
+				"shouldValidate": false,
+				"propertyType": "select",
+				"options": [
 					"string",
 					"varchar",
-					"char",
+					"char"
+				],
+				"dependency": {
+					"key": "keyType",
+					"value": "text"
+				}
+			},
+			{
+				"propertyName": "Key subtype",
+				"propertyKeyword": "keySubtype",
+				"shouldValidate": false,
+				"propertyType": "select",
+				"options": [
 					"tinyint",
 					"smallint",
 					"int",
@@ -259,10 +282,14 @@ making sure that you maintain a proper JSON format.
 					"float",
 					"double",
 					"decimal"
-				]
+				],
+				"dependency": {
+					"key": "keyType",
+					"value": "numeric"
+				}
 			},
 			{
-				"propertyName": "Subtype",
+				"propertyName": "Value type",
 				"propertyKeyword": "subtype",
 				"shouldValidate": false,
 				"propertyType": "select",

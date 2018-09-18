@@ -6,8 +6,7 @@
 	},
 	"container": {
 		"name": "New database",
-		"indexes": [],
-		"replStrategy": "SimpleStrategy"
+		"indexes": []
 	},
 	"collection": {
 		"collectionName": "New table",
@@ -32,20 +31,6 @@
 	"view": {
 		"viewOn": "",
 		"pipeline": ""
-	},
-	"UDFs": {
-		"name": "New UDF",
-		"udfID": "",
-		"udfDescription": "",
-		"udfFunction": "",
-		"udfComments": ""
-	},
-	"UDAs": {
-		"name": "New UDA",
-		"udfID": "",
-		"udfDescription": "",
-		"udfFunction": "",
-		"udfComments": ""
 	},
 	"SecIdxs": {
 		"name": "New Secondary Index",
