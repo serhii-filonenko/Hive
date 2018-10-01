@@ -118,6 +118,28 @@ making sure that you maintain a proper JSON format.
 			"foreignField",
 			"relationshipType",
 			"default",
+			{
+				"propertyName": "Precision",
+				"propertyKeyword": "precision",
+				"propertyValidate": false,
+				"propertyType": "text",
+				"valueType": "number",
+				"dependency": {
+					"key": "mode",
+					"value": "decimal"
+				}
+			},
+			{
+				"propertyName": "Scale",
+				"propertyKeyword": "scale",
+				"propertyValidate": false,
+				"propertyType": "text",
+				"valueType": "number",
+				"dependency": {
+					"key": "mode",
+					"value": "decimal"
+				}
+			},
 			"unit",
 			"minimum",
 			"exclusiveMinimum",
