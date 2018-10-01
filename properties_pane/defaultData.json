@@ -26,7 +26,11 @@
 	"subschema": {},
 	"arrayItem": {},
 	"choice": {},
-	"relationship": {},
+	"relationship": {
+		"customProperties": {
+			"disableNoValidate": true
+		}
+	},
 	"user": {},
 	"view": {
 		"viewOn": "",
