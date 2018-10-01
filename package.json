@@ -20,7 +20,7 @@
 			"nestedCollections": false,
 			"disablePatternField": false,
 			"enableForwardEngineering": true,
-			"disableMultipleTypes": true,
+			"disableMultipleTypes": false,
 			"disableReverseEngineering": false,
 			"disableChoices": true,
 			"enableJsonType": true
