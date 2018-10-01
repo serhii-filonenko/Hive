@@ -139,5 +139,6 @@
 	"CONTEXT_MENU___CONVERT_TO_PATTERN_FIELD": "Convert to Pattern Column",
 	"CONTEXT_MENU___CONVERT_PATTERN_TO_REGULAR_FIELD": "Convert to Regular Column",
 	"MODAL_WINDOW___DB_CONNECTION_PROCESS": "Hive Reverse-Engineering Process",
-	"MODAL_WINDOW___DB_CONNECTIONS_LIST_TITLE": "Hive Connections"
+	"MODAL_WINDOW___DB_CONNECTIONS_LIST_TITLE": "Hive Connections",
+	"COLLECTION_SCHEMA_ROOT_TYPE": "row"
 }
