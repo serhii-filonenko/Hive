@@ -164,7 +164,7 @@ module.exports = {
 				if (err) {
 					cb(err);
 				} else {
-					cb(err, ...expandPackages(data));
+					cb(err, ...expandFinalPackages(data));
 				}
 			});
 		});
