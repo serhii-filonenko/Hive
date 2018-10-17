@@ -74,18 +74,13 @@ module.exports = {
 			async.mapSeries(databases, (dbName, nextDb) => {
 				const exec = cursor.asyncExecute.bind(null, session.sessionHandle);
 				const execWithResult = getExecutorWithResult(cursor, exec);
-				const getJsonSchema = hiveHelper.getJsonSchemaCreator(...cursor.getTCLIService());
 				const tableNames = tables[dbName] || [];
 
 				exec(`use ${dbName}`)
 					.then(() => execWithResult(`describe database ${dbName}`))
 					.then((databaseInfo) => {
 						async.mapSeries(tableNames, (tableName, nextTable) => {
-							execWithResult(`describe formatted ${tableName}`)
-								.then(data => {
-									console.log(data);
-								})
-								.then(() => execWithResult(`select count(*) as count from ${tableName}`))
+							execWithResult(`select count(*) as count from ${tableName}`)
 								.then((data) => {
 									return getLimitByCount(data[0].count, recordSamplingSettings);
 								})
@@ -117,17 +112,23 @@ module.exports = {
 
 									return documentPackage;
 								})
-								.then((documentPackage) => exec(`select * from ${tableName} limit 1`)
-									.then(cursor.getSchema)
-									.then(getJsonSchema)
-									.then(jsonSchema => {
+								.then((documentPackage) => {
+									return Promise.all([
+										execWithResult(`describe formatted ${tableName}`),
+										exec(`select * from ${tableName} limit 1`).then(cursor.getSchema)
+									]).then(([formattedTable, tableSchema]) => {
+										const tableInfo = hiveHelper.getFormattedTable(formattedTable);
+										const sample = documentPackage.documents[0];
+
+										return hiveHelper.getJsonSchemaCreator(...cursor.getTCLIService(), tableInfo)(tableSchema, sample);
+									}).then(jsonSchema => {
 										if (jsonSchema) {
 											documentPackage.validation = { jsonSchema };
 										}
 
 										return documentPackage;
-									})
-								)
+									});
+								})
 								.then((documentPackage) => {
 									nextTable(null, documentPackage);
 								})

@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const Big = require('big.js');
+const schemaHelper = require('./schemaHelper');
 
 const getInt64 = (buffer, offset) => {
 	// This code from Int64 toNumber function. Using Big.js, convert to string.
@@ -252,8 +253,6 @@ const getJsonSchemaByTypeDescriptor = (TCLIServiceTypes) => (typeDescriptor) => 
 		case TCLIServiceTypes.TTypeId.STRUCT_TYPE:
 			return {
 				type: "struct",
-				keyType: "string",
-				subtype: "struct<txt>",
 				properties: {}
 			};
 		case TCLIServiceTypes.TTypeId.INTERVAL_YEAR_MONTH_TYPE:
@@ -268,17 +267,26 @@ const getJsonSchemaByTypeDescriptor = (TCLIServiceTypes) => (typeDescriptor) => 
 	}
 };
 
-const getJsonSchemaCreator = (TCLIService, TCLIServiceTypes) => (schemaResp) => {
+const getJsonSchemaCreator = (TCLIService, TCLIServiceTypes, tableInfo) => (schemaResp, sample) => {
 	const columnDescriptors = _.get(schemaResp, 'schema.columns', []);
 
 	const jsonSchema = columnDescriptors.reduce((jsonSchema, columnDescriptor) => {
 		const typeDescriptor = getTypeDescriptorByColumnDescriptor(columnDescriptor);
-
-		jsonSchema.properties[getColumnName(columnDescriptor)] = Object.assign(
+		const columnName = getColumnName(columnDescriptor);
+		const schema = Object.assign(
 			{},
 			getJsonSchemaByTypeDescriptor(TCLIServiceTypes)(typeDescriptor),
 			{ comments: columnDescriptor.comment || "" }
 		);
+
+		if (tableInfo.table[columnName]) {
+			Object.assign(
+				schema,
+				schemaHelper.getJsonSchema(tableInfo.table[columnName], _.get(sample, columnName))
+			);
+		}
+
+		jsonSchema.properties[columnName] = schema;
 
 		return jsonSchema;
 	}, {
@@ -291,7 +299,135 @@ const getJsonSchemaCreator = (TCLIService, TCLIServiceTypes) => (schemaResp) => 
 	return jsonSchema;
 };
 
+const getIterator = (hiveResult) => {
+	let i = 0;
+	return () => hiveResult[i++];
+};
+
+const isDivider = (column) => {
+	return !column || Object.keys(column).every(item => !column[item]);
+};
+
+const getColumn = (column, next) => {
+	if (isDivider(column)) {
+		return {};
+	}
+
+	return Object.assign(
+		{},
+		{ [column.col_name]: column.data_type },
+		getColumn(next(), next)
+	);
+};
+
+const getTable = (next) => {
+	const header = next();
+	return getColumn(next(), next);
+};
+
+const getPartitionInfo = (next) => {
+	const header = next();
+	return getColumn(next(), next);
+};
+
+
+const isTableParameter = (column) => {
+	return column.col_name === "Table Parameters:";
+};
+
+const getTableParameters = (next) => {
+	const column = next();
+	if (isDivider(column)) {
+		return [];
+	} else {
+		return [{ [column.data_type.trim()]: column.comment }, ...getTableParameters(next)];
+	}
+};
+
+const getDetailedInfo = (next) => {
+	const column = next();
+	if (isDivider(column)) {
+		return {};
+	}
+	if (isTableParameter(column)) {
+		return {
+			[column.col_name.trim().slice(0, -1)]: getTableParameters(next)
+		};
+	}
+
+	return Object.assign(
+		{[column.col_name.trim().slice(0, -1)]: column.data_type},
+		getDetailedInfo(next)
+	);
+};
+
+const getStorageInfo = (next) => {
+	const column = next();
+	if (isDivider(column)) {
+		return {};
+	}
+	if (isStorageDesc(column)) {
+		return {
+			[column.col_name.trim().slice(0, -1)]: getTableParameters(next)
+		};
+	}
+
+	return Object.assign(
+		{[column.col_name.trim().slice(0, -1)]: column.data_type},
+		getStorageInfo(next)
+	);
+};
+
+const getForeignKeys = (next) => {
+	
+};
+
+const isStorageDesc = (column) => column.col_name === "Storage Desc Params:"
+
+const isPartitionInfo = (column) => {
+	return (column.col_name === "# Partition Information");
+};
+
+const isDetailedTableInformation = (column) => {
+	return (column.col_name === "# Detailed Table Information");
+};
+
+const isStorageInfo = (column) => {
+	return (column.col_name === "# Storage Information");
+};
+
+const isForeignKey = (column) => {
+	return (column.col_name === "# Foreign Keys");
+};
+
+const handleRow = (column, next) => {
+	if (isPartitionInfo(column)) {
+		return { partitionInfo: getPartitionInfo(next) };
+	} else if (isDetailedTableInformation(column)) {
+		return { detailedInfo: getDetailedInfo(next) };
+	} else if (isStorageInfo(column)) {
+		return { storageInfo: getStorageInfo(next) };
+	} else if (isForeignKey(column)) {
+		return { foreignKeys: getForeignKeys(next) };
+	}
+};
+
+const getFormattedTable = (hiveResult) => {
+	const next = getIterator(hiveResult);
+	const table = getTable(next);
+	let currentColumn = next();
+	let result = { table }
+
+	while (currentColumn) {
+		result = Object.assign(result, handleRow(currentColumn, next));
+		currentColumn = next();
+	}
+	
+	return result;
+};
+
 module.exports = {
 	getResultParser,
-	getJsonSchemaCreator
+	getJsonSchemaCreator,
+	getFormattedTable
 };

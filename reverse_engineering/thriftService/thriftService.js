@@ -110,6 +110,54 @@ const connect = ({ host, port, username, password, authMech, options, configurat
 			}
 		});
 	});
+
+	const getSchemas = (sessionHandle) => new Promise((resolve, reject) => {
+		const request = new TCLIServiceTypes.TGetSchemasReq({ sessionHandle });
+
+		getConnection().GetSchemas(request, (err, res) => {
+			if (err) {
+				reject(err);
+			} else {
+				resolve(res);
+			}
+		});
+	});
+
+	const getPrimaryKeys = (sessionHandle, schemaName, tableName) => new Promise((resolve, reject) => {
+		const request = new TCLIServiceTypes.TGetPrimaryKeysReq({ sessionHandle, schemaName, tableName });
+
+		getConnection().GetPrimaryKeys(request, (err, res) => {
+			if (err) {
+				reject(err);
+			} else {
+				resolve(res);
+			}
+		});
+	});
+
+	const getCatalogs = (sessionHandle) => new Promise((resolve, reject) => {
+		const request = new TCLIServiceTypes.TGetCatalogsReq({ sessionHandle });
+
+		getConnection().GetCatalogs(request, (err, res) => {
+			if (err) {
+				reject(err);
+			} else {
+				resolve(res);
+			}
+		});
+	});
+
+	const getColumns = (sessionHandle, schemaName, tableName) => new Promise((resolve, reject) => {
+		const request = new TCLIServiceTypes.TGetColumnsReq({ sessionHandle, schemaName, tableName });
+
+		getConnection().GetColumns(request, (err, res) => {
+			if (err) {
+				reject(err);
+			} else {
+				resolve(res);
+			}
+		});
+	});
 	
 	const fetchFirstResult = (operationHandle, maxRows) => {
 		return fetchResultRequest({
@@ -200,6 +248,10 @@ const connect = ({ host, port, username, password, authMech, options, configurat
 		asyncExecute,
 		fetchResult,
 		getSchema,
+		getSchemas,
+		getPrimaryKeys,
+		getCatalogs,
+		getColumns,
 		getTCLIService
 	};
 

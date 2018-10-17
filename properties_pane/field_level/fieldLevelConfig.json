@@ -343,42 +343,6 @@ making sure that you maintain a proper JSON format.
 			"schemaId",
 			"refPath",
 			"type",
-			{
-				"propertyName": "Key type",
-				"propertyKeyword": "keyType",
-				"shouldValidate": false,
-				"propertyType": "select",
-				"options": [
-					"string",
-					"varchar",
-					"char",
-					"tinyint",
-					"smallint",
-					"int",
-					"bigint",
-					"float",
-					"double",
-					"decimal"
-				]
-			},
-			{
-				"propertyName": "Subtype",
-				"propertyKeyword": "subtype",
-				"shouldValidate": false,
-				"propertyType": "select",
-				"options": [
-					"struct<txt>",
-					"struct<num>",
-					"struct<bool>",
-					"struct<ts>",
-					"struct<date>",
-					"struct<intrvl>",
-					"struct<array>",
-					"struct<map>",
-					"struct<struct>",
-					"struct<union>"
-				]
-			},
 			"description",
 			"dependencies",
 			"required",
