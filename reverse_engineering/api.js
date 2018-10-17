@@ -73,20 +73,24 @@ module.exports = {
 
 			async.mapSeries(databases, (dbName, nextDb) => {
 				const exec = cursor.asyncExecute.bind(null, session.sessionHandle);
-				const execWithResult = getExecutorWithResult(cursor, exec);
+				const query = getExecutorWithResult(cursor, exec);
+				const getPrimaryKeys = getExecutorWithResult(
+					cursor,
+					cursor.getPrimaryKeys.bind(null, session.sessionHandle)
+				);
 				const tableNames = tables[dbName] || [];
 
 				exec(`use ${dbName}`)
-					.then(() => execWithResult(`describe database ${dbName}`))
+					.then(() => query(`describe database ${dbName}`))
 					.then((databaseInfo) => {
 						async.mapSeries(tableNames, (tableName, nextTable) => {
-							execWithResult(`select count(*) as count from ${tableName}`)
+							query(`select count(*) as count from ${tableName}`)
 								.then((data) => {
 									return getLimitByCount(data[0].count, recordSamplingSettings);
 								})
 								.then(limit => {
 									return getDataByPagination(pagination, limit, (limit, offset, next) => {
-										execWithResult(`select * from ${tableName} limit ${limit} offset ${offset}`)
+										query(`select * from ${tableName} limit ${limit} offset ${offset}`)
 											.then(data => next(null, data), err => next(err));
 									});
 								})
@@ -114,30 +118,75 @@ module.exports = {
 								})
 								.then((documentPackage) => {
 									return Promise.all([
-										execWithResult(`describe formatted ${tableName}`),
-										exec(`select * from ${tableName} limit 1`).then(cursor.getSchema)
+										query(`describe formatted ${tableName}`),
+										exec(`select * from ${tableName} limit 1`).then(cursor.getSchema),
 									]).then(([formattedTable, tableSchema]) => {
 										const tableInfo = hiveHelper.getFormattedTable(formattedTable);
 										const sample = documentPackage.documents[0];
 
-										return hiveHelper.getJsonSchemaCreator(...cursor.getTCLIService(), tableInfo)(tableSchema, sample);
-									}).then(jsonSchema => {
+										return {
+											jsonSchema: hiveHelper.getJsonSchemaCreator(...cursor.getTCLIService(), tableInfo)(tableSchema, sample),
+											relationships: convertForeignKeysToRelationships(dbName, tableName, tableInfo.foreignKeys || [])
+										};
+									}).then(({ jsonSchema, relationships }) => {
+										return getPrimaryKeys(dbName, tableName)
+											.then(keys => {
+												keys.forEach(key => {
+													jsonSchema.properties[key.COLUMN_NAME].primaryKey = true;
+												});
+
+												return jsonSchema;
+											}).then(jsonSchema => ({ jsonSchema, relationships }));
+									}).then(({ jsonSchema, relationships }) => {
 										if (jsonSchema) {
 											documentPackage.validation = { jsonSchema };
 										}
 
-										return documentPackage;
+										return {
+											documentPackage,
+											relationships
+										};
 									});
 								})
-								.then((documentPackage) => {
-									nextTable(null, documentPackage);
+								.then((data) => {
+									nextTable(null, data);
 								})
 								.catch(err => nextTable(err));
-						}, nextDb);
+						}, (err, data) => {
+							if (err) {
+								nextDb(err);
+							} else {
+								nextDb(err, expandPackages(data));
+							}
+						});
 					});
-			}, cb);
+			}, (err, data) => {
+				if (err) {
+					cb(err);
+				} else {
+					cb(err, ...expandPackages(data));
+				}
+			});
 		});
 	}
+};
+
+const expandPackages = (packages) => {
+	return packages.reduce((result, pack) => {
+		result.documentPackage.push(pack.documentPackage);
+		result.relationships = result.relationships.concat(pack.relationships);
+
+		return result;
+	}, { documentPackage: [], relationships: [] });
+};
+
+const expandFinalPackages = (packages) => {
+	return packages.reduce((result, pack) => {
+		result[0] = [...result[0], ...pack.documentPackage];
+		result[2] = [...result[2], ...pack.relationships];
+
+		return result;
+	}, [[], null, []])
 };
 
 const getLimitByCount = (count, recordSamplingSettings) => {
@@ -189,15 +238,27 @@ const getDataByPagination = (pagination, limit, callback) => new Promise((resolv
 	);
 });
 
-const getExecutorWithResult = (cursor, exec) => {
+const getExecutorWithResult = (cursor, handler) => {
 	const resultParser = hiveHelper.getResultParser(...cursor.getTCLIService());
 	
-	return (statement, limit) => {
-		return exec(statement).then(resp => Promise.all([
-			cursor.fetchResult(resp, limit),
+	return (...args) => {
+		return handler(...args).then(resp => Promise.all([
+			cursor.fetchResult(resp),
 			cursor.getSchema(resp)
 		])).then(([ resultResp, schemaResp ]) => {
 			return resultParser(schemaResp, resultResp)
 		});
 	};
+};
+
+const convertForeignKeysToRelationships = (childDbName, childCollection, foreignKeys) => {
+	return foreignKeys.map(foreignKey => ({
+		relationshipName: foreignKey.name,
+		dbName: foreignKey.parentDb,
+		parentCollection: foreignKey.parentTable,
+		parentField: foreignKey.parentField,
+		childDbName: childDbName,
+		childCollection: childCollection,
+		childField: foreignKey.childField
+	}));
 };

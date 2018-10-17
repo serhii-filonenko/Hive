@@ -379,8 +379,49 @@ const getStorageInfo = (next) => {
 };
 
 const getForeignKeys = (next) => {
+	const header = next();
+	const getForeignKey = (next) => {
+		const column = next();
+
+		if (isDivider(column)) {
+			return [];
+		}
+
+		const parentItem = column.col_name.split(":").pop() || "";
+		const [ dbName, tableName, fieldName ] = parentItem.split(".");
+		const childField =( column.data_type.split(":").pop() || "").trim();
+
+		return [{
+			parentDb: dbName,
+			parentTable: tableName,
+			parentField: fieldName,
+			childField
+		}, ...getForeignKey(next)];
+	};
+	const getConstraint = (next) => {
+		const column = next();
+
+		if (isDivider(column)) {
+			return [];
+		}
+
+		if (!isConstraint(column)) {
+			return [];
+		}
+
+		const constraintName = (column.data_type || "").trim();
+
+		return [...getForeignKey(next).map(foreignKey => {
+			return Object.assign(foreignKey, {
+				name: constraintName
+			});
+		}), ...getConstraint(next)];
+	};
 	
+	return getConstraint(next);
 };
+
+const isConstraint = (column) => (column.col_name || "").trim() === "Constraint Name:";
 
 const isStorageDesc = (column) => column.col_name === "Storage Desc Params:"
 
