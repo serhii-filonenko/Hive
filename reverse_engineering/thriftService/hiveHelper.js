@@ -338,9 +338,9 @@ const isTableParameter = (column) => {
 const getTableParameters = (next) => {
 	const column = next();
 	if (isDivider(column)) {
-		return [];
+		return {};
 	} else {
-		return [{ [column.data_type.trim()]: column.comment }, ...getTableParameters(next)];
+		return Object.assign(getTableParameters(next), { [column.data_type.trim()]: column.comment });
 	}
 };
 
@@ -467,8 +467,21 @@ const getFormattedTable = (hiveResult) => {
 	return result;
 };
 
+const getDetailInfoFromExtendedTable = (extendedTable) => {
+	const isDetailExtendedTableInformation = (column) => column.col_name === "Detailed Table Information";
+	const next = getIterator(extendedTable);
+	let column;
+
+	while (column = next()) {
+		if (isDetailExtendedTableInformation(column)) {
+			return column.data_type;
+		}
+	}
+};
+
 module.exports = {
 	getResultParser,
 	getJsonSchemaCreator,
-	getFormattedTable
+	getFormattedTable,
+	getDetailInfoFromExtendedTable
 };

@@ -4,6 +4,7 @@ const _ = require('lodash');
 const async = require('async');
 const thriftService = require('./thriftService/thriftService');
 const hiveHelper = require('./thriftService/hiveHelper');
+const entityLevelHelper = require('./entityLevelHelper');
 const TCLIService = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService');
 const TCLIServiceTypes = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService_types');
 
@@ -39,19 +40,28 @@ module.exports = {
 			}
 			const exec = cursor.asyncExecute.bind(null, session.sessionHandle);
 			const execWithResult = getExecutorWithResult(cursor, exec);
+			const getTables = getExecutorWithResult(cursor, cursor.getTables.bind(null, session.sessionHandle));
 
 			execWithResult('show databases')
 				.then(databases => databases.map(d => d.database_name))
 				.then(databases => {
 					async.mapSeries(databases, (dbName, next) => {
-						exec(`use ${dbName}`)
-							.then(() => execWithResult(`show tables`))
-							.then((tables) => tables.map(table => table.tab_name))
-							.then(dbCollections => next(null, {
-								isEmpty: !Boolean(dbCollections.length),
-								dbName,
-								dbCollections
-							}))
+						const tableTypes = [ "TABLE", "VIEW", "GLOBAL TEMPORARY", "TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM" ];
+						
+						if (includeSystemCollection) {
+							tableTypes.push("SYSTEM TABLE");
+						}
+						getTables(dbName, tableTypes)
+							.then((tables) => {
+								return tables.map(table => table.TABLE_NAME)
+							})
+							.then(dbCollections => {
+								next(null, {
+									isEmpty: !Boolean(dbCollections.length),
+									dbName,
+									dbCollections
+								})
+							})
 							.catch(err => next(err))
 					}, cb);
 				});
@@ -119,10 +129,13 @@ module.exports = {
 								.then((documentPackage) => {
 									return Promise.all([
 										query(`describe formatted ${tableName}`),
+										query(`describe extended ${tableName}`),
 										exec(`select * from ${tableName} limit 1`).then(cursor.getSchema),
-									]).then(([formattedTable, tableSchema]) => {
+									]).then(([formattedTable, extendedTable, tableSchema]) => {
 										const tableInfo = hiveHelper.getFormattedTable(formattedTable);
+										const extendedTableInfo = hiveHelper.getDetailInfoFromExtendedTable(extendedTable);
 										const sample = documentPackage.documents[0];
+										documentPackage.entityLevel = entityLevelHelper.getEntityLevelData(tableName, tableInfo, extendedTableInfo);
 
 										return {
 											jsonSchema: hiveHelper.getJsonSchemaCreator(...cursor.getTCLIService(), tableInfo)(tableSchema, sample),
@@ -151,7 +164,9 @@ module.exports = {
 								.then((data) => {
 									nextTable(null, data);
 								})
-								.catch(err => nextTable(err));
+								.catch(err => {
+									nextTable(err)
+								});
 						}, (err, data) => {
 							if (err) {
 								nextDb(err);
@@ -242,10 +257,12 @@ const getExecutorWithResult = (cursor, handler) => {
 	const resultParser = hiveHelper.getResultParser(...cursor.getTCLIService());
 	
 	return (...args) => {
-		return handler(...args).then(resp => Promise.all([
-			cursor.fetchResult(resp),
-			cursor.getSchema(resp)
-		])).then(([ resultResp, schemaResp ]) => {
+		return handler(...args).then(resp => {
+			return Promise.all([
+				cursor.fetchResult(resp),
+				cursor.getSchema(resp)
+			]);
+		}).then(([ resultResp, schemaResp ]) => {
 			return resultParser(schemaResp, resultResp)
 		});
 	};

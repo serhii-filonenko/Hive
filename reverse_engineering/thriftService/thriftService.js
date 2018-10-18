@@ -147,6 +147,42 @@ const connect = ({ host, port, username, password, authMech, options, configurat
 		});
 	});
 
+	const getTables = (sessionHandle, schemaName, tableTypes) => new Promise((resolve, reject) => {
+		const request = new TCLIServiceTypes.TGetTablesReq({ sessionHandle, schemaName, tableTypes, tableName: '_%' });
+
+		getConnection().GetTables(request, (err, res) => {
+			if (err) {
+				reject(err);
+			} else {
+				resolve(res);
+			}
+		});
+	});
+
+	const getTableTypes = (sessionHandle) => new Promise((resolve, reject) => {
+		const request = new TCLIServiceTypes.TGetTableTypesReq({ sessionHandle });
+
+		getConnection().GetTableTypes(request, (err, res) => {
+			if (err) {
+				reject(err);
+			} else {
+				resolve(res);
+			}
+		});
+	});
+
+	const getTypeInfo = (sessionHandle) => new Promise((resolve, reject) => {
+		const request = new TCLIServiceTypes.TGetTypeInfoReq({ sessionHandle });
+
+		getConnection().GetTypeInfo(request, (err, res) => {
+			if (err) {
+				reject(err);
+			} else {
+				resolve(res);
+			}
+		});
+	});
+
 	const getColumns = (sessionHandle, schemaName, tableName) => new Promise((resolve, reject) => {
 		const request = new TCLIServiceTypes.TGetColumnsReq({ sessionHandle, schemaName, tableName });
 
@@ -225,7 +261,7 @@ const connect = ({ host, port, username, password, authMech, options, configurat
 				.catch(reject);
 		};
 	
-		repeat(5);
+		repeat(60);
 	});
 	
 	const sleep = (timeout) => {
@@ -252,6 +288,9 @@ const connect = ({ host, port, username, password, authMech, options, configurat
 		getPrimaryKeys,
 		getCatalogs,
 		getColumns,
+		getTables,
+		getTableTypes,
+		getTypeInfo,
 		getTCLIService
 	};
 
