@@ -177,6 +177,7 @@ module.exports = {
 					});
 			}, (err, data) => {
 				if (err) {
+					logger.log('error', err);
 					cb(err);
 				} else {
 					cb(err, ...expandFinalPackages(data));
