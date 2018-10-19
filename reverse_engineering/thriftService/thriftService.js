@@ -50,6 +50,8 @@ const connect = ({ host, port, username, password, authMech, options, configurat
 			getConnection().ExecuteStatement(request, (err, res) => {
 				if (err) {
 					reject(err);
+				} else if (res.status.statusCode === TCLIServiceTypes.TStatusCode.ERROR_STATUS) {
+					reject(res.status.errorMessage);
 				} else {
 					resolve(res);
 				}
