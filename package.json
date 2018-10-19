@@ -22,7 +22,7 @@
 			"enableForwardEngineering": true,
 			"disableMultipleTypes": false,
 			"disableReverseEngineering": false,
-			"disableChoices": true,
+			"disableChoices": false,
 			"enableJsonType": true
 		}
 	},

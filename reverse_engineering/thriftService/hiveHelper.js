@@ -263,7 +263,9 @@ const getJsonSchemaByTypeDescriptor = (TCLIServiceTypes) => (typeDescriptor) => 
 		case TCLIServiceTypes.TTypeId.UNION_TYPE:
 		case TCLIServiceTypes.TTypeId.USER_DEFINED_TYPE:
 		default:
-			return noConversion;
+			return {
+				type: "string"
+			};
 	}
 };
 
@@ -278,15 +280,19 @@ const getJsonSchemaCreator = (TCLIService, TCLIServiceTypes, tableInfo) => (sche
 			getJsonSchemaByTypeDescriptor(TCLIServiceTypes)(typeDescriptor),
 			{ comments: columnDescriptor.comment || "" }
 		);
+		const jsonSchemaFromInfo = tableInfo.table[columnName] 
+			? schemaHelper.getJsonSchema(tableInfo.table[columnName], _.get(sample, columnName))
+			: {};
 
-		if (tableInfo.table[columnName]) {
-			Object.assign(
+		if (jsonSchemaFromInfo.type === 'union') {
+			return schemaHelper.getChoice(jsonSchema, jsonSchemaFromInfo.subSchemas, columnName);
+		} else {
+			jsonSchema.properties[columnName] = Object.assign(
+				{},
 				schema,
-				schemaHelper.getJsonSchema(tableInfo.table[columnName], _.get(sample, columnName))
+				jsonSchemaFromInfo
 			);
 		}
-
-		jsonSchema.properties[columnName] = schema;
 
 		return jsonSchema;
 	}, {
@@ -389,7 +395,7 @@ const getForeignKeys = (next) => {
 
 		const parentItem = column.col_name.split(":").pop() || "";
 		const [ dbName, tableName, fieldName ] = parentItem.split(".");
-		const childField =( column.data_type.split(":").pop() || "").trim();
+		const childField = (column.data_type.split(":").pop() || "").trim();
 
 		return [{
 			parentDb: dbName,

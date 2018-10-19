@@ -66,19 +66,16 @@ const parseStruct = (splittedContent, sample = {}) => {
 		return keyItem.slice(0, keyItem.indexOf(':'));
 	};
 	
-	const properties = splittedContent.reduce((result, keyItem) => {
+	return splittedContent.reduce((schema, keyItem) => {
 		const keyName = getKeyName(keyItem).trim();
 		const keyContent = keyItem.slice(keyName.length + 1).trim();
-		
-		return Object.assign({}, result, {
-			[keyName]: getJsonSchema(keyContent, sample[keyName])
-		});
-	}, {});
-	
-	return {
+		const childSchema = getJsonSchema(keyContent, sample[keyName]);
+
+		return setProperty(keyName, childSchema, schema);
+	}, {
 		type: "struct",
-		properties
-	};
+		properties: {}
+	});
 };
 
 const getMapKeyType = (childItem) => {
@@ -118,13 +115,11 @@ const parseMap = ([ keySubtype, subtype ], sample = {}) => {
 	const subtypeSchema = getJsonSchema(subtype, sample[childName]);
 	const keySubtypeSchema = getJsonSchema(keySubtype);
 	
-	return Object.assign({
+	return setProperty(childName, Object.assign({}, subtypeSchema), Object.assign({
 		type: "map",
 		subtype: getMapSubtype(subtypeSchema.type),
-		properties: {
-			[childName]: Object.assign({}, subtypeSchema) 
-		}
-	}, getMapKeyType(keySubtypeSchema));
+		properties: {}
+	}, getMapKeyType(keySubtypeSchema)));
 };
 
 const getArraySubtypeByType = (type) => {
@@ -145,11 +140,11 @@ const getArraySubtypeByType = (type) => {
 const parseArray = ([ content ], sample = []) => {
 	const items = getJsonSchema(content, sample[0]);
 
-	return {
+	return setProperty("New column", items, {
 		type: "array",
 		subtype: getArraySubtypeByType(items.type),
-		items
-	};
+		items: {}
+	});
 };
 
 const parsePrimitive = ([ type ]) => {
@@ -204,13 +199,20 @@ const parsePrimitive = ([ type ]) => {
 };
 
 const parseUnion = (types, sample) => {
+	const isComplex = (type) => [ 'struct', 'map', 'array' ].indexOf(type) !== -1;
 	const jsonSchemas = types.map(getJsonSchema);
+	const complexTypes = jsonSchemas.some((schema) => isComplex(schema.type)); 
 	
-	const jsonSchema = {
-		type: _.uniq(jsonSchemas.map(schema => schema.type))
-	};
+	if (!complexTypes) {
+		return {
+			type: _.uniq(jsonSchemas.map(schema => schema.type))
+		};
+	}
 
-	return jsonSchema;
+	return {
+		type: "union",
+		subSchemas: jsonSchemas
+	};
 };
 
 const getParserByType = (type) => {
@@ -230,6 +232,52 @@ const getJsonSchema = (str, sample) => {
 	return getParserByType(type)(content, sample);
 };
 
+const getOneOf = (subSchemas, columnName) => {
+	return subSchemas.map(subSchema => {
+		return {
+			type: "object",
+			properties: {
+				[columnName]: subSchema
+			}
+		};
+	})
+};
+
+const getChoice = (jsonSchema, subSchemas, columnName) => {
+	const oneOf = getOneOf(subSchemas, columnName);
+	
+	if (jsonSchema["allOf"]) {
+		jsonSchema["allOf"].push({ oneOf });
+	} else if (!jsonSchema["oneOf"]) {
+		jsonSchema["oneOf"] = oneOf;
+	} else {
+		const oldOneOf = jsonSchema["oneOf"];
+		delete jsonSchema["oneOf"];
+		jsonSchema["allOf"] = [
+			{ oneOf: oldOneOf },
+			{ oneOf }
+		];
+	}
+
+	return jsonSchema;
+};
+
+const setProperty = (columnName, subSchema, jsonSchema) => {
+	if (subSchema.type === "union") {
+		return getChoice(jsonSchema, subSchema.subSchemas, columnName);
+	} else if (jsonSchema.type === "array") {
+		jsonSchema.items = subSchema;
+	} else {
+		if (!jsonSchema.properties) {
+			jsonSchema.properties = {};
+		}
+		jsonSchema.properties[columnName] = subSchema;
+	}
+
+	return jsonSchema;
+};
+
 module.exports = {
-	getJsonSchema
+	getJsonSchema,
+	getChoice
 };

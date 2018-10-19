@@ -39,7 +39,6 @@
 			"childValueType": "struct"
 		},
 		"array<union>": {
-			"childValueType": "union"
 		}
 	}
 }
