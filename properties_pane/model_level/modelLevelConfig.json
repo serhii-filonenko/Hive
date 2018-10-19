@@ -104,5 +104,17 @@ making sure that you maintain a proper JSON format.
 				"template": "textarea"
 			}
 		]
+	},
+	{
+		"lowerTab": "Relationships",
+		"structure": [
+			{
+				"propertyName": "Disable No Validate",
+				"propertyKeyword": "disableNoValidate",
+				"shouldValidate": false,
+				"propertyTooltip": "Disable No Validate",
+				"propertyType": "checkbox"
+			}
+		]
 	}
 ]

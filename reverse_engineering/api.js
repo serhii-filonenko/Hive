@@ -1,131 +1,282 @@
 'use strict';
 
+const _ = require('lodash');
 const async = require('async');
-const cassandra = require('./cassandraHelper');
-const systemKeyspaces = require('./package').systemKeyspaces;
+const thriftService = require('./thriftService/thriftService');
+const hiveHelper = require('./thriftService/hiveHelper');
+const entityLevelHelper = require('./entityLevelHelper');
+const TCLIService = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService');
+const TCLIServiceTypes = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService_types');
 
 module.exports = {
 	connect: function(connectionInfo, logger, cb){
 		logger.clear();
 		logger.log('info', connectionInfo, 'connectionInfo', connectionInfo.hiddenKeys);
-		cassandra.connect(connectionInfo).then(cb, cb);
+
+		thriftService.connect({
+			host: connectionInfo.host,
+			port: connectionInfo.port,
+			username: connectionInfo.user,
+			password: connectionInfo.password,
+			authMech: 'NOSASL',
+			configuration: {}
+		})(cb)(TCLIService, TCLIServiceTypes);
 	},
 
 	disconnect: function(connectionInfo, cb){
-		cassandra.close();
 		cb();
 	},
 
 	testConnection: function(connectionInfo, logger, cb){
-		this.connect(connectionInfo, logger, (error) => {
-			this.disconnect(connectionInfo, () => {});
-			return cb(error);
-		});
+		this.connect(connectionInfo, logger, cb);
 	},
 
 	getDbCollectionsNames: function(connectionInfo, logger, cb) {
 		const { includeSystemCollection } = connectionInfo;
 
-		cassandra.connect(connectionInfo).then(() => {
-				let keyspaces = cassandra.getKeyspacesNames();
+		this.connect(connectionInfo, logger, (err, session, cursor) => {
+			if (err) {
+				return cb(err);
+			}
+			const exec = cursor.asyncExecute.bind(null, session.sessionHandle);
+			const execWithResult = getExecutorWithResult(cursor, exec);
+			const getTables = getExecutorWithResult(cursor, cursor.getTables.bind(null, session.sessionHandle));
 
-				if (!includeSystemCollection) {
-					keyspaces = cassandra.filterKeyspaces(keyspaces, systemKeyspaces);
-				}
-
-				async.map(keyspaces, (keyspace, next) => {
-					cassandra.getTablesNames(keyspace).then(tablesData => {
-						const tableNames = tablesData.rows.map(table => table.table_name);
-						return next(null, cassandra.prepareConnectionDataItem(keyspace, tableNames)); 
-					}).catch(next);
-				}, (err, result) => {
-					return cb(err, result);
+			execWithResult('show databases')
+				.then(databases => databases.map(d => d.database_name))
+				.then(databases => {
+					async.mapSeries(databases, (dbName, next) => {
+						const tableTypes = [ "TABLE", "VIEW", "GLOBAL TEMPORARY", "TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM" ];
+						
+						if (includeSystemCollection) {
+							tableTypes.push("SYSTEM TABLE");
+						}
+						getTables(dbName, tableTypes)
+							.then((tables) => {
+								return tables.map(table => table.TABLE_NAME)
+							})
+							.then(dbCollections => {
+								next(null, {
+									isEmpty: !Boolean(dbCollections.length),
+									dbName,
+									dbCollections
+								})
+							})
+							.catch(err => next(err))
+					}, cb);
 				});
-			}).catch((error) => {
-				return cb(error || 'error');
-			});
+		});
 	},
 
 	getDbCollectionsData: function(data, logger, cb){
-		logger.clear();
-		logger.log('info', data, 'connectionInfo', data.hiddenKeys);
-	
 		const tables = data.collectionData.collections;
-		const keyspacesNames = data.collectionData.dataBaseNames;
+		const databases = data.collectionData.dataBaseNames;
+		const pagination = data.pagination;
 		const includeEmptyCollection = data.includeEmptyCollection;
 		const recordSamplingSettings = data.recordSamplingSettings;
+		const fieldInference = data.fieldInference;
 	
-		async.map(keyspacesNames, (keyspaceName, keyspaceCallback) => {
-			const tableNames = tables[keyspaceName] || [];
-			let udtHash = [];
-			let udfData = [];
-			
-			cassandra.getUDF(keyspaceName)
-			.then(udf => {
-				udfData = cassandra.handleUDF(udf);
-				return cassandra.getUDA(keyspaceName)
-			})
-			.then(uda => {
-				let udaData = cassandra.handleUDA(uda);
-				pipeline(udaData, udfData);
-			})
-			.catch(err => {
-				pipeline([], []);
-			});
+		this.connect(data, logger, (err, session, cursor) => {
+			if (err) {
+				return cb(err);
+			}
 
-			const pipeline = (UDAs, UDFs) => {
-				if (!tableNames.length) {
-					let packageData = {
-						dbName: keyspaceName,
-						emptyBucket: true
-					};
+			async.mapSeries(databases, (dbName, nextDb) => {
+				const exec = cursor.asyncExecute.bind(null, session.sessionHandle);
+				const query = getExecutorWithResult(cursor, exec);
+				const getPrimaryKeys = getExecutorWithResult(
+					cursor,
+					cursor.getPrimaryKeys.bind(null, session.sessionHandle)
+				);
+				const tableNames = tables[dbName] || [];
 
-					packageData.bucketInfo = cassandra.getKeyspaceInfo(keyspaceName);
-					packageData.bucketInfo.UDFs = UDFs;
-					packageData.bucketInfo.UDAs = UDAs;
-					return keyspaceCallback(null, packageData);
-				} else {
-					async.map(tableNames, (tableName, tableCallback) => {
-						let packageData = {
-							dbName: keyspaceName,
-							collectionName: tableName,
-							documents: []
-						};
-						let columns = [];
-	
-						cassandra.getTableMetadata(keyspaceName, tableName)
-						.then(table => {
-							columns = table.columns;
-							packageData = cassandra.getPackageData({
-								keyspaceName,
-								table,
-								tableName,
-								udtHash,
-								UDFs,
-								UDAs
-							}, includeEmptyCollection);
-							return packageData;
-						})
-						.then(packageData => {
-							return packageData && columns && columns.length ? cassandra.scanRecords(keyspaceName, tableName, recordSamplingSettings) : null;
-						})
-						.then(columns => {
-							if (columns) {
-								packageData.documents = columns;
+				exec(`use ${dbName}`)
+					.then(() => query(`describe database ${dbName}`))
+					.then((databaseInfo) => {
+						async.mapSeries(tableNames, (tableName, nextTable) => {
+							query(`select count(*) as count from ${tableName}`)
+								.then((data) => {
+									return getLimitByCount(data[0].count, recordSamplingSettings);
+								})
+								.then(limit => {
+									return getDataByPagination(pagination, limit, (limit, offset, next) => {
+										query(`select * from ${tableName} limit ${limit} offset ${offset}`)
+											.then(data => next(null, data), err => next(err));
+									});
+								})
+								.then((documents) => {
+									const documentPackage = {
+										dbName,
+										collectionName: tableName,
+										documents,
+										indexes: [],
+										bucketIndexes: [],
+										views: [],
+										validation: false,
+										emptyBucket: false,
+										containerLevelKeys: [],
+										bucketInfo: {
+											comments: _.get(databaseInfo, '[0].comment', '')
+										}
+									};
+
+									if (fieldInference.active === 'field') {
+										documentPackage.documentTemplate = _.cloneDeep(documents[0]);
+									}
+
+									return documentPackage;
+								})
+								.then((documentPackage) => {
+									return Promise.all([
+										query(`describe formatted ${tableName}`),
+										query(`describe extended ${tableName}`),
+										exec(`select * from ${tableName} limit 1`).then(cursor.getSchema),
+									]).then(([formattedTable, extendedTable, tableSchema]) => {
+										const tableInfo = hiveHelper.getFormattedTable(formattedTable);
+										const extendedTableInfo = hiveHelper.getDetailInfoFromExtendedTable(extendedTable);
+										const sample = documentPackage.documents[0];
+										documentPackage.entityLevel = entityLevelHelper.getEntityLevelData(tableName, tableInfo, extendedTableInfo);
+
+										return {
+											jsonSchema: hiveHelper.getJsonSchemaCreator(...cursor.getTCLIService(), tableInfo)(tableSchema, sample),
+											relationships: convertForeignKeysToRelationships(dbName, tableName, tableInfo.foreignKeys || [])
+										};
+									}).then(({ jsonSchema, relationships }) => {
+										return getPrimaryKeys(dbName, tableName)
+											.then(keys => {
+												keys.forEach(key => {
+													jsonSchema.properties[key.COLUMN_NAME].primaryKey = true;
+												});
+
+												return jsonSchema;
+											}).then(jsonSchema => ({ jsonSchema, relationships }));
+									}).then(({ jsonSchema, relationships }) => {
+										if (jsonSchema) {
+											documentPackage.validation = { jsonSchema };
+										}
+
+										return {
+											documentPackage,
+											relationships
+										};
+									});
+								})
+								.then((data) => {
+									nextTable(null, data);
+								})
+								.catch(err => {
+									nextTable(err)
+								});
+						}, (err, data) => {
+							if (err) {
+								nextDb(err);
+							} else {
+								nextDb(err, expandPackages(data));
 							}
-							return tableCallback(null, packageData);
-						})
-						.catch(tableCallback);
-					}, (err, res) => {
-						if (err) {
-							logger.log('error', cassandra.prepareError(err), "Error");
-						}
-						return keyspaceCallback(err, res)
+						});
 					});
+			}, (err, data) => {
+				if (err) {
+					logger.log('error', err);
+					cb(err);
+				} else {
+					cb(err, ...expandFinalPackages(data));
 				}
-			};
-		}, (err, res) => {
-			return cb(err, res);
+			});
 		});
 	}
+};
+
+const expandPackages = (packages) => {
+	return packages.reduce((result, pack) => {
+		result.documentPackage.push(pack.documentPackage);
+		result.relationships = result.relationships.concat(pack.relationships);
+
+		return result;
+	}, { documentPackage: [], relationships: [] });
+};
+
+const expandFinalPackages = (packages) => {
+	return packages.reduce((result, pack) => {
+		result[0] = [...result[0], ...pack.documentPackage];
+		result[2] = [...result[2], ...pack.relationships];
+
+		return result;
+	}, [[], null, []])
+};
+
+const getLimitByCount = (count, recordSamplingSettings) => {
+	let limit = count;
+
+	if (recordSamplingSettings.active === 'relative') {
+		limit = Math.ceil((count * Number(recordSamplingSettings.relative.value)) / 100);
+	} else {
+		const absolute = Number(recordSamplingSettings.absolute.value);
+		limit = count > absolute ? absolute : count;
+	}
+
+	const maxValue = Number(recordSamplingSettings.maxValue);
+
+	if (limit > maxValue) {
+		limit = maxValue;
+	}
+
+	return limit;
+};
+
+const getPages = (total, pageSize) => {
+	const generate = (size) => size <= 0 ? [0] : [...generate(size - 1), size];
+
+	return generate(Math.ceil(total / pageSize) - 1);
+};
+
+const getDataByPagination = (pagination, limit, callback) => new Promise((resolve, reject) => {
+	const getResult = (err, data) => err ? reject(err) : resolve(data);
+	const pageSize = Number(pagination.value);
+
+	if (!pagination.enabled) {
+		return callback(limit, 0, getResult);
+	}
+
+	async.reduce(
+		getPages(limit, pageSize),
+		[],
+		(result, page, next) => {
+			callback(pageSize, page, (err, data) => {
+				if (err) {
+					next(err);
+				} else {
+					next(null, result.concat(data));
+				}
+			});
+		},
+		getResult
+	);
+});
+
+const getExecutorWithResult = (cursor, handler) => {
+	const resultParser = hiveHelper.getResultParser(...cursor.getTCLIService());
+	
+	return (...args) => {
+		return handler(...args).then(resp => {
+			return Promise.all([
+				cursor.fetchResult(resp),
+				cursor.getSchema(resp)
+			]);
+		}).then(([ resultResp, schemaResp ]) => {
+			return resultParser(schemaResp, resultResp)
+		});
+	};
+};
+
+const convertForeignKeysToRelationships = (childDbName, childCollection, foreignKeys) => {
+	return foreignKeys.map(foreignKey => ({
+		relationshipName: foreignKey.name,
+		dbName: foreignKey.parentDb,
+		parentCollection: foreignKey.parentTable,
+		parentField: foreignKey.parentField,
+		childDbName: childDbName,
+		childCollection: childCollection,
+		childField: foreignKey.childField
+	}));
 };

@@ -20,9 +20,9 @@
 			"nestedCollections": false,
 			"disablePatternField": false,
 			"enableForwardEngineering": true,
-			"disableMultipleTypes": true,
+			"disableMultipleTypes": false,
 			"disableReverseEngineering": false,
-			"disableChoices": true,
+			"disableChoices": false,
 			"enableJsonType": true
 		}
 	},
