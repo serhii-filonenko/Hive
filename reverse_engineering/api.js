@@ -157,10 +157,19 @@ module.exports = {
 											})
 											.then(jsonSchema => ({ jsonSchema, relationships }))
 											.catch(err => {
-												logger.log('error', err, 'Primary keys are not retrieved');
-
 												return Promise.resolve({ jsonSchema, relationships });
 											});
+									}).then(({ jsonSchema, relationships }) => {
+										return query(`show indexes on ${tableName}`)
+											.then(result => {
+												return getIndexes(result);
+											})
+											.then(indexes => {
+												documentPackage.entityLevel.SecIndxs = indexes;
+
+												return { jsonSchema, relationships };
+											})
+											.catch(err => ({ jsonSchema, relationships }));
 									}).then(({ jsonSchema, relationships }) => {
 										if (jsonSchema) {
 											documentPackage.validation = { jsonSchema };
@@ -290,4 +299,18 @@ const convertForeignKeysToRelationships = (childDbName, childCollection, foreign
 		childCollection: childCollection,
 		childField: foreignKey.childField
 	}));
+};
+
+const getIndexes = (indexesFromDb) => {
+	const getValue = (value) => (value || '').trim();
+
+	return (indexesFromDb || []).map(indexFromDb => {
+		return {
+			name: getValue(indexFromDb.idx_name),
+			SecIndxKey: getValue(indexFromDb.col_names).split(',').map(name => ({ name: getValue(name) })),
+			idx_tab_name: getValue(indexFromDb.idx_tab_name),
+			idx_type: getValue(indexFromDb.idx_type),
+			SecIndxComments: getValue(indexFromDb.comment)
+		};
+	});
 };
