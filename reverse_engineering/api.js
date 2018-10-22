@@ -19,6 +19,7 @@ module.exports = {
 			username: connectionInfo.user,
 			password: connectionInfo.password,
 			authMech: 'NOSASL',
+			version: connectionInfo.version,
 			configuration: {}
 		})(cb)(TCLIService, TCLIServiceTypes);
 	},
@@ -132,7 +133,11 @@ module.exports = {
 										query(`describe extended ${tableName}`),
 										exec(`select * from ${tableName} limit 1`).then(cursor.getSchema),
 									]).then(([formattedTable, extendedTable, tableSchema]) => {
-										const tableInfo = hiveHelper.getFormattedTable(formattedTable);
+										const tableInfo = hiveHelper
+											.getFormattedTable(
+												...cursor.getTCLIService(),
+												cursor.getCurrentProtocol()
+											)(formattedTable);
 										const extendedTableInfo = hiveHelper.getDetailInfoFromExtendedTable(extendedTable);
 										const sample = documentPackage.documents[0];
 										documentPackage.entityLevel = entityLevelHelper.getEntityLevelData(tableName, tableInfo, extendedTableInfo);
@@ -149,7 +154,13 @@ module.exports = {
 												});
 
 												return jsonSchema;
-											}).then(jsonSchema => ({ jsonSchema, relationships }));
+											})
+											.then(jsonSchema => ({ jsonSchema, relationships }))
+											.catch(err => {
+												logger.log('error', err, 'Primary keys are not retrieved');
+
+												return Promise.resolve({ jsonSchema, relationships });
+											});
 									}).then(({ jsonSchema, relationships }) => {
 										if (jsonSchema) {
 											documentPackage.validation = { jsonSchema };

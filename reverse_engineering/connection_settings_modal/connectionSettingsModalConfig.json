@@ -28,6 +28,15 @@
 				"validation": {
 					"regex": "([^\\s])"
 				}
+			},
+			{
+				"inputLabel": "Hive version",
+				"inputKeyword": "version",
+				"inputType": "select",
+				"options": [
+					{ "value": "<2.3.3", "label": "<2.3.3" },
+					{ "value": ">=2.3.3", "label": ">=2.3.3" }
+				]
 			}
 		]
 	}, {

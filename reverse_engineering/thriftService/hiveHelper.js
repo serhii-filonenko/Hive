@@ -459,8 +459,13 @@ const handleRow = (column, next) => {
 	}
 };
 
-const getFormattedTable = (hiveResult) => {
+const getFormattedTable = (TCLIService, TCLIServiceTypes, currentProtocol) => (hiveResult) => {
 	const next = getIterator(hiveResult);
+
+	if (currentProtocol < TCLIServiceTypes.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V9) {
+		next();
+	}
+
 	const table = getTable(next);
 	let currentColumn = next();
 	let result = { table }
