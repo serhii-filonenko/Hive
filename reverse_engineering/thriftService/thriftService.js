@@ -36,7 +36,7 @@ const getConnection = cacheCall((TCLIService, { host, port, authMech, options })
 });
 
 const getProtocolByVersion = cacheCall((TCLIServiceTypes, version) => {
-	if (version === '<2.3.3') {
+	if (version === '2.x') {
 		return TCLIServiceTypes.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8;
 	} else {
 		return TCLIServiceTypes.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V9;
