@@ -326,16 +326,19 @@ const getColumn = (column, next) => {
 	);
 };
 
-const getTable = (next) => {
+const getTable = (next, skipColumn) => {
 	const header = next();
+
+	if (skipColumn) {
+		next();
+	}
+
 	return getColumn(next(), next);
 };
 
-const getPartitionInfo = (next) => {
-	const header = next();
-	return getColumn(next(), next);
+const getPartitionInfo = (next, skipColumn) => {
+	return getTable(next, skipColumn);
 };
-
 
 const isTableParameter = (column) => {
 	return column.col_name === "Table Parameters:";
@@ -447,9 +450,9 @@ const isForeignKey = (column) => {
 	return (column.col_name === "# Foreign Keys");
 };
 
-const handleRow = (column, next) => {
+const handleRow = (column, next, skipColumn) => {
 	if (isPartitionInfo(column)) {
-		return { partitionInfo: getPartitionInfo(next) };
+		return { partitionInfo: getPartitionInfo(next, skipColumn) };
 	} else if (isDetailedTableInformation(column)) {
 		return { detailedInfo: getDetailedInfo(next) };
 	} else if (isStorageInfo(column)) {
@@ -459,14 +462,16 @@ const handleRow = (column, next) => {
 	}
 };
 
-const getFormattedTable = (hiveResult) => {
+const getFormattedTable = (TCLIService, TCLIServiceTypes, currentProtocol) => (hiveResult) => {
 	const next = getIterator(hiveResult);
-	const table = getTable(next);
+	const skipColumn = (currentProtocol < TCLIServiceTypes.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V9);
+
+	const table = getTable(next, skipColumn);
 	let currentColumn = next();
 	let result = { table }
 
 	while (currentColumn) {
-		result = Object.assign(result, handleRow(currentColumn, next));
+		result = Object.assign(result, handleRow(currentColumn, next, skipColumn));
 		currentColumn = next();
 	}
 	

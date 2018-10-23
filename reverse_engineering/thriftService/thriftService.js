@@ -35,7 +35,18 @@ const getConnection = cacheCall((TCLIService, { host, port, authMech, options })
 	return thrift.createClient(TCLIService, connection);
 });
 
-const connect = ({ host, port, username, password, authMech, options, configuration }) => (handler) => (TCLIService, TCLIServiceTypes) => {
+const getProtocolByVersion = cacheCall((TCLIServiceTypes, version) => {
+	if (version === '2.x') {
+		return TCLIServiceTypes.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8;
+	} else {
+		return TCLIServiceTypes.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V9;
+	}
+});
+
+const connect = ({ host, port, username, password, authMech, version, options, configuration }) => (handler) => (TCLIService, TCLIServiceTypes) => {
+	const connectionsParams = { host, port, authMech, options };
+	const protocol = getProtocolByVersion(TCLIServiceTypes, version);
+
 	const execute = (sessionHandle, statement, options = {}) => {
 		return new Promise((resolve, reject) => {
 			const requestOptions = Object.assign({
@@ -273,10 +284,11 @@ const connect = ({ host, port, username, password, authMech, options, configurat
 	};
 
 	const getTCLIService = () => [TCLIService, TCLIServiceTypes];
-
-	const connectionsParams = { host, port, authMech, options };
+	
+	const getCurrentProtocol = () => protocol;
+	
 	const request = new TCLIServiceTypes.TOpenSessionReq({
-		client_protocol: TCLIServiceTypes.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V9,
+		client_protocol: protocol,
 		configuration,
 		username,
 		password
@@ -293,7 +305,8 @@ const connect = ({ host, port, username, password, authMech, options, configurat
 		getTables,
 		getTableTypes,
 		getTypeInfo,
-		getTCLIService
+		getTCLIService,
+		getCurrentProtocol
 	};
 
 	getConnection(TCLIService, connectionsParams).OpenSession(request, (err, session) => {

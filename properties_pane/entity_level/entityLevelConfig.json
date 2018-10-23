@@ -372,11 +372,7 @@ making sure that you maintain a proper JSON format.
 					"propertyKeyword": "SecIndxKey",
 					"shouldValidate": false,
 					"propertyType": "fieldList",
-					"template": "orderedList",
-					"attributeList": [
-						"ascending",
-						"descending"
-					]
+					"template": "orderedList"
 				},
 				{
 					"propertyName": "Id",
@@ -394,12 +390,18 @@ making sure that you maintain a proper JSON format.
 					"template": "textarea"
 				},
 				{
-					"propertyName": "Function",
-					"propertyKeyword": "SecIndxFunction",
+					"propertyName": "Index table name",
+					"propertyKeyword": "idx_tab_name",
 					"shouldValidate": false,
-					"propertyTooltip": "description",
-					"propertyType": "details",
-					"template": "textarea"
+					"propertyTooltip": "Index table name",
+					"propertyType": "text"
+				},
+				{
+					"propertyName": "Index type",
+					"propertyKeyword": "idx_type",
+					"shouldValidate": false,
+					"propertyTooltip": "Index type",
+					"propertyType": "text"
 				},
 				{
 					"propertyName": "Comments",

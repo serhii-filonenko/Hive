@@ -19,6 +19,7 @@ module.exports = {
 			username: connectionInfo.user,
 			password: connectionInfo.password,
 			authMech: 'NOSASL',
+			version: connectionInfo.version,
 			configuration: {}
 		})(cb)(TCLIService, TCLIServiceTypes);
 	},
@@ -132,7 +133,11 @@ module.exports = {
 										query(`describe extended ${tableName}`),
 										exec(`select * from ${tableName} limit 1`).then(cursor.getSchema),
 									]).then(([formattedTable, extendedTable, tableSchema]) => {
-										const tableInfo = hiveHelper.getFormattedTable(formattedTable);
+										const tableInfo = hiveHelper
+											.getFormattedTable(
+												...cursor.getTCLIService(),
+												cursor.getCurrentProtocol()
+											)(formattedTable);
 										const extendedTableInfo = hiveHelper.getDetailInfoFromExtendedTable(extendedTable);
 										const sample = documentPackage.documents[0];
 										documentPackage.entityLevel = entityLevelHelper.getEntityLevelData(tableName, tableInfo, extendedTableInfo);
@@ -149,7 +154,22 @@ module.exports = {
 												});
 
 												return jsonSchema;
-											}).then(jsonSchema => ({ jsonSchema, relationships }));
+											})
+											.then(jsonSchema => ({ jsonSchema, relationships }))
+											.catch(err => {
+												return Promise.resolve({ jsonSchema, relationships });
+											});
+									}).then(({ jsonSchema, relationships }) => {
+										return query(`show indexes on ${tableName}`)
+											.then(result => {
+												return getIndexes(result);
+											})
+											.then(indexes => {
+												documentPackage.entityLevel.SecIndxs = indexes;
+
+												return { jsonSchema, relationships };
+											})
+											.catch(err => ({ jsonSchema, relationships }));
 									}).then(({ jsonSchema, relationships }) => {
 										if (jsonSchema) {
 											documentPackage.validation = { jsonSchema };
@@ -279,4 +299,18 @@ const convertForeignKeysToRelationships = (childDbName, childCollection, foreign
 		childCollection: childCollection,
 		childField: foreignKey.childField
 	}));
+};
+
+const getIndexes = (indexesFromDb) => {
+	const getValue = (value) => (value || '').trim();
+
+	return (indexesFromDb || []).map(indexFromDb => {
+		return {
+			name: getValue(indexFromDb.idx_name),
+			SecIndxKey: getValue(indexFromDb.col_names).split(',').map(name => ({ name: getValue(name) })),
+			idx_tab_name: getValue(indexFromDb.idx_tab_name),
+			idx_type: getValue(indexFromDb.idx_type),
+			SecIndxComments: getValue(indexFromDb.comment)
+		};
+	});
 };
