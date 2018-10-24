@@ -375,7 +375,8 @@ making sure that you maintain a proper JSON format.
 					"propertyKeyword": "name",
 					"shouldValidate": false,
 					"propertyTooltip": "",
-					"propertyType": "text"
+					"propertyType": "text",
+					"defaultValue": "New Secondary Index"
 				},
 				{
 					"propertyName": "Key",
@@ -392,26 +393,44 @@ making sure that you maintain a proper JSON format.
 					"propertyType": "text"
 				},
 				{
+					"propertyName": "Index handler",
+					"propertyKeyword": "SecIndxHandler",
+					"shouldValidate": false,
+					"propertyTooltip": "Class name of index handler",
+					"propertyType": "text",
+					"defaultValue": "org.apache.hadoop.hive.ql.index.compact.CompactIndexHandler"
+				},
+				{
+					"propertyName": "With deferred rebuild",
+					"propertyKeyword": "SecIndxWithDeferredRebuild",
+					"shouldValidate": false,
+					"propertyTooltip": "With deferred rebuild",
+					"propertyType": "checkbox",
+					"defaultValue": true
+				},
+				{
+					"propertyName": "Index properties",
+					"propertyKeyword": "SecIndxProperties",
+					"shouldValidate": false,
+					"propertyTooltip": "IDXPROPERTIES",
+					"propertyType": "details",
+					"template": "textarea"
+				},
+				{
+					"propertyName": "Index table",
+					"propertyKeyword": "SecIndxTable",
+					"shouldValidate": false,
+					"propertyTooltip": "IN TABLE statement",
+					"propertyType": "details",
+					"template": "textarea"
+				},
+				{
 					"propertyName": "Description",
 					"propertyKeyword": "SecIndxDescription",
 					"shouldValidate": false,
 					"propertyTooltip": "description",
 					"propertyType": "details",
 					"template": "textarea"
-				},
-				{
-					"propertyName": "Index table name",
-					"propertyKeyword": "idx_tab_name",
-					"shouldValidate": false,
-					"propertyTooltip": "Index table name",
-					"propertyType": "text"
-				},
-				{
-					"propertyName": "Index type",
-					"propertyKeyword": "idx_type",
-					"shouldValidate": false,
-					"propertyTooltip": "Index type",
-					"propertyType": "text"
 				},
 				{
 					"propertyName": "Comments",

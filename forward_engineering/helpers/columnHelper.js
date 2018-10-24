@@ -277,7 +277,7 @@ const getColumnsStatement = (columns) => {
 			columns[name],
 			{ name }
 		))
-	}).join('\n');
+	}).join(',\n');
 };
 
 module.exports = {

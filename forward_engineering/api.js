@@ -2,6 +2,7 @@
 
 const { getDatabaseStatement } = require('./helpers/databaseHelper');
 const { getTableStatement } = require('./helpers/tableHelper');
+const { getIndexes } = require('./helpers/indexHelper');
 
 module.exports = {
 	generateScript(data, logger, callback) {
@@ -16,6 +17,11 @@ module.exports = {
 			callback(null, buildScript(
 				getDatabaseStatement(containerData),
 				getTableStatement(containerData, entityData, jsonSchema, [
+					modelDefinitions,
+					internalDefinitions,
+					externalDefinitions
+				]),
+				getIndexes(containerData, entityData, jsonSchema, [
 					modelDefinitions,
 					internalDefinitions,
 					externalDefinitions

@@ -36,12 +36,15 @@
 		"viewOn": "",
 		"pipeline": ""
 	},
-	"SecIdxs": {
+	"SecIndxs": {
 		"name": "New Secondary Index",
 		"SecIndxKey": "",
 		"SecIndxID": "",
+		"SecIndxHandler": "org.apache.hadoop.hive.ql.index.compact.CompactIndexHandler",
+		"SecIndxWithDeferredRebuild": true,
+		"SecIndxProperties": "",
+		"SecIndxTable": "",
 		"SecIndxDescription": "",
-		"SecIndxFunction": "",
 		"SecIndxComments": ""
 	}
 }
