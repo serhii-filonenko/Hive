@@ -13,7 +13,7 @@ const getCreateStatement = ({
 	const tempExtStatement = [temporary, external].filter(d => d).join(' ');
 
 	return buildStatement(`CREATE ${tempExtStatement} TABLE IF NOT EXISTS ${dbName}.${tableName} (`)
-		(columnStatement, indentString(columnStatement))
+		(columnStatement, indentString(columnStatement + (primaryKeyStatement ? ',' : '')))
 		(primaryKeyStatement, indentString(primaryKeyStatement))
 		(foreignKeyStatement, indentString(foreignKeyStatement))
 		(true, ')')
@@ -122,12 +122,10 @@ const getStoredAsStatement = (tableData) => {
 	return `STORED AS ${tableData.storedAsTable.toUpperCase()}`;
 };
 
-const getTableStatement = (containerData, entityData, jsonSchema, definitions) => {
+const getTableStatement = (containerData, entityData, jsonSchema, definitions, foreignKeyStatement) => {
 	const dbName = getName(getTab(0, containerData));
 	const tableData = getTab(0, entityData);
 	const tableName = getName(tableData);
-	const indexes = getTab(1, entityData).SecIndxs || {};
-
 	const columns = getColumns(jsonSchema);
 	const keyNames = keyHelper.getKeyNames(tableData, jsonSchema, definitions);
 
@@ -138,6 +136,7 @@ const getTableStatement = (containerData, entityData, jsonSchema, definitions) =
 		isExternal: tableData.externalTable,
 		columnStatement: getColumnsStatement(removePartitions(columns, keyNames.compositePartitionKey)),
 		primaryKeyStatement: getPrimaryKeyStatement(keyNames.primaryKeys),
+		foreignKeyStatement: foreignKeyStatement,
 		comment: tableData.comments,
 		partitionedByKeys: getPartitionKeyStatement(getPartitionsKeys(columns, keyNames.compositePartitionKey)),
 		clusteredKeys: getClusteringKeys(keyNames.compositeClusteringKey),

@@ -3,6 +3,7 @@
 const { getDatabaseStatement } = require('./helpers/databaseHelper');
 const { getTableStatement } = require('./helpers/tableHelper');
 const { getIndexes } = require('./helpers/indexHelper');
+const foreignKeyHelper = require('./helpers/foreignKeyHelper');
 
 module.exports = {
 	generateScript(data, logger, callback) {
@@ -25,9 +26,7 @@ module.exports = {
 					modelDefinitions,
 					internalDefinitions,
 					externalDefinitions
-				]),
-				JSON.stringify(jsonSchema, null, 2),
-				JSON.stringify(data, null, 2)
+				])
 			));
 		} catch (e) {
 			logger.log('error', { message: e.message, stack: e.stack }, 'Hive Forward-Engineering Error');
@@ -40,7 +39,56 @@ module.exports = {
 
 	generateContainerScript(data, logger, callback) {
 		try {
-			callback(null, JSON.stringify(data));
+			const containerData = data.containerData;
+			const modelDefinitions = JSON.parse(data.modelDefinitions);
+			const externalDefinitions = JSON.parse(data.externalDefinitions);
+			const databaseStatement = getDatabaseStatement(containerData);
+			const jsonSchema = parseEntities(data.entities, data.jsonSchema);
+			const internalDefinitions = parseEntities(data.entities, data.internalDefinitions);
+			const foreignKeyHashTable = foreignKeyHelper.getForeignKeyHashTable(
+				data.relationships,
+				data.entities,
+				data.entityData,
+				jsonSchema,
+				internalDefinitions,
+				[
+					modelDefinitions,
+					externalDefinitions
+				]
+			);
+
+			const entities = data.entities.reduce((result, entityId) => {
+				const args = [
+					containerData,
+					data.entityData[entityId],
+					jsonSchema[entityId], [
+						internalDefinitions[entityId],
+						modelDefinitions,
+						externalDefinitions
+					]
+				];
+
+				return result.concat([
+					getTableStatement(...args),
+					getIndexes(...args),
+				]);
+			}, []);
+
+			const foreignKeys = data.entities.reduce((result, entityId) => {
+				const foreignKeyStatement = foreignKeyHelper.getForeignKeyStatementsByHashItem(foreignKeyHashTable[entityId] || {});
+			
+				if (foreignKeyStatement) {
+					return [...result, foreignKeyStatement];
+				}
+
+				return result;
+			}, []);
+
+			callback(null, buildScript(
+				databaseStatement,
+				...entities,
+				foreignKeys
+			));
 		} catch (e) {
 			logger.log('error', { message: e.message, stack: e.stack }, 'Cassandra Forward-Engineering Error');
 
@@ -52,5 +100,15 @@ module.exports = {
 };
 
 const buildScript = (...statements) => {
-	return statements.join('\n\n');
+	return statements.filter(statement => statement).join('\n\n');
+};
+
+const parseEntities = (entities, serializedItems) => {
+	return entities.reduce((result, entityId) => {
+		try {
+			return Object.assign({}, result, { [entityId]: JSON.parse(serializedItems[entityId]) });
+		} catch (e) {
+			return result;
+		}
+	}, {});
 };

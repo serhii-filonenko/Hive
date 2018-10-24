@@ -28,7 +28,7 @@ const getStructChildProperties = getTypeByProperty => property => {
 	}
 
 	if (!result.length) {
-		result.push('column: string');
+		result.push('new_column: string');
 	}
 
 	return result;
@@ -79,7 +79,9 @@ const getArray = getTypeByProperty => property => {
 };
 
 const getMapKey = (property) => {
-	if (property.keySubtype) {
+	if (['char', 'varchar'].indexOf(property.keySubtype) !== -1) {
+		return property.keySubtype + '(255)';
+	} else if (property.keySubtype) {
 		return property.keySubtype;
 	} else if (property.keyType === 'numeric') {
 		return 'int';
@@ -118,7 +120,7 @@ const getText = (property) => {
 	} else if (property.maxLength) {
 		return mode + `(${property.maxLength})`;
 	} else {
-		return mode;
+		return mode + `(${255})`;
 	}
 };
 
@@ -264,7 +266,7 @@ const getColumns = jsonSchema => {
 
 const getColumnStatement = ({ name, type, comment }) => {
 	const commentStatement = comment 
-		? ` COMMENT ${comment}`
+		? ` COMMENT '${comment}'`
 		: '';
 	
 	return `${name} ${type}${commentStatement}`;
