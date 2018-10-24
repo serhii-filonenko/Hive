@@ -1,7 +1,7 @@
 {
 	"extension": "cql",
-	"filterName": "Cassandra Query Language",
-	"namePrefix": "Cassandra",
+	"filterName": "Hive Query Language",
+	"namePrefix": "Hive",
 	"hasUpdateScript": false,
 	"level": {
 		"entity": true,

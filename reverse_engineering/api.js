@@ -303,13 +303,28 @@ const convertForeignKeysToRelationships = (childDbName, childCollection, foreign
 
 const getIndexes = (indexesFromDb) => {
 	const getValue = (value) => (value || '').trim();
+	const getIndexHandler = (idxType) => {
+		if (!idxType) {
+			return 'org.apache.hadoop.hive.ql.index.compact.CompactIndexHandler';
+		}
+		
+		if (idxType === 'compact') {
+			return 'org.apache.hadoop.hive.ql.index.compact.CompactIndexHandler';
+		}
+
+		return idxType;
+	};
+
+	const getInTable = (tableName) => {
+		return 'IN TABLE ' + tableName;
+	};
 
 	return (indexesFromDb || []).map(indexFromDb => {
 		return {
 			name: getValue(indexFromDb.idx_name),
 			SecIndxKey: getValue(indexFromDb.col_names).split(',').map(name => ({ name: getValue(name) })),
-			idx_tab_name: getValue(indexFromDb.idx_tab_name),
-			idx_type: getValue(indexFromDb.idx_type),
+			SecIndxTable: getInTable(getValue(indexFromDb.idx_tab_name)),
+			SecIndxHandler: getIndexHandler(getValue(indexFromDb.idx_type)),
 			SecIndxComments: getValue(indexFromDb.comment)
 		};
 	});
