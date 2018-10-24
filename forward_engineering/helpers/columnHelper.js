@@ -220,38 +220,68 @@ const getTypeByProperty = (property) => {
 	}
 };
 
-const getColumn = (name, type, comment) => buildStatement(`${name} ${type}`)(comment, `COMMENT "${comment}"`)();
+const getColumn = (name, type, comment) => ({
+	[name]: { type, comment }
+});
 
-const getColumns = getTypeByProperty => jsonSchema => {
-	const columns = Object.keys(jsonSchema.properties).map(columnName => {
+const getColumns = jsonSchema => {
+	let columns = Object.keys(jsonSchema.properties || {}).reduce((hash, columnName) => {
 		const property = jsonSchema.properties[columnName];
 
-		return getColumn(
-			(getName(property) || columnName),
-			getTypeByProperty(property),
-			property.comments
+		return Object.assign(
+			{},
+			hash,
+			getColumn(
+				(getName(property) || columnName),
+				getTypeByProperty(property),
+				property.comments
+			)
 		);
-	});
+	}, {});
 
 	if (Array.isArray(jsonSchema.oneOf)) {
 		const unions = getUnionFromOneOf(getTypeByProperty)(jsonSchema);
-		columns.push(...Object.keys(unions).map(typeName => getColumn(typeName, unions[typeName])));
+
+		columns = Object.keys(unions).reduce((hash, typeName) => Object.assign(
+			{},
+			hash,
+			getColumn(typeName, unions[typeName])
+		), columns);
 	} 
 	
 	if (Array.isArray(jsonSchema.allOf)) {
 		const unions = getUnionFromAllOf(getTypeByProperty)(jsonSchema);
-		columns.push(...Object.keys(unions).map(typeName => getColumn(typeName, unions[typeName])));
+		
+		columns = Object.keys(unions).reduce((hash, typeName) => Object.assign(
+			{},
+			hash,
+			getColumn(typeName, unions[typeName])
+		), columns);
 	}
 
 	return columns;
 };
 
-const getColumnsStatement = (jsonSchema) => {
-	return getColumns(getTypeByProperty)
-		(jsonSchema)
-		.join(',\n');
+const getColumnStatement = ({ name, type, comment }) => {
+	const commentStatement = comment 
+		? ` COMMENT ${comment}`
+		: '';
+	
+	return `${name} ${type}${commentStatement}`;
+};
+
+const getColumnsStatement = (columns) => {
+	return Object.keys(columns).map((name) => {
+		return getColumnStatement(Object.assign(
+			{},
+			columns[name],
+			{ name }
+		))
+	}).join('\n');
 };
 
 module.exports = {
-	getColumnsStatement
+	getColumns,
+	getColumnsStatement,
+	getColumnStatement
 };

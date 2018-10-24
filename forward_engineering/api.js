@@ -12,10 +12,14 @@ module.exports = {
 			const externalDefinitions = JSON.parse(data.externalDefinitions);
 			const containerData = data.containerData;
 			const entityData = data.entityData;
-
+			
 			callback(null, buildScript(
 				getDatabaseStatement(containerData),
-				getTableStatement(containerData, entityData, jsonSchema),
+				getTableStatement(containerData, entityData, jsonSchema, [
+					modelDefinitions,
+					internalDefinitions,
+					externalDefinitions
+				]),
 				JSON.stringify(jsonSchema, null, 2),
 				JSON.stringify(data, null, 2)
 			));

@@ -248,6 +248,16 @@ making sure that you maintain a proper JSON format.
 				}
 			},
 			{
+				"propertyName": "SerDe Library",
+				"propertyKeyword": "serDeLibrary",
+				"shouldValidate": false,
+				"propertyType": "text",
+				"dependency": {
+					"key": "storedAsTable",
+					"value": "by"
+				}
+			},
+			{
 				"propertyName": "Input fmt classname",
 				"propertyKeyword": "inputFormatClassname",
 				"shouldValidate": false,

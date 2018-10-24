@@ -28,7 +28,7 @@ const buildStatement = (mainStatement) => {
 
 const getName = (entity) => entity.code || entity.collectionName || entity.name || '';
 const getTab = (tabNum, configData) => Array.isArray(configData) ? (configData[tabNum] || {}) : {};
-const indentString = (str, tab = 4) => str.split('\n').map(s => ' '.repeat(tab) + s).join('\n');
+const indentString = (str, tab = 4) => (str || '').split('\n').map(s => ' '.repeat(tab) + s).join('\n');
 
 const descriptors = {};
 const getTypeDescriptor = (typeName) => {
