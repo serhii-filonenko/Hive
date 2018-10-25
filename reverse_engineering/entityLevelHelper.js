@@ -50,13 +50,13 @@ const getStoredAs = (storageInfo) => {
 			return {
 				storedAsTable: 'textfile',
 				rowFormat: 'delimited',
-				fieldsTerminatedBy: storageParams['field.delim'] || '',
-				linesTerminatedBy: storageParams['line.delim'] || '',
-				collectionItemsTerminatedBy: storageParams['collection.delim'] || '',
-				fieldsescapedBy: storageParams['escape.delim'] || '',
-				linesTerminatedBy: storageParams['line.delim'] || '',
-				mapKeysTerminatedBy: storageParams['mapkey.delim'] || '',
-				nullDefinedAs: storageParams['serialization.null.format'] || ''
+				fieldsTerminatedBy: (storageParams['field.delim']).trim() || '',
+				linesTerminatedBy: (storageParams['line.delim']).trim() || '',
+				collectionItemsTerminatedBy: (storageParams['collection.delim']).trim() || '',
+				fieldsescapedBy: (storageParams['escape.delim']).trim() || '',
+				linesTerminatedBy: (storageParams['line.delim']).trim() || '',
+				mapKeysTerminatedBy: (storageParams['mapkey.delim']).trim() || '',
+				nullDefinedAs: (storageParams['serialization.null.format']).trim() || ''
 			};
 		} else {
 			return {
@@ -135,7 +135,7 @@ const getEntityLevelData = (tableName, tableInfo, extendedTableInfo) => {
 		sortedByKey: getSortColumns(_.get(storageInfo, 'Sort Columns', '')),
 		skewedby: getFieldsArray(_.get(storageInfo, 'Skewed Columns', '')),
 		skewedOn: getSkewedOn(_.get(storageInfo, 'Skewed Values', '')),
-		numBuckets: _.get(storageInfo, 'Num Buckets', ''),
+		numBuckets: _.get(storageInfo, 'Num Buckets', '').trim(),
 		comments: _.get(detailedInfo, 'Table Parameters.comment', ''),
 		skewStoredAsDir: _.get(storageInfo, 'Stored As SubDirectories', '').trim().toLowerCase() === 'yes',
 		tableProperties: getTableProperties(_.get(detailedInfo, 'Table Parameters', {}))
