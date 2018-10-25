@@ -1,38 +1,49 @@
 'use strict'
 
-const { tab, getTableNameStatement } = require('./generalHelper');
-const { getNamesByIds } = require('./schemaHelper');
+const { getTab, buildStatement, getName } = require('./generalHelper');
+const schemaHelper = require('./jsonSchemaHelper');
 
-const getIndexes = (indexes, dataSources, tableName, keyspaceName) => {
-	return unwindIndexes(indexes).map(index => {
-		return getIndex(
-			index.name,
-			keyspaceName,
-			tableName,
-			getIndexColumnStatement(index.SecIndxKey, dataSources)
-		);
-	}).join('\n\n');
+const getIndexStatement = ({
+	name, tableName, dbName, columns, indexHandler, comment, withDeferredRebuild,
+	idxProperties, inTable
+}) => {
+	return buildStatement(`CREATE INDEX ${name} ON TABLE ${dbName}.${tableName} (${columns}) AS '${indexHandler}'`)
+		(withDeferredRebuild, 'WITH DEFERRED REBUILD')
+		(idxProperties, `IDXPROPERTIES ${idxProperties}`)
+		(inTable, inTable)
+		(comment, `COMMENT '${comment}'`)
+		() + ';';
 };
 
-const getIndex = (name, keyspaceName, tableName, indexColumnStatement) => (
-	`CREATE INDEX IF NOT EXISTS "${name}"\n${tab(`ON ${getTableNameStatement(keyspaceName, tableName)} (${indexColumnStatement});`)}`	
-);
+const getIndexKeys = (keys, jsonSchema, definitions) => {
+	if (!Array.isArray(keys)) {
+		return '';
+	}
 
-const getIndexColumnStatement = (key, dataSources) => {
-	const name = getNamesByIds([key.keyId], dataSources)[key.keyId];
+	const paths = schemaHelper.getPathsByIds(keys.map(key => key.keyId), [jsonSchema, ...definitions]);
+	const idToNameHashTable = schemaHelper.getIdToNameHashTable([jsonSchema, ...definitions]);
 
-	return `"${name}"`;
+	return paths
+		.map(path => schemaHelper.getNameByPath(idToNameHashTable, path))
+		.join(', ');
 };
 
-const unwindIndexes = (indexes) => {
-	return indexes.reduce((result, index) => {
-		return [...result, ...(index.SecIndxKey || []).map((key, i) => {
-			return Object.assign({}, index, {
-				name: i > 0 ? index.name + '_' + i : index.name,
-				SecIndxKey: key
-			});
-		})];
-	}, []);
+const getIndexes = (containerData, entityData, jsonSchema, definitions) => {
+	const dbName = getName(getTab(0, containerData));
+	const tableData = getTab(0, entityData);
+	const indexesData = getTab(1, entityData).SecIndxs || [];
+	const tableName = getName(tableData);
+
+	return indexesData.map(indexData => getIndexStatement({
+		name: indexData.name,
+		dbName: dbName,
+		tableName: tableName,
+		columns: getIndexKeys(indexData.SecIndxKey, jsonSchema, definitions),
+		indexHandler: indexData.SecIndxHandler,
+		inTable: indexData.SecIndxTable,
+		comment: indexData.SecIndxComments,
+		withDeferredRebuild: indexData.SecIndxWithDeferredRebuild
+	})).join('\n\n');
 };
 
 module.exports = {
