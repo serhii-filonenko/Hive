@@ -34,8 +34,8 @@
 				"inputKeyword": "version",
 				"inputType": "select",
 				"options": [
-					{ "value": "2.x", "label": "2.x" },
-					{ "value": "3.x", "label": "3.x" }
+					{ "value": "3.x", "label": "3.x" },
+					{ "value": "2.x", "label": "2.x" }
 				]
 			}
 		]

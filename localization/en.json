@@ -6,7 +6,7 @@
 	"MAIN_MENU___ADD_ATTRIBUTE": "Add Column",
 	"MAIN_MENU___INSERT_FIELD": "Insert Column",
 	"MAIN_MENU___APPEND_FIELD": "Append Column",
-	"MAIN_MENU___REVERSE_MONGODB_COLLECTIONS": "Hive databases...",
+	"MAIN_MENU___REVERSE_DB_COLLECTIONS": "Hive tables...",
 	"MAIN_MENU___FORWARD_DB_COLLECTIONS": "HiveQL of Table",
 	"MAIN_MENU___FORWARD_DB_BUCKETS": "HiveQL of database",
 	"TOOLBAR___ADD_BUCKET": "Add database",
