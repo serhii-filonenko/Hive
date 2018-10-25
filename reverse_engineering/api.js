@@ -95,6 +95,8 @@ module.exports = {
 					.then(() => query(`describe database ${dbName}`))
 					.then((databaseInfo) => {
 						async.mapSeries(tableNames, (tableName, nextTable) => {
+							logger.progress({ message: 'Start retrieving data', containerName: dbName, entityName: tableName });
+
 							query(`select count(*) as count from ${tableName}`)
 								.then((data) => {
 									return getLimitByCount(data[0].count, recordSamplingSettings);
@@ -106,6 +108,8 @@ module.exports = {
 									});
 								})
 								.then((documents) => {
+									logger.progress({ message: `Data retrieved successfully!`, containerName: dbName, entityName: tableName });									
+
 									const documentPackage = {
 										dbName,
 										collectionName: tableName,
@@ -128,6 +132,8 @@ module.exports = {
 									return documentPackage;
 								})
 								.then((documentPackage) => {
+									logger.progress({ message: `Start creating schema`, containerName: dbName, entityName: tableName });
+
 									return Promise.all([
 										query(`describe formatted ${tableName}`),
 										query(`describe extended ${tableName}`),
@@ -147,6 +153,8 @@ module.exports = {
 											relationships: convertForeignKeysToRelationships(dbName, tableName, tableInfo.foreignKeys || [])
 										};
 									}).then(({ jsonSchema, relationships }) => {
+										logger.progress({ message: `Schema created successfully`, containerName: dbName, entityName: tableName });
+										
 										return getPrimaryKeys(dbName, tableName)
 											.then(keys => {
 												keys.forEach(key => {
@@ -155,7 +163,11 @@ module.exports = {
 
 												return jsonSchema;
 											})
-											.then(jsonSchema => ({ jsonSchema, relationships }))
+											.then(jsonSchema => {
+												logger.progress({ message: `Primary keys retrieved successfully`, containerName: dbName, entityName: tableName });
+
+												return ({ jsonSchema, relationships });
+											})
 											.catch(err => {
 												return Promise.resolve({ jsonSchema, relationships });
 											});
@@ -165,6 +177,8 @@ module.exports = {
 												return getIndexes(result);
 											})
 											.then(indexes => {
+												logger.progress({ message: `Indexes retrieved successfully`, containerName: dbName, entityName: tableName });
+												
 												documentPackage.entityLevel.SecIndxs = indexes;
 
 												return { jsonSchema, relationships };
