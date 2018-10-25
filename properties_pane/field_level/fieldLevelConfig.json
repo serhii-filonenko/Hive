@@ -74,6 +74,7 @@ making sure that you maintain a proper JSON format.
 				"data": "options",
 				"valueType": "string"
 			},
+			"primaryKey",
 			"description",
 			"dependencies",
 			"required",
@@ -111,6 +112,7 @@ making sure that you maintain a proper JSON format.
 				"data": "options",
 				"valueType": "string"
 			},
+			"primaryKey",
 			"description",
 			"dependencies",
 			"required",
@@ -171,6 +173,7 @@ making sure that you maintain a proper JSON format.
 			"schemaId",
 			"refPath",
 			"type",
+			"primaryKey",
 			"description",
 			"dependencies",
 			"required",
@@ -184,6 +187,7 @@ making sure that you maintain a proper JSON format.
 			"schemaId",
 			"refPath",
 			"type",
+			"primaryKey",
 			"description",
 			"dependencies",
 			"required",
@@ -200,6 +204,7 @@ making sure that you maintain a proper JSON format.
 			"schemaId",
 			"refPath",
 			"type",
+			"primaryKey",
 			"description",
 			"dependencies",
 			"required",
@@ -215,6 +220,7 @@ making sure that you maintain a proper JSON format.
 			"sampleName",
 			"schemaId",
 			"type",
+			"primaryKey",
 			"description",
 			"dependencies",
 			"required",
@@ -249,6 +255,7 @@ making sure that you maintain a proper JSON format.
 					"array<union>"
 				]
 			},
+			"primaryKey",
 			"description",
 			"dependencies",
 			"required",
@@ -328,6 +335,7 @@ making sure that you maintain a proper JSON format.
 					"map<union>"
 				]
 			},
+			"primaryKey",
 			"description",
 			"dependencies",
 			"required",
@@ -343,42 +351,7 @@ making sure that you maintain a proper JSON format.
 			"schemaId",
 			"refPath",
 			"type",
-			{
-				"propertyName": "Key type",
-				"propertyKeyword": "keyType",
-				"shouldValidate": false,
-				"propertyType": "select",
-				"options": [
-					"string",
-					"varchar",
-					"char",
-					"tinyint",
-					"smallint",
-					"int",
-					"bigint",
-					"float",
-					"double",
-					"decimal"
-				]
-			},
-			{
-				"propertyName": "Subtype",
-				"propertyKeyword": "subtype",
-				"shouldValidate": false,
-				"propertyType": "select",
-				"options": [
-					"struct<txt>",
-					"struct<num>",
-					"struct<bool>",
-					"struct<ts>",
-					"struct<date>",
-					"struct<intrvl>",
-					"struct<array>",
-					"struct<map>",
-					"struct<struct>",
-					"struct<union>"
-				]
-			},
+			"primaryKey",
 			"description",
 			"dependencies",
 			"required",
