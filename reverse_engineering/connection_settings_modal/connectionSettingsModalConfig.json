@@ -7,7 +7,6 @@
 				"inputKeyword": "name",
 				"inputType": "text",
 				"inputPlaceholder": "Name"
-				
 			},
 			{
 				"inputLabel": "Host",
@@ -54,6 +53,38 @@
 				"inputKeyword": "password",
 				"inputType": "password",
 				"isHiddenKey": true
+			}
+		]	
+	}, {
+		"lowerTab": "Options",
+		"structure": [
+			{
+				"inputLabel": "Transport mode",
+				"inputKeyword": "mode",
+				"inputType": "select",
+				"options": [
+					{ "value": "binary", "label": "binary" },
+					{ "value": "http", "label": "http" }
+				]
+			},
+			{
+				"inputLabel": "HTTP path",
+				"inputKeyword": "path",
+				"inputType": "text",
+				"inputPlaceholder": "/hive2",
+				"dependency": {
+					"key": "mode",
+					"value": "http"
+				}
+			},
+			{
+				"inputLabel": "HTTPS",
+				"inputKeyword": "isHTTPS",
+				"inputType": "checkbox",
+				"dependency": {
+					"key": "mode",
+					"value": "http"
+				}
 			}
 		]	
 	}

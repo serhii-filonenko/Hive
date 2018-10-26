@@ -20,7 +20,12 @@ module.exports = {
 			password: connectionInfo.password,
 			authMech: 'NOSASL',
 			version: connectionInfo.version,
-			configuration: {}
+			mode: connectionInfo.mode,
+			configuration: {},
+			options: {
+				https: connectionInfo.isHTTPS,
+				path: connectionInfo.path				
+			}
 		})(cb)(TCLIService, TCLIServiceTypes);
 	},
 
