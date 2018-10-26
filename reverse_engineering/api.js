@@ -100,20 +100,25 @@ module.exports = {
 					.then(() => query(`describe database ${dbName}`))
 					.then((databaseInfo) => {
 						async.mapSeries(tableNames, (tableName, nextTable) => {
-							logger.progress({ message: 'Start retrieving data', containerName: dbName, entityName: tableName });
+							logger.progress({ message: 'Start sampling data', containerName: dbName, entityName: tableName });
 
 							query(`select count(*) as count from ${tableName}`)
 								.then((data) => {
 									return getLimitByCount(data[0].count, recordSamplingSettings);
 								})
-								.then(limit => {
-									return getDataByPagination(pagination, limit, (limit, offset, next) => {
+								.then(countDocuments => {
+									logger.progress({ message: 'Start getting data from database', containerName: dbName, entityName: tableName });
+
+									return getDataByPagination(pagination, countDocuments, (limit, offset, next) => {
 										query(`select * from ${tableName} limit ${limit} offset ${offset}`)
-											.then(data => next(null, data), err => next(err));
+											.then(data => {
+												logger.progress({ message: `${limit * (offset + 1)}/${countDocuments}`, containerName: dbName, entityName: tableName });
+												next(null, data);
+											}, err => next(err));
 									});
 								})
 								.then((documents) => {
-									logger.progress({ message: `Data retrieved successfully!`, containerName: dbName, entityName: tableName });									
+									logger.progress({ message: `Data has successfully got`, containerName: dbName, entityName: tableName });									
 
 									const documentPackage = {
 										dbName,
@@ -158,7 +163,7 @@ module.exports = {
 											relationships: convertForeignKeysToRelationships(dbName, tableName, tableInfo.foreignKeys || [])
 										};
 									}).then(({ jsonSchema, relationships }) => {
-										logger.progress({ message: `Schema created successfully`, containerName: dbName, entityName: tableName });
+										logger.progress({ message: `Schema has created successfully`, containerName: dbName, entityName: tableName });
 										
 										return getPrimaryKeys(dbName, tableName)
 											.then(keys => {
@@ -169,7 +174,7 @@ module.exports = {
 												return jsonSchema;
 											})
 											.then(jsonSchema => {
-												logger.progress({ message: `Primary keys retrieved successfully`, containerName: dbName, entityName: tableName });
+												logger.progress({ message: `Primary keys have retrieved successfully`, containerName: dbName, entityName: tableName });
 
 												return ({ jsonSchema, relationships });
 											})
@@ -182,7 +187,7 @@ module.exports = {
 												return getIndexes(result);
 											})
 											.then(indexes => {
-												logger.progress({ message: `Indexes retrieved successfully`, containerName: dbName, entityName: tableName });
+												logger.progress({ message: `Indexes have retrieved successfully`, containerName: dbName, entityName: tableName });
 												
 												documentPackage.entityLevel.SecIndxs = indexes;
 
