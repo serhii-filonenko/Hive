@@ -22,8 +22,14 @@ const cacheCall = (func) => {
 	};
 };
 
-const getConnection = cacheCall((TCLIService, { host, port, authMech, options }) => {
-	const connection = thrift.createConnection(host, port, Object.assign({
+const getConnection = cacheCall((TCLIService, { host, port, authMech, mode, options }) => {
+	let connectionHandler = thrift.createConnection;
+
+	if (mode === 'http') {
+		connectionHandler = thrift.createHttpConnection;
+	}
+
+	const connection = connectionHandler(host, port, Object.assign({
 		https: false,
 		debug: true,
 		max_attempts: 1,
@@ -43,8 +49,42 @@ const getProtocolByVersion = cacheCall((TCLIServiceTypes, version) => {
 	}
 });
 
-const connect = ({ host, port, username, password, authMech, version, options, configuration }) => (handler) => (TCLIService, TCLIServiceTypes) => {
-	const connectionsParams = { host, port, authMech, options };
+const getConnectionParamsByMode = (mode, data) => {
+	if (mode === 'http') {
+		return getHttpConnectionParams(data);
+	} else {
+		return getBinaryConnectionParams(data);
+	}
+};
+
+const getBinaryConnectionParams = ({ host, port, authMech, options }) => {
+	return { host, port, authMech, options, mode: 'binary' };
+};
+
+const getHttpConnectionParams = ({ host, port, username, password, authMech, options }) => {
+	const headers = options.headers || {};
+
+	if (username && password) {
+		headers['Authorization'] = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+	}
+
+	return {
+		host,
+		port,
+		authMech,
+		mode: 'http',
+		options: Object.assign(
+			{},
+			options,
+			{
+				headers
+			}
+		)
+	};	
+};
+
+const connect = ({ host, port, username, password, authMech, version, options, configuration, mode }) => (handler) => (TCLIService, TCLIServiceTypes) => {
+	const connectionsParams = getConnectionParamsByMode(mode, { host, port, username, password, authMech, version, options, mode });
 	const protocol = getProtocolByVersion(TCLIServiceTypes, version);
 
 	const execute = (sessionHandle, statement, options = {}) => {
