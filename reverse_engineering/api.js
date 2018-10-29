@@ -26,7 +26,11 @@ module.exports = {
 				https: connectionInfo.isHTTPS,
 				path: connectionInfo.path				
 			}
-		})(cb)(TCLIService, TCLIServiceTypes);
+		})(cb)(TCLIService, TCLIServiceTypes, {
+			log: (message) => {
+				logger.log('info', { message }, 'Query info')
+			}
+		});
 	},
 
 	disconnect: function(connectionInfo, cb){

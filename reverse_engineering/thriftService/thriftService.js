@@ -83,7 +83,7 @@ const getHttpConnectionParams = ({ host, port, username, password, authMech, opt
 	};	
 };
 
-const connect = ({ host, port, username, password, authMech, version, options, configuration, mode }) => (handler) => (TCLIService, TCLIServiceTypes) => {
+const connect = ({ host, port, username, password, authMech, version, options, configuration, mode }) => (handler) => (TCLIService, TCLIServiceTypes, logger) => {
 	const connectionsParams = getConnectionParamsByMode(mode, { host, port, username, password, authMech, version, options, mode });
 	const protocol = getProtocolByVersion(TCLIServiceTypes, version);
 
@@ -292,6 +292,10 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 			if (err) {
 				reject(err);
 			} else {
+				logger.log({
+					info: 'Query status',
+					status: res.taskStatus
+				});
 				resolve(res);
 			}
 		});
