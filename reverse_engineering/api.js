@@ -106,10 +106,7 @@ module.exports = {
 						async.mapSeries(tableNames, (tableName, nextTable) => {
 							logger.progress({ message: 'Start sampling data', containerName: dbName, entityName: tableName });
 
-							query(`select count(*) as count from ${tableName}`)
-								.then((data) => {
-									return getLimitByCount(data[0].count, recordSamplingSettings);
-								})
+							getLimitByCount(recordSamplingSettings, query.bind(null, `select count(*) as count from ${tableName}`))
 								.then(countDocuments => {
 									logger.progress({ message: 'Start getting data from database', containerName: dbName, entityName: tableName });
 
@@ -253,24 +250,20 @@ const expandFinalPackages = (packages) => {
 	}, [[], null, []])
 };
 
-const getLimitByCount = (count, recordSamplingSettings) => {
-	let limit = count;
-
-	if (recordSamplingSettings.active === 'relative') {
-		limit = Math.ceil((count * Number(recordSamplingSettings.relative.value)) / 100);
-	} else {
+const getLimitByCount = (recordSamplingSettings, getCount) => new Promise((resolve, reject) => {
+	if (recordSamplingSettings.active !== 'relative') {
 		const absolute = Number(recordSamplingSettings.absolute.value);
-		limit = count > absolute ? absolute : count;
+
+		return resolve(absolute);
 	}
 
-	const maxValue = Number(recordSamplingSettings.maxValue);
-
-	if (limit > maxValue) {
-		limit = maxValue;
-	}
-
-	return limit;
-};
+	getCount().then((data) => {
+		const count = data[0].count;
+		const limit = Math.ceil((count * Number(recordSamplingSettings.relative.value)) / 100);
+	
+		resolve(limit);
+	}).catch(reject);
+});
 
 const getPages = (total, pageSize) => {
 	const generate = (size) => size <= 0 ? [0] : [...generate(size - 1), size];
