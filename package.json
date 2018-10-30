@@ -1,11 +1,11 @@
 {
 	"name": "Hive",
-	"version": "0.0.2",
-	"versionDate": "2018-09-17",
+	"version": "0.1.0",
+	"versionDate": "2018-10-30",
 	"author": "hackolade",
 	"engines": {
 		"hackolade": "2.1.x",
-		"hackoladePlugin": "1.1.0"
+		"hackoladePlugin": "1.2.0"
 	},
 	"contributes": {
 		"target": {
@@ -20,9 +20,9 @@
 			"nestedCollections": false,
 			"disablePatternField": false,
 			"enableForwardEngineering": true,
-			"disableMultipleTypes": true,
+			"disableMultipleTypes": false,
 			"disableReverseEngineering": false,
-			"disableChoices": true,
+			"disableChoices": false,
 			"enableJsonType": true
 		}
 	},

@@ -6,7 +6,7 @@
 	"MAIN_MENU___ADD_ATTRIBUTE": "Add Column",
 	"MAIN_MENU___INSERT_FIELD": "Insert Column",
 	"MAIN_MENU___APPEND_FIELD": "Append Column",
-	"MAIN_MENU___REVERSE_MONGODB_COLLECTIONS": "Hive databases...",
+	"MAIN_MENU___REVERSE_DB_COLLECTIONS": "Hive tables...",
 	"MAIN_MENU___FORWARD_DB_COLLECTIONS": "HiveQL of Table",
 	"MAIN_MENU___FORWARD_DB_BUCKETS": "HiveQL of database",
 	"TOOLBAR___ADD_BUCKET": "Add database",
@@ -139,5 +139,6 @@
 	"CONTEXT_MENU___CONVERT_TO_PATTERN_FIELD": "Convert to Pattern Column",
 	"CONTEXT_MENU___CONVERT_PATTERN_TO_REGULAR_FIELD": "Convert to Regular Column",
 	"MODAL_WINDOW___DB_CONNECTION_PROCESS": "Hive Reverse-Engineering Process",
-	"MODAL_WINDOW___DB_CONNECTIONS_LIST_TITLE": "Hive Connections"
+	"MODAL_WINDOW___DB_CONNECTIONS_LIST_TITLE": "Hive Connections",
+	"COLLECTION_SCHEMA_ROOT_TYPE": "row"
 }
