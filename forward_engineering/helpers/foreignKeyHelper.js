@@ -37,10 +37,11 @@ const getForeignKeyHashTable = (relationships, entities, entityData, jsonSchemas
 		if (!hashTable[relationship.childCollection][groupKey]) {
 			hashTable[relationship.childCollection][groupKey] = [];
 		}
+		const disableNoValidate = ((relationship || {}).customProperties || {}).disableNoValidate;
 		
 		hashTable[relationship.childCollection][groupKey].push({
 			name: relationship.name,
-			disableNoValidate: relationship.customProperties.disableNoValidate,
+			disableNoValidate: disableNoValidate,
 			parentTableName: parentTableName,
 			childTableName: childTableName,
 			parentColumn: schemaHelper.getNameByPath(idToNameHashTable, (relationship.parentField || []).slice(1)),
@@ -57,7 +58,7 @@ const getForeignKeyStatementsByHashItem = (hashItem) => {
 		const constraintName = (keys[0] || {}).name;
 		const parentTableName = (keys[0] || {}).parentTableName;
 		const childTableName = (keys[0] || {}).childTableName;
-		const disableNoValidate = keys.some(item => item.disableNoValidate);
+		const disableNoValidate = keys.some(item => (item || {}).disableNoValidate);
 		const childColumns = keys.map(item => item.childColumn).join(', ');
 		const parentColumns = keys.map(item => item.parentColumn).join(', ');
 
