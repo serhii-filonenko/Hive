@@ -82,7 +82,7 @@ module.exports = {
 				}
 
 				return result;
-			}, []);
+			}, []).join('\n');
 
 			callback(null, buildScript(
 				databaseStatement,
