@@ -10,9 +10,9 @@ const getCreateStatement = ({
 }) => {
 	const temporary = isTemporary ? 'TEMPORARY' : '';
 	const external = isExternal ? 'EXTERNAL' : '';
-	const tempExtStatement = [temporary, external].filter(d => d).join(' ');
+	const tempExtStatement = ' ' + [temporary, external].filter(d => d).map(item => item + ' ').join('');
 
-	return buildStatement(`CREATE ${tempExtStatement} TABLE IF NOT EXISTS ${dbName}.${tableName} (`)
+	return buildStatement(`CREATE${tempExtStatement}TABLE IF NOT EXISTS ${dbName}.${tableName} (`)
 		(columnStatement, indentString(columnStatement + (primaryKeyStatement ? ',' : '')))
 		(primaryKeyStatement, indentString(primaryKeyStatement))
 		(foreignKeyStatement, indentString(foreignKeyStatement))
