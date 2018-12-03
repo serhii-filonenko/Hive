@@ -1,4 +1,4 @@
-# Cassandra
+# Apache Hive
 Hackolade plugin for Apache Hive
 
 Not ready for production!!
