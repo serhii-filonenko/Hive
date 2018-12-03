@@ -120,6 +120,20 @@ const getTableProperties = (tableParams) => {
 	.join('\n\t') + '\n)';
 };
 
+const getNumBuckets = (storageInfo) => {
+	const value = _.get(storageInfo, 'Num Buckets', '').trim();
+
+	if (!value) {
+		return value;
+	}
+
+	if (Number(value) < 0) {
+		return '';
+	}
+
+	return value;
+};
+
 const getEntityLevelData = (tableName, tableInfo, extendedTableInfo) => {
 	const partitionInfo = tableInfo.partitionInfo || {};
 	const detailedInfo = tableInfo.detailedInfo || {};
@@ -135,7 +149,7 @@ const getEntityLevelData = (tableName, tableInfo, extendedTableInfo) => {
 		sortedByKey: getSortColumns(_.get(storageInfo, 'Sort Columns', '')),
 		skewedby: getFieldsArray(_.get(storageInfo, 'Skewed Columns', '')),
 		skewedOn: getSkewedOn(_.get(storageInfo, 'Skewed Values', '')),
-		numBuckets: _.get(storageInfo, 'Num Buckets', '').trim(),
+		numBuckets: getNumBuckets(storageInfo),
 		comments: _.get(detailedInfo, 'Table Parameters.comment', ''),
 		skewStoredAsDir: _.get(storageInfo, 'Stored As SubDirectories', '').trim().toLowerCase() === 'yes',
 		tableProperties: getTableProperties(_.get(detailedInfo, 'Table Parameters', {}))
