@@ -50,6 +50,8 @@ const getColumnValueKeyByTypeDescriptor = (TCLIServiceTypes) =>  (typeDescriptor
 		case TCLIServiceTypes.TTypeId.FLOAT_TYPE:
 		case TCLIServiceTypes.TTypeId.DOUBLE_TYPE:
 			return 'doubleVal';
+		case TCLIServiceTypes.TTypeId.BINARY_TYPE:
+			return 'binaryVal';
 		default:
 			return 'stringVal';
 	}
@@ -96,8 +98,8 @@ const getDataConverter = (TCLIServiceTypes) => (typeDescriptor) => {
 			return convertBigInt;
 		case TCLIServiceTypes.TTypeId.TIMESTAMP_TYPE:
 		case TCLIServiceTypes.TTypeId.DATE_TYPE:
-		case TCLIServiceTypes.TTypeId.BINARY_TYPE:
 			return toString;
+		case TCLIServiceTypes.TTypeId.BINARY_TYPE:
 		case TCLIServiceTypes.TTypeId.INTERVAL_YEAR_MONTH_TYPE:
 		case TCLIServiceTypes.TTypeId.INTERVAL_DAY_TIME_TYPE:
 		case TCLIServiceTypes.TTypeId.FLOAT_TYPE:
