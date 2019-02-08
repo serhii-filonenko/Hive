@@ -124,14 +124,14 @@ const getNumBuckets = (storageInfo) => {
 	const value = _.get(storageInfo, 'Num Buckets', '').trim();
 
 	if (!value) {
-		return value;
+		return {};
 	}
 
 	if (Number(value) < 0) {
-		return '';
+		return {};
 	}
 
-	return value;
+	return { numBuckets: Number(value) };
 };
 
 const getEntityLevelData = (tableName, tableInfo, extendedTableInfo) => {
@@ -149,11 +149,10 @@ const getEntityLevelData = (tableName, tableInfo, extendedTableInfo) => {
 		sortedByKey: getSortColumns(_.get(storageInfo, 'Sort Columns', '')),
 		skewedby: getFieldsArray(_.get(storageInfo, 'Skewed Columns', '')),
 		skewedOn: getSkewedOn(_.get(storageInfo, 'Skewed Values', '')),
-		numBuckets: getNumBuckets(storageInfo),
 		comments: _.get(detailedInfo, 'Table Parameters.comment', ''),
 		skewStoredAsDir: _.get(storageInfo, 'Stored As SubDirectories', '').trim().toLowerCase() === 'yes',
 		tableProperties: getTableProperties(_.get(detailedInfo, 'Table Parameters', {}))
-	}, getStoredAs(storageInfo));
+	}, getNumBuckets(storageInfo), getStoredAs(storageInfo));
 };
 
 module.exports = {
