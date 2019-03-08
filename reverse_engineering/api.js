@@ -12,6 +12,10 @@ module.exports = {
 	connect: function(connectionInfo, logger, cb){
 		logger.clear();
 		logger.log('info', connectionInfo, 'connectionInfo', connectionInfo.hiddenKeys);
+		
+		if (connectionInfo.path && (connectionInfo.path || '').charAt(0) !== '/') {
+			connectionInfo.path = '/' + connectionInfo.path;
+		}
 
 		thriftService.connect({
 			host: connectionInfo.host,
