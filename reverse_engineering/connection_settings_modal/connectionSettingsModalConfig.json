@@ -71,7 +71,7 @@
 				"inputLabel": "HTTP path",
 				"inputKeyword": "path",
 				"inputType": "text",
-				"inputPlaceholder": "/hive2",
+				"inputPlaceholder": "hive2",
 				"dependency": {
 					"key": "mode",
 					"value": "http"
