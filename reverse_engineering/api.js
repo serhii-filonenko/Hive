@@ -9,7 +9,7 @@ const TCLIService = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService')
 const TCLIServiceTypes = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService_types');
 
 module.exports = {
-	connect: function(connectionInfo, logger, cb){
+	connect: function(connectionInfo, logger, cb, app){
 		logger.clear();
 		logger.log('info', connectionInfo, 'connectionInfo', connectionInfo.hiddenKeys);
 		
@@ -17,23 +17,33 @@ module.exports = {
 			connectionInfo.path = '/' + connectionInfo.path;
 		}
 
+		const MongoAuthProcess = app.require('kerberos').processes.MongoAuthProcess;
+
 		thriftService.connect({
 			host: connectionInfo.host,
 			port: connectionInfo.port,
 			username: connectionInfo.user,
 			password: connectionInfo.password,
-			authMech: 'NOSASL',
+			authMech: connectionInfo.authMechanism,
 			version: connectionInfo.version,
 			mode: connectionInfo.mode,
-			configuration: {},
+			configuration: {
+				krb_host: connectionInfo.krb_host,
+				krb_service: connectionInfo.krb_service
+			},
 			options: {
 				https: connectionInfo.isHTTPS,
-				path: connectionInfo.path				
+				path: connectionInfo.path			
 			}
-		})(cb)(TCLIService, TCLIServiceTypes, {
+		})()(TCLIService, TCLIServiceTypes, {
 			log: (message) => {
 				logger.log('info', { message }, 'Query info')
 			}
+		}, MongoAuthProcess).then(({ cursor, session }) => {
+			cb(null, session, cursor);
+		}).catch(err => {
+			logger.log('error', err);
+			cb(err);
 		});
 	},
 
@@ -41,11 +51,11 @@ module.exports = {
 		cb();
 	},
 
-	testConnection: function(connectionInfo, logger, cb){
-		this.connect(connectionInfo, logger, cb);
+	testConnection: function(connectionInfo, logger, cb, app){
+		this.connect(connectionInfo, logger, cb, app);
 	},
 
-	getDbCollectionsNames: function(connectionInfo, logger, cb) {
+	getDbCollectionsNames: function(connectionInfo, logger, cb, app) {
 		const { includeSystemCollection } = connectionInfo;
 
 		this.connect(connectionInfo, logger, (err, session, cursor) => {
@@ -79,10 +89,10 @@ module.exports = {
 							.catch(err => next(err))
 					}, cb);
 				});
-		});
+		}, app);
 	},
 
-	getDbCollectionsData: function(data, logger, cb){
+	getDbCollectionsData: function(data, logger, cb, app){
 		const tables = data.collectionData.collections;
 		const databases = data.collectionData.dataBaseNames;
 		const pagination = data.pagination;
@@ -232,7 +242,7 @@ module.exports = {
 					cb(err, ...expandFinalPackages(data));
 				}
 			});
-		});
+		}, app);
 	}
 };
 
