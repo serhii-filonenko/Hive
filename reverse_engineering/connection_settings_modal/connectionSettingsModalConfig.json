@@ -76,7 +76,7 @@
 				}
 			},
 			{
-				"inputLabel": "Kerberos host",
+				"inputLabel": "Host FQDN",
 				"inputKeyword": "krb_host",
 				"inputType": "text",
 				"inputPlaceholder": "",
