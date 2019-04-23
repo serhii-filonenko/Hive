@@ -42,17 +42,48 @@
 		"lowerTab": "Authentication",
 		"structure": [
 			{
+				"inputLabel": "Authentication type",
+				"inputKeyword": "authMechanism",
+				"inputType": "select",
+				"options": [{
+					"label": "Plain",
+					"value": "NOSASL"
+				}, {
+					"label": "Kerberos",
+					"value": "GSSAPI"
+				}]
+			},
+			{
 				"inputLabel": "User Name",
 				"inputKeyword": "user",
 				"inputType": "text",
 				"inputPlaceholder": "User Name"
-				
 			},
 			{
 				"inputLabel": "Password",
 				"inputKeyword": "password",
 				"inputType": "password",
 				"isHiddenKey": true
+			},
+			{
+				"inputLabel": "Service Name",
+				"inputKeyword": "krb_service",
+				"inputType": "text",
+				"inputPlaceholder": "hive",
+				"dependency": {
+					"key": "authMechanism",
+					"value": "GSSAPI"
+				}
+			},
+			{
+				"inputLabel": "Kerberos host",
+				"inputKeyword": "krb_host",
+				"inputType": "text",
+				"inputPlaceholder": "",
+				"dependency": {
+					"key": "authMechanism",
+					"value": "GSSAPI"
+				}
 			}
 		]	
 	}, {
