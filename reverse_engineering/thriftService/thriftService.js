@@ -1,6 +1,6 @@
 const thrift = require('thrift');
-const createKerberosConnection = require('./hackolade/createKerberosConnection').createKerberosConnection;
-const createLdapConnection = require('./hackolade/createKerberosConnection').createLdapConnection;
+const createKerberosConnection = require('./hackolade/saslConnectionService').createKerberosConnection;
+const createLdapConnection = require('./hackolade/saslConnectionService').createLdapConnection;
 
 const getConnectionByMechanism = (authMech) => {
 	if (authMech === 'NOSASL') {
