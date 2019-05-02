@@ -51,6 +51,9 @@
 				}, {
 					"label": "Kerberos",
 					"value": "GSSAPI"
+				}, {
+					"label": "LDAP",
+					"value": "LDAP"
 				}]
 			},
 			{
@@ -64,26 +67,6 @@
 				"inputKeyword": "password",
 				"inputType": "password",
 				"isHiddenKey": true
-			},
-			{
-				"inputLabel": "Service Name",
-				"inputKeyword": "krb_service",
-				"inputType": "text",
-				"inputPlaceholder": "hive",
-				"dependency": {
-					"key": "authMechanism",
-					"value": "GSSAPI"
-				}
-			},
-			{
-				"inputLabel": "Host FQDN",
-				"inputKeyword": "krb_host",
-				"inputType": "text",
-				"inputPlaceholder": "",
-				"dependency": {
-					"key": "authMechanism",
-					"value": "GSSAPI"
-				}
 			}
 		]	
 	}, {
@@ -96,7 +79,11 @@
 				"options": [
 					{ "value": "binary", "label": "binary" },
 					{ "value": "http", "label": "http" }
-				]
+				],
+				"dependency": {
+					"key": "authMechanism",
+					"value": "NOSASL"
+				}
 			},
 			{
 				"inputLabel": "HTTP path",
