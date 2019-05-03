@@ -148,11 +148,11 @@ const ldapAuthentication = (kerberosAuthProcess) => (options) => new Promise((re
 		const onConnect = () => {
 			stream.write(createPackage(START, new Buffer(options.authMech)));
 			stream.write(createPackage(OK, Buffer.concat([
-				new Buffer(options.username),
+				new Buffer(options.username || ""),
 				Buffer.from([0]),
-				new Buffer(options.username),
+				new Buffer(options.username || ""),
 				Buffer.from([0]),
-				new Buffer(options.password),
+				new Buffer(options.password || ""),
 			])));
 		};
 		const onData = (data) => {
