@@ -46,7 +46,7 @@
 				"inputKeyword": "authMechanism",
 				"inputType": "select",
 				"options": [{
-					"label": "Plain",
+					"label": "NoSASL",
 					"value": "NOSASL"
 				}, {
 					"label": "Kerberos",
