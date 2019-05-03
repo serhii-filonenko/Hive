@@ -115,7 +115,7 @@
 				],
 				"dependency": {
 					"key": "authMechanism",
-					"value": "NOSASL"
+					"value": ["NOSASL", ""]
 				}
 			},
 			{

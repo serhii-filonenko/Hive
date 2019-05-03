@@ -24,7 +24,7 @@ module.exports = {
 			port: connectionInfo.port,
 			username: connectionInfo.user,
 			password: connectionInfo.password,
-			authMech: connectionInfo.authMechanism,
+			authMech: connectionInfo.authMechanism || 'NOSASL',
 			version: connectionInfo.version,
 			mode: connectionInfo.mode,
 			configuration: {
