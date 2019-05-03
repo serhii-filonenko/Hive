@@ -67,11 +67,44 @@
 				"inputKeyword": "password",
 				"inputType": "password",
 				"isHiddenKey": true
+			},
+			{
+				"inputLabel": "Service Name",
+				"inputKeyword": "krb_service",
+				"inputType": "text",
+				"inputPlaceholder": "hive",
+				"dependency": {
+					"key": "authMechanism",
+					"value": "GSSAPI"
+				}
+			},
+			{
+				"inputLabel": "Kerberos host",
+				"inputKeyword": "krb_host",
+				"inputType": "text",
+				"inputPlaceholder": "",
+				"dependency": {
+					"key": "authMechanism",
+					"value": "GSSAPI"
+				}
 			}
 		]	
 	}, {
 		"lowerTab": "Options",
 		"structure": [
+			{
+				"inputLabel": "Transport mode",
+				"inputKeyword": "mode",
+				"inputType": "select",
+				"options": [
+					{ "value": "binary", "label": "binary" }
+				],
+				"disable": true,
+				"dependency": {
+					"key": "authMechanism",
+					"value": [ "GSSAPI", "LDAP" ]
+				}
+			},
 			{
 				"inputLabel": "Transport mode",
 				"inputKeyword": "mode",
