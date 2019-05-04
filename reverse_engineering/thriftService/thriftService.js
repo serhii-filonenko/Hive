@@ -1,10 +1,22 @@
 const thrift = require('thrift');
+const createKerberosConnection = require('./hackolade/saslConnectionService').createKerberosConnection;
+const createLdapConnection = require('./hackolade/saslConnectionService').createLdapConnection;
 
 const getConnectionByMechanism = (authMech) => {
 	if (authMech === 'NOSASL') {
 		return {
 			transport: thrift.TBufferedTransport,
 			protocol: thrift.TBinaryProtocol
+		};
+	} else if (authMech === 'GSSAPI') {
+		return {
+			protocol: thrift.TBinaryProtocol,
+			transport: thrift.TFramedTransport
+		};
+	} else if (authMech === 'LDAP') {
+		return {
+			protocol: thrift.TBinaryProtocol,
+			transport: thrift.TFramedTransport
 		};
 	} else {
 		throw new Error("The authentication mechanism " + authMech + " is not supported!");
@@ -13,20 +25,40 @@ const getConnectionByMechanism = (authMech) => {
 
 const cacheCall = (func) => {
 	let cache = null;
+
 	return (...args) => {
 		if (!cache) {
-			cache = func(...args)
+			cache = func(...args);
+
+			if (cache instanceof Promise) {
+				return cache.then(result => {
+					cache = Promise.resolve(result);
+					
+					return result;
+				});
+			}
 		}
 
 		return cache;
 	};
 };
 
-const getConnection = cacheCall((TCLIService, { host, port, authMech, mode, options }) => {
+const getConnection = cacheCall((TCLIService, kerberosAuthProcess, parameters) => {
+	const { host, port, authMech, mode, options } = parameters;
+
+
 	let connectionHandler = thrift.createConnection;
 
 	if (mode === 'http') {
 		connectionHandler = thrift.createHttpConnection;
+	}
+
+	if (authMech === 'GSSAPI') {
+		connectionHandler = createKerberosConnection(kerberosAuthProcess);
+	}
+
+	if (authMech === 'LDAP') {
+		connectionHandler = createLdapConnection(kerberosAuthProcess);
 	}
 
 	const connection = connectionHandler(host, port, Object.assign({
@@ -38,7 +70,13 @@ const getConnection = cacheCall((TCLIService, { host, port, authMech, mode, opti
 		timeout: 1000
 	}, getConnectionByMechanism(authMech), (options || {})));
 	
-	return thrift.createClient(TCLIService, connection);
+	return (
+		connection instanceof Promise 
+			? connection
+			: Promise.resolve(connection)
+	).then(connection => {
+		return thrift.createClient(TCLIService, connection);
+	});
 });
 
 const getProtocolByVersion = cacheCall((TCLIServiceTypes, version) => {
@@ -52,6 +90,10 @@ const getProtocolByVersion = cacheCall((TCLIServiceTypes, version) => {
 const getConnectionParamsByMode = (mode, data) => {
 	if (mode === 'http') {
 		return getHttpConnectionParams(data);
+	} else if (data.authMech === 'GSSAPI') {
+		return getKerberosConnectionParams(data);
+	} else if (data.authMech === 'LDAP') {
+		return getLdapConnectionParams(data);
 	} else {
 		return getBinaryConnectionParams(data);
 	}
@@ -83,31 +125,82 @@ const getHttpConnectionParams = ({ host, port, username, password, authMech, opt
 	};	
 };
 
-const connect = ({ host, port, username, password, authMech, version, options, configuration, mode }) => (handler) => (TCLIService, TCLIServiceTypes, logger) => {
-	const connectionsParams = getConnectionParamsByMode(mode, { host, port, username, password, authMech, version, options, mode });
+const getKerberosConnectionParams = ({ host, port, username, password, authMech, options, configuration }) => {
+	return {
+		options: Object.assign({}, options, {
+			krb5: {
+				krb_service: configuration.krb_service,
+				krb_host: configuration.krb_host,
+				username,
+				password
+			}
+		}),
+		mode: 'binary',
+		host,
+		port,
+		authMech,
+		
+	};
+};
+
+const getLdapConnectionParams = ({ host, port, username, password, authMech, options, configuration }) => {
+	return {
+		options: Object.assign({}, options, {
+			username,
+			password
+		}),
+		mode: 'binary',
+		authMech,
+		host,
+		port,
+	};
+};
+
+const promisifyCallback = (operation) => new Promise((resolve, reject) => {
+	operation((err, res) => {
+		if (err) {
+			reject(err);
+		} else {
+			resolve(res);
+		}
+	});
+});
+
+const createSessionRequest = cacheCall((TCLIServiceTypes, options) => {
+	return new TCLIServiceTypes.TOpenSessionReq(options);
+});
+
+const filterConfiguration = (configuration) => {
+	return Object.keys(configuration).filter(key => configuration[key] !== undefined).reduce((result, key) => Object.assign({}, result, {
+		[key]: configuration[key]
+	}), {});
+};
+
+const connect = ({ host, port, username, password, authMech, version, options, configuration, mode }) => (handler) => (TCLIService, TCLIServiceTypes, logger, kerberosAuthProcess) => {
+	const connectionsParams = getConnectionParamsByMode(mode, { host, port, username, password, authMech, version, options, mode, configuration });
 	const protocol = getProtocolByVersion(TCLIServiceTypes, version);
 
 	const execute = (sessionHandle, statement, options = {}) => {
-		return new Promise((resolve, reject) => {
-			const requestOptions = Object.assign({
-				sessionHandle,
-				statement,
-				confOverlay: undefined,
-				runAsync: false,
-				queryTimeout: 100000
-			}, options);
-			const request = new TCLIServiceTypes.TExecuteStatementReq(requestOptions);
-		
-			getConnection().ExecuteStatement(request, (err, res) => {
+		const requestOptions = Object.assign({
+			sessionHandle,
+			statement,
+			confOverlay: undefined,
+			runAsync: false,
+			queryTimeout: 100000
+		}, options);
+		const request = new TCLIServiceTypes.TExecuteStatementReq(requestOptions);
+	
+		return getConnection().then(client => promisifyCallback((callback) => {
+			client.ExecuteStatement(request, (err, res) => {
 				if (err) {
-					reject(err);
+					callback(err);
 				} else if (res.status.statusCode === TCLIServiceTypes.TStatusCode.ERROR_STATUS) {
-					reject(res.status.errorMessage);
+					callback(res.status.errorMessage);
 				} else {
-					resolve(res);
+					callback(null, res);
 				}
 			});
-		});
+		}));
 	};
 	
 	const asyncExecute = (sessionHandle, statement, options = {}) => {
@@ -148,104 +241,93 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 			.then(getResult);
 	};
 	
-	const getSchema = (executeStatementResponse) => new Promise((resolve, reject) => {
+	const getSchema = (executeStatementResponse) => {
 		if (!executeStatementResponse.operationHandle) {
-			return;
+			return Promise.reject(new Error('operation handle does not exist'));
 		}
 	
 		const request = new TCLIServiceTypes.TGetResultSetMetadataReq(executeStatementResponse);
 	
-		getConnection().GetResultSetMetadata(request, (err, res) => {
-			if (err) {
-				reject(err);
-			} else {
-				resolve(res);
-			}
-		});
-	});
+		return getConnection().then(client => promisifyCallback((callback) => {
+			client.GetResultSetMetadata(request, callback);
+		}));
+	};
 
-	const getSchemas = (sessionHandle) => new Promise((resolve, reject) => {
+	const getSchemas = (sessionHandle) => {
 		const request = new TCLIServiceTypes.TGetSchemasReq({ sessionHandle });
 
-		getConnection().GetSchemas(request, (err, res) => {
-			if (err) {
-				reject(err);
-			} else {
-				resolve(res);
-			}
-		});
-	});
+		return getConnection().then(client => promisifyCallback((callback) => {
+			client.GetSchemas(request, callback);
+		}));
+	};
 
-	const getPrimaryKeys = (sessionHandle, schemaName, tableName) => new Promise((resolve, reject) => {
+	const getPrimaryKeys = (sessionHandle, schemaName, tableName) => {
 		const request = new TCLIServiceTypes.TGetPrimaryKeysReq({ sessionHandle, schemaName, tableName });
 
-		getConnection().GetPrimaryKeys(request, (err, res) => {
-			if (err) {
-				reject(err);
-			} else {
-				resolve(res);
-			}
-		});
-	});
+		return getConnection()
+			.then(client => promisifyCallback((callback) => {
+				client.GetPrimaryKeys(request, callback);
+			}));
+	};
 
 	const getCatalogs = (sessionHandle) => new Promise((resolve, reject) => {
 		const request = new TCLIServiceTypes.TGetCatalogsReq({ sessionHandle });
 
-		getConnection().GetCatalogs(request, (err, res) => {
+		getConnection().then(client => client.GetCatalogs(request, (err, res) => {
 			if (err) {
 				reject(err);
 			} else {
 				resolve(res);
 			}
-		});
+		}));
 	});
 
 	const getTables = (sessionHandle, schemaName, tableTypes) => new Promise((resolve, reject) => {
 		const request = new TCLIServiceTypes.TGetTablesReq({ sessionHandle, schemaName, tableTypes, tableName: '_%' });
 
-		getConnection().GetTables(request, (err, res) => {
+		getConnection().then(client => client.GetTables(request, (err, res) => {
 			if (err) {
 				reject(err);
 			} else {
 				resolve(res);
 			}
-		});
+		}));
 	});
 
 	const getTableTypes = (sessionHandle) => new Promise((resolve, reject) => {
 		const request = new TCLIServiceTypes.TGetTableTypesReq({ sessionHandle });
 
-		getConnection().GetTableTypes(request, (err, res) => {
+		getConnection().then(client => client.GetTableTypes(request, (err, res) => {
 			if (err) {
 				reject(err);
 			} else {
 				resolve(res);
 			}
-		});
+		}));
 	});
 
 	const getTypeInfo = (sessionHandle) => new Promise((resolve, reject) => {
 		const request = new TCLIServiceTypes.TGetTypeInfoReq({ sessionHandle });
 
-		getConnection().GetTypeInfo(request, (err, res) => {
+		getConnection().then(client => client.GetTypeInfo(request, (err, res) => {
 			if (err) {
 				reject(err);
 			} else {
 				resolve(res);
 			}
-		});
+		}));
 	});
 
 	const getColumns = (sessionHandle, schemaName, tableName) => new Promise((resolve, reject) => {
 		const request = new TCLIServiceTypes.TGetColumnsReq({ sessionHandle, schemaName, tableName });
 
-		getConnection().GetColumns(request, (err, res) => {
+		getConnection().then(client => client.GetColumns(request, (err, res) => {
 			if (err) {
 				reject(err);
 			} else {
 				resolve(res);
 			}
-		});
+		}));
 	});
 	
 	const fetchFirstResult = (operationHandle, maxRows) => {
@@ -267,12 +349,14 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 	const fetchResultRequest = (options) => new Promise((resolve, reject) => {
 		const request = new TCLIServiceTypes.TFetchResultsReq(options);	
 	
-		getConnection().FetchResults(request, (err, res) => {
-			if (err) {
-				reject(err);
-			} else {
-				resolve(res);
-			}
+		getConnection().then(client => {
+			return client.FetchResults(request, (err, res) => {
+				if (err) {
+					reject(err);
+				} else {
+					resolve(res);
+				}
+			});
 		});	
 	});
 	
@@ -288,16 +372,18 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 	const getOperationStatus = (operationHandle) => new Promise((resolve, reject) => {
 		const request = new TCLIServiceTypes.TGetOperationStatusReq({ operationHandle });
 	
-		getConnection().GetOperationStatus(request, (err, res) => {
-			if (err) {
-				reject(err);
-			} else {
-				logger.log({
-					info: 'Query status',
-					status: res.taskStatus
-				});
-				resolve(res);
-			}
+		getConnection().then(client => {
+			return client.GetOperationStatus(request, (err, res) => {
+				if (err) {
+					reject(err);
+				} else {
+					logger.log({
+						info: 'Query status',
+						status: res.taskStatus
+					});
+					resolve(res);
+				}
+			});
 		});
 	});
 	
@@ -331,9 +417,9 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 	
 	const getCurrentProtocol = () => protocol;
 	
-	const request = new TCLIServiceTypes.TOpenSessionReq({
+	const request = createSessionRequest(TCLIServiceTypes, {
+		configuration: filterConfiguration(configuration),
 		client_protocol: protocol,
-		configuration,
 		username,
 		password
 	});
@@ -353,9 +439,18 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 		getCurrentProtocol
 	};
 
-	getConnection(TCLIService, connectionsParams).OpenSession(request, (err, session) => {
-		handler(err, session, cursor);
-	});
+	return getConnection(TCLIService, kerberosAuthProcess, connectionsParams)
+		.then(client => new Promise((resolve, reject) => {
+			client.OpenSession(request, (err, session) => {
+				if (typeof handler === 'function') {
+					handler(err, session, cursor);
+				} else if (err) {
+					reject(err);
+				} else {
+					resolve({ session, cursor });
+				}
+			});
+		}));
 };
 
 module.exports = {
