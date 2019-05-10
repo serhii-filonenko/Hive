@@ -58,7 +58,6 @@ const cacheCall = (func) => {
 const getConnection = cacheCall((TCLIService, kerberosAuthProcess, parameters) => {
 	const { host, port, authMech, mode, options } = parameters;
 
-
 	let connectionHandler = thrift.createConnection;
 
 	if (mode === 'http') {
