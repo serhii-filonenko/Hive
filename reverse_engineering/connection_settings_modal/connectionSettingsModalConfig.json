@@ -155,7 +155,7 @@
 				},
 				"dependency": {
 					"key": "authMechanism",
-					"value": [ "PLAIN", "LDAP" ]
+					"value": [ "PLAIN", "LDAP", "GSSAPI" ]
 				}
 			},
 			{
@@ -167,7 +167,7 @@
 				"isHiddenKey": true,
 				"dependency": {
 					"key": "authMechanism",
-					"value": [ "PLAIN", "LDAP" ]
+					"value": [ "PLAIN", "LDAP", "GSSAPI" ]
 				},
 				"disable": {
 					"key": "mode",
@@ -183,7 +183,7 @@
 				"isHiddenKey": true,
 				"dependency": {
 					"key": "authMechanism",
-					"value": [ "PLAIN", "LDAP" ]
+					"value": [ "PLAIN", "LDAP", "GSSAPI" ]
 				},
 				"disable": {
 					"key": "mode",
@@ -199,7 +199,7 @@
 				"isHiddenKey": true,
 				"dependency": {
 					"key": "authMechanism",
-					"value": [ "PLAIN", "LDAP" ]
+					"value": [ "PLAIN", "LDAP", "GSSAPI" ]
 				},
 				"disable": {
 					"key": "mode",
