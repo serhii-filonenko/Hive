@@ -23,7 +23,7 @@ const createKerberosConnection = (kerberosAuthProcess) => (host, port, options) 
 		password: options.krb5.password,
 		host,
 		port,
-	}).then(({ connection }) => {
+	}).then(() => {
 		return connection.assignStream(ThriftConnection);
 	});
 };
