@@ -83,7 +83,6 @@ const getConnection = cacheCall((TCLIService, kerberosAuthProcess, parameters) =
 			connectionHandler = createLdapConnection(kerberosAuthProcess);
 		}
 	}
-
 	const connection = connectionHandler(host, port, Object.assign({
 		https: false,
 		debug: true,
