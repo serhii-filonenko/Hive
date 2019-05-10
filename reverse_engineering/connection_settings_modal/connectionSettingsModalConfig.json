@@ -152,6 +152,10 @@
 				"disable": {
 					"key": "mode",
 					"value": "http"
+				},
+				"dependency": {
+					"key": "authMechanism",
+					"value": [ "PLAIN", "LDAP" ]
 				}
 			},
 			{
@@ -162,8 +166,8 @@
 				"extensions": ["pem", "crt", "key"],
 				"isHiddenKey": true,
 				"dependency": {
-					"key": "ssl",
-					"value": true
+					"key": "authMechanism",
+					"value": [ "PLAIN", "LDAP" ]
 				},
 				"disable": {
 					"key": "mode",
@@ -178,8 +182,8 @@
 				"extensions": ["pem", "crt", "key"],
 				"isHiddenKey": true,
 				"dependency": {
-					"key": "ssl",
-					"value": true
+					"key": "authMechanism",
+					"value": [ "PLAIN", "LDAP" ]
 				},
 				"disable": {
 					"key": "mode",
@@ -194,8 +198,8 @@
 				"extensions": ["pem", "crt", "key"],
 				"isHiddenKey": true,
 				"dependency": {
-					"key": "ssl",
-					"value": true
+					"key": "authMechanism",
+					"value": [ "PLAIN", "LDAP" ]
 				},
 				"disable": {
 					"key": "mode",

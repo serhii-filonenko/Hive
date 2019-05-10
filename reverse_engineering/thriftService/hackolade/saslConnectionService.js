@@ -11,7 +11,9 @@ const getConnection = (port, host, options) => {
 };
 
 const createKerberosConnection = (kerberosAuthProcess) => (host, port, options) => {
-	const connection = getConnection(port, host, options);
+	const connection = getConnection(port, host, Object.assign({}, options, {
+		ssl: false
+	}));
 
 	return kerberosAuthentication(kerberosAuthProcess, connection)({
 		authMech: 'GSSAPI',
