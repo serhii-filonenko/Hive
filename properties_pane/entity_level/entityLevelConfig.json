@@ -230,7 +230,7 @@ making sure that you maintain a proper JSON format.
 				"shouldValidate": true,
 				"propertyTooltip": "description",
 				"propertyType": "details",
-				"template": "textarea",
+				"template": "textareaWithoutMarkdown",
 				"valueType": "string",
 				"dependency": {
 					"key": "rowFormat",
@@ -346,7 +346,7 @@ making sure that you maintain a proper JSON format.
 				"propertyKeyword": "tableProperties",
 				"shouldValidate": false,
 				"propertyType": "details",
-				"template": "textarea",
+				"template": "tableProperties",
 				"valueType": "string"
 			},
 			{
@@ -414,7 +414,7 @@ making sure that you maintain a proper JSON format.
 					"shouldValidate": false,
 					"propertyTooltip": "IDXPROPERTIES",
 					"propertyType": "details",
-					"template": "textarea"
+					"template": "textareaWithoutMarkdown"
 				},
 				{
 					"propertyName": "Index table",
@@ -422,7 +422,7 @@ making sure that you maintain a proper JSON format.
 					"shouldValidate": false,
 					"propertyTooltip": "IN TABLE statement",
 					"propertyType": "details",
-					"template": "textarea"
+					"template": "SecIndxTable"
 				},
 				{
 					"propertyName": "Description",
