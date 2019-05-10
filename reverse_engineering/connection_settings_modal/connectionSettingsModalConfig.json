@@ -49,6 +49,9 @@
 					"label": "NoSASL",
 					"value": "NOSASL"
 				}, {
+					"label": "Plain",
+					"value": "PLAIN"
+				}, {
 					"label": "Kerberos",
 					"value": "GSSAPI"
 				}, {
@@ -115,7 +118,7 @@
 				],
 				"dependency": {
 					"key": "authMechanism",
-					"value": ["NOSASL", ""]
+					"value": ["NOSASL", "PLAIN", ""]
 				}
 			},
 			{
