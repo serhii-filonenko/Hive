@@ -20,6 +20,10 @@ module.exports = {
 
 		const MongoAuthProcess = app.require('kerberos').processes.MongoAuthProcess;
 
+		connectionInfo.isHTTPS = Boolean(
+			connectionInfo.mode === 'http' && connectionInfo.ssl
+		); 
+
 		thriftService.connect({
 			host: connectionInfo.host,
 			port: connectionInfo.port,
@@ -375,10 +379,6 @@ const getSslCerts = (options) => {
 			return fs.readFileSync(filePath);
 		}
 	};
-
-	if (!options.ssl || options.mode === 'http') {
-		return {};
-	}
 
 	return {
 		ca: getFile(options.sslCaFile),
