@@ -46,15 +46,15 @@
 				"inputKeyword": "authMechanism",
 				"inputType": "select",
 				"options": [{
+					"label": "None (Plain SASL)",
+					"value": "PLAIN"
+				},	{
 					"label": "NoSASL",
 					"value": "NOSASL"
-				}, {
-					"label": "Plain",
-					"value": "PLAIN"
-				}, {
+				},  {
 					"label": "Kerberos",
 					"value": "GSSAPI"
-				}, {
+				}, 	{
 					"label": "LDAP",
 					"value": "LDAP"
 				}]
@@ -164,6 +164,72 @@
 				"inputPlaceholder": "Client Private Key",
 				"extensions": ["pem", "crt", "key"],
 				"isHiddenKey": true
+			}
+		]	
+	},
+	{
+		"lowerTab": "SSL",
+		"structure": [
+			{
+				"inputLabel": "Enable SSL",
+				"inputKeyword": "ssl",
+				"inputType": "checkbox",
+				"disable": {
+					"key": "mode",
+					"value": "http"
+				},
+				"dependency": {
+					"key": "authMechanism",
+					"value": [ "PLAIN", "LDAP", "GSSAPI" ]
+				}
+			},
+			{
+				"inputLabel": "Certificate Authority",
+				"inputKeyword": "sslCaFile",
+				"inputType": "file",
+				"inputPlaceholder": "Certificate Authority",
+				"extensions": ["pem", "crt", "key"],
+				"isHiddenKey": true,
+				"dependency": {
+					"key": "authMechanism",
+					"value": [ "PLAIN", "LDAP", "GSSAPI" ]
+				},
+				"disable": {
+					"key": "mode",
+					"value": "http"
+				}
+			},
+			{
+				"inputLabel": "Client Certificate",
+				"inputKeyword": "sslCertFile",
+				"inputType": "file",
+				"inputPlaceholder": "Client Certificate",
+				"extensions": ["pem", "crt", "key"],
+				"isHiddenKey": true,
+				"dependency": {
+					"key": "authMechanism",
+					"value": [ "PLAIN", "LDAP", "GSSAPI" ]
+				},
+				"disable": {
+					"key": "mode",
+					"value": "http"
+				}
+			},
+			{
+				"inputLabel": "Client Private Key",
+				"inputKeyword": "sslKeyFile",
+				"inputType": "file",
+				"inputPlaceholder": "Client Private Key",
+				"extensions": ["pem", "crt", "key"],
+				"isHiddenKey": true,
+				"dependency": {
+					"key": "authMechanism",
+					"value": [ "PLAIN", "LDAP", "GSSAPI" ]
+				},
+				"disable": {
+					"key": "mode",
+					"value": "http"
+				}
 			}
 		]	
 	}
