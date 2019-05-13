@@ -58,7 +58,7 @@ const cacheCall = (func) => {
 const getConnection = cacheCall((TCLIService, kerberosAuthProcess, parameters) => {
 	const { host, port, authMech, mode, options } = parameters;
 
-	let connectionHandler = thrift.createConnection;
+	let connectionHandler = options.ssl ? thrift.createSSLConnection : thrift.createConnection;
 
 	if (mode === 'http') {
 		connectionHandler = thrift.createHttpConnection;
@@ -127,7 +127,7 @@ const getBinaryConnectionParams = ({ host, port, authMech, options }) => {
 const getHttpConnectionParams = ({ host, port, username, password, authMech, options }) => {
 	const headers = options.headers || {};
 
-	if (authMech === 'PLAIN') {
+	if (authMech === 'PLAIN' || authMech === 'NOSASL') {
 		username = 'anonymous';
 		password = 'anonymous';
 	}
@@ -145,7 +145,12 @@ const getHttpConnectionParams = ({ host, port, username, password, authMech, opt
 			{},
 			options,
 			{
-				headers
+				headers,
+				nodeOptions: options.https ? {
+					ca: options.ca,
+					cert: options.cert,
+					key: options.key
+				} : {}
 			}
 		)
 	};	

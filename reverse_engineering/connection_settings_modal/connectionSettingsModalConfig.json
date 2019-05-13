@@ -51,12 +51,12 @@
 				},	{
 					"label": "NoSASL",
 					"value": "NOSASL"
-				},  {
-					"label": "Kerberos",
-					"value": "GSSAPI"
 				}, 	{
 					"label": "LDAP",
 					"value": "LDAP"
+				},  {
+					"label": "Kerberos",
+					"value": "GSSAPI"
 				}]
 			},
 			{
@@ -100,19 +100,6 @@
 				"inputKeyword": "mode",
 				"inputType": "select",
 				"options": [
-					{ "value": "binary", "label": "binary" }
-				],
-				"disable": true,
-				"dependency": {
-					"key": "authMechanism",
-					"value": [ "GSSAPI", "LDAP" ]
-				}
-			},
-			{
-				"inputLabel": "Transport mode",
-				"inputKeyword": "mode",
-				"inputType": "select",
-				"options": [
 					{ "value": "binary", "label": "binary" },
 					{ "value": "http", "label": "http" }
 				],
@@ -122,19 +109,23 @@
 				}
 			},
 			{
+				"inputLabel": "Transport mode",
+				"inputKeyword": "mode",
+				"inputType": "select",
+				"options": [
+					{ "value": "binary", "label": "binary" }
+				],
+				"disable": true,
+				"dependency": {
+					"key": "authMechanism",
+					"value": [ "GSSAPI", "LDAP" ]
+				}
+			},
+			{
 				"inputLabel": "HTTP path",
 				"inputKeyword": "path",
 				"inputType": "text",
 				"inputPlaceholder": "hive2",
-				"dependency": {
-					"key": "mode",
-					"value": "http"
-				}
-			},
-			{
-				"inputLabel": "HTTPS",
-				"inputKeyword": "isHTTPS",
-				"inputType": "checkbox",
 				"dependency": {
 					"key": "mode",
 					"value": "http"
@@ -148,15 +139,7 @@
 			{
 				"inputLabel": "Enable SSL",
 				"inputKeyword": "ssl",
-				"inputType": "checkbox",
-				"disable": {
-					"key": "mode",
-					"value": "http"
-				},
-				"dependency": {
-					"key": "authMechanism",
-					"value": [ "PLAIN", "LDAP", "GSSAPI" ]
-				}
+				"inputType": "checkbox"
 			},
 			{
 				"inputLabel": "Certificate Authority",
@@ -164,15 +147,7 @@
 				"inputType": "file",
 				"inputPlaceholder": "Certificate Authority",
 				"extensions": ["pem", "crt", "key"],
-				"isHiddenKey": true,
-				"dependency": {
-					"key": "authMechanism",
-					"value": [ "PLAIN", "LDAP", "GSSAPI" ]
-				},
-				"disable": {
-					"key": "mode",
-					"value": "http"
-				}
+				"isHiddenKey": true
 			},
 			{
 				"inputLabel": "Client Certificate",
@@ -180,15 +155,7 @@
 				"inputType": "file",
 				"inputPlaceholder": "Client Certificate",
 				"extensions": ["pem", "crt", "key"],
-				"isHiddenKey": true,
-				"dependency": {
-					"key": "authMechanism",
-					"value": [ "PLAIN", "LDAP", "GSSAPI" ]
-				},
-				"disable": {
-					"key": "mode",
-					"value": "http"
-				}
+				"isHiddenKey": true
 			},
 			{
 				"inputLabel": "Client Private Key",
@@ -196,15 +163,7 @@
 				"inputType": "file",
 				"inputPlaceholder": "Client Private Key",
 				"extensions": ["pem", "crt", "key"],
-				"isHiddenKey": true,
-				"dependency": {
-					"key": "authMechanism",
-					"value": [ "PLAIN", "LDAP", "GSSAPI" ]
-				},
-				"disable": {
-					"key": "mode",
-					"value": "http"
-				}
+				"isHiddenKey": true
 			}
 		]	
 	}
