@@ -21,7 +21,7 @@
 			"disablePatternField": false,
 			"enableForwardEngineering": true,
 			"disableMultipleTypes": false,
-			"disableReverseEngineering": false,
+			"enableReverseEngineering": true,
 			"disableChoices": false,
 			"enableJsonType": true
 		}
