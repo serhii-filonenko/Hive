@@ -347,7 +347,8 @@ making sure that you maintain a proper JSON format.
 				"propertyKeyword": "tableProperties",
 				"shouldValidate": false,
 				"propertyType": "details",
-				"template": "tableProperties",
+				"template": "textarea",
+				"markdown": false,
 				"valueType": "string"
 			},
 			{
@@ -424,7 +425,8 @@ making sure that you maintain a proper JSON format.
 					"shouldValidate": false,
 					"propertyTooltip": "IN TABLE statement",
 					"propertyType": "details",
-					"template": "SecIndxTable"
+					"template": "textarea",
+					"markdown": false
 				},
 				{
 					"propertyName": "Description",
