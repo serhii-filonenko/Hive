@@ -2,7 +2,7 @@ const thrift = require('thrift');
 const createKerberosConnection = require('./hackolade/saslConnectionService').createKerberosConnection;
 const createLdapConnection = require('./hackolade/saslConnectionService').createLdapConnection;
 
-const getConnectionByMechanism = (authMech) => {
+const getConnectionByMechanism = (authMech, mode) => {
 	if (authMech === 'NOSASL') {
 		return {
 			transport: thrift.TBufferedTransport,
@@ -18,6 +18,18 @@ const getConnectionByMechanism = (authMech) => {
 			protocol: thrift.TBinaryProtocol,
 			transport: thrift.TFramedTransport
 		};
+	} else if (authMech === 'PLAIN') {
+		if (mode ==='http') {
+			return {
+				transport: thrift.TBufferedTransport,
+				protocol: thrift.TBinaryProtocol
+			};
+		} else {
+			return {
+				protocol: thrift.TBinaryProtocol,
+				transport: thrift.TFramedTransport
+			};
+		}
 	} else {
 		throw new Error("The authentication mechanism " + authMech + " is not supported!");
 	}
@@ -46,8 +58,7 @@ const cacheCall = (func) => {
 const getConnection = cacheCall((TCLIService, kerberosAuthProcess, parameters) => {
 	const { host, port, authMech, mode, options } = parameters;
 
-
-	let connectionHandler = thrift.createConnection;
+	let connectionHandler = options.ssl ? thrift.createSSLConnection : thrift.createConnection;
 
 	if (mode === 'http') {
 		connectionHandler = thrift.createHttpConnection;
@@ -61,6 +72,16 @@ const getConnection = cacheCall((TCLIService, kerberosAuthProcess, parameters) =
 		connectionHandler = createLdapConnection(kerberosAuthProcess);
 	}
 
+	if (authMech === 'PLAIN') {
+		if (mode === 'http') {
+			connectionHandler = thrift.createHttpConnection;
+		} else {
+			options.username = options.username || 'anonymous';
+			options.password = options.password || 'anonymous';
+
+			connectionHandler = createLdapConnection(kerberosAuthProcess);
+		}
+	}
 	const connection = connectionHandler(host, port, Object.assign({
 		https: false,
 		debug: true,
@@ -68,7 +89,7 @@ const getConnection = cacheCall((TCLIService, kerberosAuthProcess, parameters) =
 		retry_max_delay: 2,
 		connect_timeout: 1000,
 		timeout: 1000
-	}, getConnectionByMechanism(authMech), (options || {})));
+	}, getConnectionByMechanism(authMech, mode), (options || {})));
 	
 	return (
 		connection instanceof Promise 
@@ -106,6 +127,11 @@ const getBinaryConnectionParams = ({ host, port, authMech, options }) => {
 const getHttpConnectionParams = ({ host, port, username, password, authMech, options }) => {
 	const headers = options.headers || {};
 
+	if (authMech === 'PLAIN' || authMech === 'NOSASL') {
+		username = 'anonymous';
+		password = 'anonymous';
+	}
+
 	if (username && password) {
 		headers['Authorization'] = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
 	}
@@ -119,7 +145,12 @@ const getHttpConnectionParams = ({ host, port, username, password, authMech, opt
 			{},
 			options,
 			{
-				headers
+				headers,
+				nodeOptions: options.https ? {
+					ca: options.ca,
+					cert: options.cert,
+					key: options.key
+				} : {}
 			}
 		)
 	};	

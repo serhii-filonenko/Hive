@@ -1,8 +1,19 @@
-const Connection = require('thrift').Connection;
-const net = require('net');
+const ThriftConnection = require('thrift').Connection;
+const sslTcpConnection = require('./connections/sslTcpConnection');
+const tcpConnection = require('./connections/tcpConnection');
+
+const getConnection = (port, host, options) => {
+	if (options.ssl) {
+		return sslTcpConnection(port, host, options);
+	} else {
+		return tcpConnection(port, host, options);
+	}
+};
 
 const createKerberosConnection = (kerberosAuthProcess) => (host, port, options) => {
-	return kerberosAuthentication(kerberosAuthProcess)({
+	const connection = getConnection(port, host, options);
+
+	return kerberosAuthentication(kerberosAuthProcess, connection)({
 		authMech: 'GSSAPI',
 		krb_host: options.krb5.krb_host,
 		krb_service: options.krb5.krb_service,
@@ -10,32 +21,22 @@ const createKerberosConnection = (kerberosAuthProcess) => (host, port, options) 
 		password: options.krb5.password,
 		host,
 		port,
-	}).then(({ connection }) => {
-		const conn = new Connection(connection, options);
-
-		conn.host = host;
-		conn.port = port;
-		connection.emit('connect');
-
-		return conn;
+	}).then(() => {
+		return connection.assignStream(ThriftConnection);
 	});
 };
 
 const createLdapConnection = (kerberosAuthProcess) => (host, port, options) => {
-	return ldapAuthentication(kerberosAuthProcess)({
+	const connection = getConnection(port, host, options);
+
+	return ldapAuthentication(kerberosAuthProcess, connection)({
 		authMech: 'PLAIN',
 		username: options.username,
 		password: options.password,
 		host,
 		port,
-	}).then(({ connection }) => {
-		const conn = new Connection(connection, options);
-
-		conn.host = host;
-		conn.port = port;
-		connection.emit('connect');
-
-		return conn;
+	}).then(() => {
+		return connection.assignStream(ThriftConnection);
 	});
 };
 
@@ -53,7 +54,7 @@ const createPackage = (status, body) => {
 	return Buffer.concat([ new Buffer([ status ]), bodyLength, body ]);
 };
 
-const kerberosAuthentication = (kerberosAuthProcess) => (options) => new Promise((resolve, reject) => {
+const kerberosAuthentication = (kerberosAuthProcess, connection) => (options) => new Promise((resolve, reject) => {
 	const inst = new kerberosAuthProcess(
 		options.krb_host,
 		options.port,
@@ -65,30 +66,29 @@ const kerberosAuthentication = (kerberosAuthProcess) => (options) => new Promise
 			return reject(err);
 		}
 
-		const stream = net.createConnection(options.port, options.host);
+		connection.connect();
 		const onError = (err) => {
-			stream.end();
+			connection.end();
 
 			reject(err);
 		};
 		const onSuccess = () => {
-			stream.removeListener('connect', onConnect);
-			stream.removeListener('data', onData);
+			connection.removeListener('connect', onConnect);
+			connection.removeListener('data', onData);
 
 			resolve({
-				client: client,
-				connection: stream
+				client: client
 			});
 		};
 		const onConnect = () => {
-			stream.write(createPackage(START, new Buffer(options.authMech)));
+			connection.write(createPackage(START, new Buffer(options.authMech)));
 
 			inst.transition('', (err, token) => {
 				if (err) {
 					return onError(err);
 				}
 
-				stream.write(createPackage(OK, new Buffer(token || '', 'base64')));
+				connection.write(createPackage(OK, new Buffer(token || '', 'base64')));
 			});
 		};
 		const onData = (data) => {
@@ -102,7 +102,7 @@ const kerberosAuthentication = (kerberosAuthProcess) => (options) => new Promise
 						return onError(err);
 					}
 
-					stream.write(createPackage(OK, new Buffer(response || '', 'base64')));
+					connection.write(createPackage(OK, new Buffer(response || '', 'base64')));
 				});
 			} else if (result === COMPLETE) {
 				onSuccess();
@@ -113,12 +113,12 @@ const kerberosAuthentication = (kerberosAuthProcess) => (options) => new Promise
 			}
 		};
 
-		stream.addListener('connect', onConnect);
-		stream.addListener('data', onData);
+		connection.addListener('connect', onConnect);
+		connection.addListener('data', onData);
 	});
 });
 
-const ldapAuthentication = (kerberosAuthProcess) => (options) => new Promise((resolve, reject) => {
+const ldapAuthentication = (kerberosAuthProcess, connection) => (options) => new Promise((resolve, reject) => {
 	const inst = new kerberosAuthProcess(
 		'',
 		'',
@@ -130,29 +130,29 @@ const ldapAuthentication = (kerberosAuthProcess) => (options) => new Promise((re
 			return reject(err);
 		}
 
-		const stream = net.createConnection(options.port, options.host);
+		connection.connect();
+
 		const onError = (err) => {
-			stream.end();
+			connection.end();
 
 			reject(err);
 		};
 		const onSuccess = () => {
-			stream.removeListener('connect', onConnect);
-			stream.removeListener('data', onData);
+			connection.removeListener('connect', onConnect);
+			connection.removeListener('data', onData);
 
 			resolve({
-				client: client,
-				connection: stream
+				client: client
 			});
 		};
 		const onConnect = () => {
-			stream.write(createPackage(START, new Buffer(options.authMech)));
-			stream.write(createPackage(OK, Buffer.concat([
-				new Buffer(options.username),
+			connection.write(createPackage(START, new Buffer(options.authMech)));
+			connection.write(createPackage(OK, Buffer.concat([
+				new Buffer(options.username || ""),
 				Buffer.from([0]),
-				new Buffer(options.username),
+				new Buffer(options.username || ""),
 				Buffer.from([0]),
-				new Buffer(options.password),
+				new Buffer(options.password || ""),
 			])));
 		};
 		const onData = (data) => {
@@ -167,8 +167,8 @@ const ldapAuthentication = (kerberosAuthProcess) => (options) => new Promise((re
 			}
 		};
 
-		stream.addListener('connect', onConnect);
-		stream.addListener('data', onData);
+		connection.addListener('connect', onConnect);
+		connection.addListener('data', onData);
 	});
 });
 

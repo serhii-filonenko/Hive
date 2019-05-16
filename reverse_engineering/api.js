@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const async = require('async');
+const fs = require('fs');
 const thriftService = require('./thriftService/thriftService');
 const hiveHelper = require('./thriftService/hiveHelper');
 const entityLevelHelper = require('./entityLevelHelper');
@@ -19,6 +20,10 @@ module.exports = {
 
 		const MongoAuthProcess = app.require('kerberos').processes.MongoAuthProcess;
 
+		connectionInfo.isHTTPS = Boolean(
+			connectionInfo.mode === 'http' && connectionInfo.ssl
+		); 
+
 		thriftService.connect({
 			host: connectionInfo.host,
 			port: connectionInfo.port,
@@ -31,10 +36,11 @@ module.exports = {
 				krb_host: connectionInfo.krb_host,
 				krb_service: connectionInfo.krb_service
 			},
-			options: {
+			options: Object.assign({}, {
 				https: connectionInfo.isHTTPS,
-				path: connectionInfo.path			
-			}
+				path: connectionInfo.path,
+				ssl: Boolean(connectionInfo.ssl),
+			}, getSslCerts(connectionInfo))
 		})()(TCLIService, TCLIServiceTypes, {
 			log: (message) => {
 				logger.log('info', { message }, 'Query info')
@@ -363,4 +369,20 @@ const getIndexes = (indexesFromDb) => {
 			SecIndxComments: getValue(indexFromDb.comment)
 		};
 	});
+};
+
+const getSslCerts = (options) => {
+	const getFile = (filePath) => {
+		if (!fs.existsSync(filePath)) {
+			return "";
+		} else {
+			return fs.readFileSync(filePath);
+		}
+	};
+
+	return {
+		ca: getFile(options.sslCaFile),
+		cert: getFile(options.sslCertFile),
+		key: getFile(options.sslKeyFile),
+	};
 };
