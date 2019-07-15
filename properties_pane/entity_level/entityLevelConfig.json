@@ -13,14 +13,12 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Simple text",
 				"propertyKeyword": "simpletextProp",
-				"shouldValidate": false,
 				"propertyType": "text",
 				"sampleGen": "&containerName|&entityName|&random|<value>"
 			},
 			{
 				"propertyName": "Text area",
 				"propertyKeyword": "textareaProp",
-				"propertyValidate": false,
 				"propertyTooltip": "Popup for multi-line text entry",
 				"propertyType": "details",
 				"template": "textarea"
@@ -28,7 +26,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Dropdown selection",
 				"propertyKeyword": "dropdownProp",
-				"shouldValidate": false,
 				"propertyTooltip": "Select from list of options",
 				"propertyType": "select",
 				"options": [
@@ -50,7 +47,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Checkbox",
 				"propertyKeyword": "checkboxProp",
-				"shouldValidate": false,
 				"propertyType": "checkbox"
 			},
 			{
@@ -62,14 +58,12 @@ making sure that you maintain a proper JSON format.
 					{
 						"propertyName": "Simple Grp Text",
 						"propertyKeyword": "simpleGrpText",
-						"shouldValidate": false,
 						"propertyTooltip": "",
 						"propertyType": "text"
 					},
 					{
 						"propertyName": "Group Number",
 						"propertyKeyword": "grpNumber",
-						"propertyValidate": true,
 						"propertyType": "numeric",
 						"valueType": "number",
 						"allowNegative": false
@@ -84,20 +78,17 @@ making sure that you maintain a proper JSON format.
 				"propertyName": "Block",
 				"propertyType": "block",
 				"propertyKeyword": "grpProp",
-				"shouldValidate": false,
 				"propertyTooltip": "",
 				"structure": [
 					{
 						"propertyName": "Simple Grp Text",
 						"propertyKeyword": "simpleGrpText",
-						"shouldValidate": false,
 						"propertyTooltip": "",
 						"propertyType": "text"
 					},
 					{
 						"propertyName": "Group Number",
 						"propertyKeyword": "grpNumber",
-						"propertyValidate": true,
 						"propertyType": "numeric",
 						"valueType": "number",
 						"allowNegative": false
@@ -107,14 +98,12 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Field List",
 				"propertyKeyword": "keyList",
-				"shouldValidate": false,
 				"propertyType": "fieldList",
 				"template": "orderedList"
 			}, 
 			{
 				"propertyName": "List with attribute",
 				"propertyKeyword": "keyListOrder",
-				"shouldValidate": false,
 				"propertyType": "fieldList",
 				"template": "orderedList",
 				"attributeList": [
@@ -132,25 +121,21 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Technical name",
 				"propertyKeyword": "code",
-				"shouldValidate": true,
 				"propertyType": "text"
 			},
 			{
 				"propertyName": "Temporary",
 				"propertyKeyword": "temporaryTable",
-				"shouldValidate": false,
 				"propertyType": "checkbox"
 			},
 			{
 				"propertyName": "External",
 				"propertyKeyword": "externalTable",
-				"shouldValidate": false,
 				"propertyType": "checkbox"
 			},
 			{
 				"propertyName": "Stored as",
 				"propertyKeyword": "storedAsTable",
-				"shouldValidate": false,
 				"propertyTooltip": "Select from list of options",
 				"propertyType": "select",
 				"options": [
@@ -169,7 +154,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Row format",
 				"propertyKeyword": "rowFormat",
-				"shouldValidate": false,
 				"propertyTooltip": "Select from list of options",
 				"propertyType": "select",
 				"options": [
@@ -185,7 +169,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Fields terminated by",
 				"propertyKeyword": "fieldsTerminatedBy",
-				"shouldValidate": false,
 				"propertyType": "text",
 				"dependency": {
 					"key": "rowFormat",
@@ -195,7 +178,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Fields escaped by",
 				"propertyKeyword": "fieldsescapedBy",
-				"shouldValidate": false,
 				"propertyType": "text",
 				"dependency": {
 					"key": "rowFormat",
@@ -205,7 +187,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Coll items termin by",
 				"propertyKeyword": "collectionItemsTerminatedBy",
-				"shouldValidate": false,
 				"propertyType": "text",
 				"dependency": {
 					"key": "rowFormat",
@@ -215,7 +196,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Map keys termin by",
 				"propertyKeyword": "mapKeysTerminatedBy",
-				"shouldValidate": false,
 				"propertyType": "text",
 				"dependency": {
 					"key": "rowFormat",
@@ -225,7 +205,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Lines terminated by",
 				"propertyKeyword": "linesTerminatedBy",
-				"shouldValidate": false,
 				"propertyType": "text",
 				"dependency": {
 					"key": "rowFormat",
@@ -235,7 +214,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Null defined as",
 				"propertyKeyword": "nullDefinedAs",
-				"shouldValidate": false,
 				"propertyType": "text",
 				"dependency": {
 					"key": "rowFormat",
@@ -245,7 +223,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "SerDe Library",
 				"propertyKeyword": "serDeLibrary",
-				"shouldValidate": false,
 				"propertyType": "text",
 				"dependency": {
 					"key": "rowFormat",
@@ -255,10 +232,10 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "SerDe Properties",
 				"propertyKeyword": "serDeProperties",
-				"shouldValidate": true,
-				"propertyTooltip": "description",
+				"propertyTooltip": "SerDe Properties",
 				"propertyType": "details",
 				"template": "textarea",
+				"markdown": false,
 				"valueType": "string",
 				"dependency": {
 					"key": "rowFormat",
@@ -268,7 +245,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "SerDe Library",
 				"propertyKeyword": "serDeLibrary",
-				"shouldValidate": false,
 				"propertyType": "text",
 				"dependency": {
 					"key": "storedAsTable",
@@ -278,7 +254,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "SerDe Library",
 				"propertyKeyword": "serDeLibrary",
-				"shouldValidate": false,
 				"propertyType": "text",
 				"dependency": {
 					"key": "storedAsTable",
@@ -288,7 +263,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Input fmt classname",
 				"propertyKeyword": "inputFormatClassname",
-				"shouldValidate": false,
 				"propertyType": "text",
 				"dependency": {
 					"key": "storedAsTable",
@@ -298,7 +272,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Output fmt classname",
 				"propertyKeyword": "outputFormatClassname",
-				"shouldValidate": false,
 				"propertyType": "text",
 				"dependency": {
 					"key": "storedAsTable",
@@ -308,27 +281,23 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Partition key",
 				"propertyKeyword": "compositePartitionKey",
-				"shouldValidate": false,
 				"propertyType": "primaryKeySetter",
 				"abbr": "pk"
 			}, 
 			{
 				"propertyName": "Disable No Validate",
 				"propertyKeyword": "disableNoValidate",
-				"shouldValidate": false,
 				"propertyType": "checkbox"
 			},
 			{
 				"propertyName": "Clustering key",
 				"propertyKeyword": "compositeClusteringKey",
-				"shouldValidate": false,
 				"propertyType": "primaryKeySetter",
 				"abbr": "ck"
 			},
 			{
 				"propertyName": "Sorted by",
 				"propertyKeyword": "sortedByKey",
-				"shouldValidate": false,
 				"propertyType": "fieldList",
 				"template": "orderedList",
 				"attributeList": [
@@ -339,7 +308,6 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Number of buckets",
 				"propertyKeyword": "numBuckets",
-				"propertyValidate": true,
 				"propertyType": "numeric",
 				"valueType": "number",
 				"allowNegative": false
@@ -347,40 +315,35 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Skewed by",
 				"propertyKeyword": "skewedby",
-				"shouldValidate": false,
 				"propertyType": "fieldList",
 				"template": "orderedList"
 			},
 			{
 				"propertyName": "Skewed on",
 				"propertyKeyword": "skewedOn",
-				"shouldValidate": false,
 				"propertyType": "text"
 			},
 			{
 				"propertyName": "Skew stored as directories",
 				"propertyKeyword": "skewStoredAsDir",
-				"shouldValidate": false,
 				"propertyType": "checkbox"
 			},
 			{
 				"propertyName": "Location",
 				"propertyKeyword": "location",
-				"shouldValidate": false,
 				"propertyType": "text"
 			},
 			{
 				"propertyName": "Table properties",
 				"propertyKeyword": "tableProperties",
-				"shouldValidate": false,
 				"propertyType": "details",
 				"template": "textarea",
+				"markdown": false,
 				"valueType": "string"
 			},
 			{
 				"propertyName": "Comments",
 				"propertyKeyword": "comments",
-				"shouldValidate": false,
 				"propertyTooltip": "comments",
 				"propertyType": "details",
 				"template": "textarea",
@@ -395,13 +358,11 @@ making sure that you maintain a proper JSON format.
 			"propertyName": "Secondary Index",
 			"propertyType": "group",
 			"propertyKeyword": "SecIndxs",
-			"shouldValidate": false,
 			"propertyTooltip": "",
 			"structure": [
 				{
 					"propertyName": "Name",
 					"propertyKeyword": "name",
-					"shouldValidate": false,
 					"propertyTooltip": "",
 					"propertyType": "text",
 					"defaultValue": "New Secondary Index"
@@ -409,21 +370,18 @@ making sure that you maintain a proper JSON format.
 				{
 					"propertyName": "Key",
 					"propertyKeyword": "SecIndxKey",
-					"shouldValidate": false,
 					"propertyType": "fieldList",
 					"template": "orderedList"
 				},
 				{
 					"propertyName": "Id",
 					"propertyKeyword": "SecIndxID",
-					"shouldValidate": false,
 					"propertyTooltip": "Secondary Index ID",
 					"propertyType": "text"
 				},
 				{
 					"propertyName": "Index handler",
 					"propertyKeyword": "SecIndxHandler",
-					"shouldValidate": false,
 					"propertyTooltip": "Class name of index handler",
 					"propertyType": "text",
 					"defaultValue": "org.apache.hadoop.hive.ql.index.compact.CompactIndexHandler"
@@ -431,7 +389,6 @@ making sure that you maintain a proper JSON format.
 				{
 					"propertyName": "With deferred rebuild",
 					"propertyKeyword": "SecIndxWithDeferredRebuild",
-					"shouldValidate": false,
 					"propertyTooltip": "With deferred rebuild",
 					"propertyType": "checkbox",
 					"defaultValue": true
@@ -439,23 +396,22 @@ making sure that you maintain a proper JSON format.
 				{
 					"propertyName": "Index properties",
 					"propertyKeyword": "SecIndxProperties",
-					"shouldValidate": false,
-					"propertyTooltip": "IDXPROPERTIES",
+					"propertyTooltip": "Index properties",
 					"propertyType": "details",
-					"template": "textarea"
+					"template": "textarea",
+					"markdown": false
 				},
 				{
 					"propertyName": "Index table",
 					"propertyKeyword": "SecIndxTable",
-					"shouldValidate": false,
 					"propertyTooltip": "IN TABLE statement",
 					"propertyType": "details",
-					"template": "textarea"
+					"template": "textarea",
+					"markdown": false
 				},
 				{
 					"propertyName": "Description",
 					"propertyKeyword": "SecIndxDescription",
-					"shouldValidate": false,
 					"propertyTooltip": "description",
 					"propertyType": "details",
 					"template": "textarea"
@@ -463,7 +419,6 @@ making sure that you maintain a proper JSON format.
 				{
 					"propertyName": "Comments",
 					"propertyKeyword": "SecIndxComments",
-					"shouldValidate": false,
 					"propertyTooltip": "comments",
 					"propertyType": "details",
 					"template": "textarea"
