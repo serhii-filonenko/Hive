@@ -51,12 +51,12 @@
 				},	{
 					"label": "NoSASL",
 					"value": "NOSASL"
-				},  {
-					"label": "Kerberos",
-					"value": "GSSAPI"
 				}, 	{
 					"label": "LDAP",
 					"value": "LDAP"
+				},  {
+					"label": "Kerberos",
+					"value": "GSSAPI"
 				}]
 			},
 			{
@@ -100,12 +100,12 @@
 				"inputKeyword": "mode",
 				"inputType": "select",
 				"options": [
-					{ "value": "binary", "label": "binary" }
+					{ "value": "binary", "label": "binary" },
+					{ "value": "http", "label": "http" }
 				],
-				"disable": true,
 				"dependency": {
 					"key": "authMechanism",
-					"value": [ "GSSAPI", "LDAP" ]
+					"value": ["NOSASL", "PLAIN", ""]
 				}
 			},
 			{
@@ -113,12 +113,12 @@
 				"inputKeyword": "mode",
 				"inputType": "select",
 				"options": [
-					{ "value": "binary", "label": "binary" },
-					{ "value": "http", "label": "http" }
+					{ "value": "binary", "label": "binary" }
 				],
+				"disable": true,
 				"dependency": {
 					"key": "authMechanism",
-					"value": ["NOSASL", "PLAIN", ""]
+					"value": [ "GSSAPI", "LDAP" ]
 				}
 			},
 			{
@@ -137,9 +137,19 @@
 		"lowerTab": "SSL",
 		"structure": [
 			{
-				"inputLabel": "Enable SSL",
+				"inputLabel": "SSL Type",
 				"inputKeyword": "ssl",
-				"inputType": "checkbox"
+				"inputType": "select",
+				"options": [{
+					"label": "None",
+					"value": false
+				}, {
+					"label": "Certificates",
+					"value": true
+				}, {
+					"label": "Java Keystore",
+					"value": "jks"
+				}]
 			},
 			{
 				"inputLabel": "Certificate Authority",
@@ -147,7 +157,11 @@
 				"inputType": "file",
 				"inputPlaceholder": "Certificate Authority",
 				"extensions": ["pem", "crt", "key"],
-				"isHiddenKey": true
+				"isHiddenKey": true,
+				"dependency": {
+					"key": "ssl",
+					"value": [true, "true"]
+				}
 			},
 			{
 				"inputLabel": "Client Certificate",
@@ -155,7 +169,11 @@
 				"inputType": "file",
 				"inputPlaceholder": "Client Certificate",
 				"extensions": ["pem", "crt", "key"],
-				"isHiddenKey": true
+				"isHiddenKey": true,
+				"dependency": {
+					"key": "ssl",
+					"value": [true, "true"]
+				}
 			},
 			{
 				"inputLabel": "Client Private Key",
@@ -163,7 +181,43 @@
 				"inputType": "file",
 				"inputPlaceholder": "Client Private Key",
 				"extensions": ["pem", "crt", "key"],
-				"isHiddenKey": true
+				"isHiddenKey": true,
+				"dependency": {
+					"key": "ssl",
+					"value": [true, "true"]
+				}
+			},
+			{
+				"inputLabel": "Keystore",
+				"inputKeyword": "keystore",
+				"inputType": "file",
+				"inputPlaceholder": "Kyestore File",
+				"extensions": ["*"],
+				"isHiddenKey": true,
+				"dependency": {
+					"key": "ssl",
+					"value": "jks"
+				}
+			},
+			{
+				"inputLabel": "Password",
+				"inputKeyword": "keystorepass",
+				"inputType": "password",
+				"isHiddenKey": true,
+				"dependency": {
+					"key": "ssl",
+					"value": "jks"
+				}
+			},
+			{
+				"inputLabel": "Alias Name",
+				"inputKeyword": "alias",
+				"inputType": "text",
+				"isHiddenKey": true,
+				"dependency": {
+					"key": "ssl",
+					"value": "jks"
+				}
 			}
 		]	
 	}
