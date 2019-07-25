@@ -100,13 +100,13 @@ module.exports = {
 								})
 							})
 							.catch(err => next(err))
-					}, (err) => {
+					}, (err, result) => {
 						if (err) {
 							logger.log('error', err);
 						}
 
 						setTimeout(() => {
-							cb(err);
+							cb(err, result);
 						}, 1000);
 					});
 				});
