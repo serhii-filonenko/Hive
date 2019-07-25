@@ -53,7 +53,10 @@ module.exports = {
 			cb(null, session, cursor);
 		}).catch(err => {
 			logger.log('error', err);
-			cb(err);
+
+			setTimeout(() => {
+				cb(err);
+			}, 1000);
 		});
 	},
 
@@ -97,7 +100,15 @@ module.exports = {
 								})
 							})
 							.catch(err => next(err))
-					}, cb);
+					}, (err) => {
+						if (err) {
+							logger.log('error', err);
+						}
+
+						setTimeout(() => {
+							cb(err);
+						}, 1000);
+					});
 				});
 		}, app);
 	},
@@ -247,7 +258,10 @@ module.exports = {
 			}, (err, data) => {
 				if (err) {
 					logger.log('error', err);
-					cb(err);
+
+					setTimeout(() => {
+						cb(err);
+					}, 1000);
 				} else {
 					cb(err, ...expandFinalPackages(data));
 				}
