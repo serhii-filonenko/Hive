@@ -24,32 +24,39 @@ module.exports = {
 			connectionInfo.mode === 'http' && connectionInfo.ssl
 		); 
 
-		thriftService.connect({
-			host: connectionInfo.host,
-			port: connectionInfo.port,
-			username: connectionInfo.user,
-			password: connectionInfo.password,
-			authMech: connectionInfo.authMechanism || 'NOSASL',
-			version: connectionInfo.version,
-			mode: connectionInfo.mode,
-			configuration: {
-				krb_host: connectionInfo.krb_host,
-				krb_service: connectionInfo.krb_service
-			},
-			options: Object.assign({}, {
-				https: connectionInfo.isHTTPS,
-				path: connectionInfo.path,
-				ssl: Boolean(connectionInfo.ssl),
-			}, getSslCerts(connectionInfo))
-		})()(TCLIService, TCLIServiceTypes, {
-			log: (message) => {
-				logger.log('info', { message }, 'Query info')
-			}
-		}, MongoAuthProcess).then(({ cursor, session }) => {
+		getSslCerts(connectionInfo, app)
+		.then((sslCerts) => {
+			return thriftService.connect({
+				host: connectionInfo.host,
+				port: connectionInfo.port,
+				username: connectionInfo.user,
+				password: connectionInfo.password,
+				authMech: connectionInfo.authMechanism || 'NOSASL',
+				version: connectionInfo.version,
+				mode: connectionInfo.mode,
+				configuration: {
+					krb_host: connectionInfo.krb_host,
+					krb_service: connectionInfo.krb_service
+				},
+				options: Object.assign({}, {
+					https: connectionInfo.isHTTPS,
+					path: connectionInfo.path,
+					ssl: isSsl(connectionInfo.ssl),
+				}, sslCerts)
+			})()(TCLIService, TCLIServiceTypes, {
+				log: (message) => {
+					logger.log('info', { message }, 'Query info')
+				}
+			}, MongoAuthProcess);
+		})
+		.then(({ cursor, session }) => {
 			cb(null, session, cursor);
 		}).catch(err => {
 			logger.log('error', err);
-			cb(err);
+
+			setTimeout(() => {
+				cb(err);
+			}, 1000);
 		});
 	},
 
@@ -93,7 +100,15 @@ module.exports = {
 								})
 							})
 							.catch(err => next(err))
-					}, cb);
+					}, (err, result) => {
+						if (err) {
+							logger.log('error', err);
+						}
+
+						setTimeout(() => {
+							cb(err, result);
+						}, 1000);
+					});
 				});
 		}, app);
 	},
@@ -243,7 +258,10 @@ module.exports = {
 			}, (err, data) => {
 				if (err) {
 					logger.log('error', err);
-					cb(err);
+
+					setTimeout(() => {
+						cb(err);
+					}, 1000);
 				} else {
 					cb(err, ...expandFinalPackages(data));
 				}
@@ -371,7 +389,7 @@ const getIndexes = (indexesFromDb) => {
 	});
 };
 
-const getSslCerts = (options) => {
+const getAuthorityCertificates = (options) => {
 	const getFile = (filePath) => {
 		if (!fs.existsSync(filePath)) {
 			return "";
@@ -386,3 +404,33 @@ const getSslCerts = (options) => {
 		key: getFile(options.sslKeyFile),
 	};
 };
+
+const getKeystoreCertificates = (options, app) => new Promise((resolve, reject) => {
+	app.require('java-ssl', (err, Keystore) => {
+		if (err) {
+			return reject(err);
+		}
+
+		const store = Keystore(options.keystore, options.keystorepass);
+		const caText = (store.getCert(options.alias) || '').replace(/\s*-----END CERTIFICATE-----$/, '\n-----END CERTIFICATE-----');
+		const ca = caText;
+		const cert = caText;
+		const key = store.getPrivateKey(options.alias);
+	
+		return resolve({
+			cert,
+			key,
+			ca,
+		});
+	});
+});
+
+const getSslCerts = (options, app) => {
+	if (options.ssl === 'jks') {
+		return getKeystoreCertificates(options, app);
+	} else {
+		return Promise.resolve(getAuthorityCertificates(options));
+	}
+};
+
+const isSsl = (ssl) => ssl && ssl !== 'false';
