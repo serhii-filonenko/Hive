@@ -144,11 +144,11 @@
 					"label": "None",
 					"value": false
 				}, {
-					"label": "Certificates",
-					"value": true
-				}, {
 					"label": "Java Keystore",
 					"value": "jks"
+				}, {
+					"label": "Certificates",
+					"value": true
 				}]
 			},
 			{
@@ -188,7 +188,7 @@
 				"inputLabel": "Keystore",
 				"inputKeyword": "keystore",
 				"inputType": "file",
-				"inputPlaceholder": "Kyestore File",
+				"inputPlaceholder": "Keystore path and filename",
 				"extensions": ["*"],
 				"dependency": {
 					"key": "ssl",
@@ -196,7 +196,7 @@
 				}
 			},
 			{
-				"inputLabel": "Password",
+				"inputLabel": "Keystore password",
 				"inputKeyword": "keystorepass",
 				"inputType": "password",
 				"isHiddenKey": true,
