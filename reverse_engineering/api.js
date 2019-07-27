@@ -24,6 +24,8 @@ module.exports = {
 
 		getSslCerts(connectionInfo, app)
 		.then((sslCerts) => {
+			logger.log('info', 'SSL certificates got successfully', 'Connection')
+
 			return thriftService.connect({
 				host: connectionInfo.host,
 				port: connectionInfo.port,
