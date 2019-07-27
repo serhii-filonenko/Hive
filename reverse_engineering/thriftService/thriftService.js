@@ -55,7 +55,7 @@ const cacheCall = (func) => {
 	};
 };
 
-const getConnection = cacheCall((TCLIService, kerberosAuthProcess, parameters) => {
+const getConnection = cacheCall((TCLIService, kerberosAuthProcess, parameters, logger) => {
 	const { host, port, authMech, mode, options } = parameters;
 
 	let connectionHandler = options.ssl ? thrift.createSSLConnection : thrift.createConnection;
@@ -65,7 +65,7 @@ const getConnection = cacheCall((TCLIService, kerberosAuthProcess, parameters) =
 	}
 
 	if (authMech === 'GSSAPI') {
-		connectionHandler = createKerberosConnection(kerberosAuthProcess);
+		connectionHandler = createKerberosConnection(kerberosAuthProcess, logger);
 	}
 
 	if (authMech === 'LDAP') {
@@ -470,9 +470,18 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 		getCurrentProtocol
 	};
 
-	return getConnection(TCLIService, kerberosAuthProcess, connectionsParams)
+	return getConnection(TCLIService, kerberosAuthProcess, connectionsParams, logger)
 		.then(client => new Promise((resolve, reject) => {
+			logger.log('Connection established successfully');
+			logger.log('Starting session...');
+
 			client.OpenSession(request, (err, session) => {
+				if (err) {
+					logger.log('Session was not started');
+				} else {
+					logger.log('Session started successfully');
+				}
+
 				if (typeof handler === 'function') {
 					handler(err, session, cursor);
 				} else if (err) {

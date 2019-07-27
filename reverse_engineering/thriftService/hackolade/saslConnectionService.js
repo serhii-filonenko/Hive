@@ -10,10 +10,10 @@ const getConnection = (port, host, options) => {
 	}
 };
 
-const createKerberosConnection = (kerberosAuthProcess) => (host, port, options) => {
+const createKerberosConnection = (kerberosAuthProcess, logger) => (host, port, options) => {
 	const connection = getConnection(port, host, options);
 
-	return kerberosAuthentication(kerberosAuthProcess, connection)({
+	return kerberosAuthentication(kerberosAuthProcess, connection, logger)({
 		authMech: 'GSSAPI',
 		krb_host: options.krb5.krb_host,
 		krb_service: options.krb5.krb_service,
@@ -54,25 +54,35 @@ const createPackage = (status, body) => {
 	return Buffer.concat([ new Buffer([ status ]), bodyLength, body ]);
 };
 
-const kerberosAuthentication = (kerberosAuthProcess, connection) => (options) => new Promise((resolve, reject) => {
+const kerberosAuthentication = (kerberosAuthProcess, connection, logger) => (options) => new Promise((resolve, reject) => {
 	const inst = new kerberosAuthProcess(
 		options.krb_host,
 		options.port,
 		options.krb_service
 	);
 
+	logger.log('Start Kerberos authentication');
+
 	inst.init(options.username, options.password, (err, client) => {
 		if (err) {
+			logger.log('kerberos authentication. Step 1. Initialization: failed');
+
 			return reject(err);
+		} else {
+			logger.log('kerberos authentication. Step 1. Initialization: succeed');
 		}
 
 		connection.connect();
 		const onError = (err) => {
+			logger.log('kerberos authentication. Connection error');
+			
 			connection.end();
 
 			reject(err);
 		};
 		const onSuccess = () => {
+			logger.log('kerberos authentication. Successfully authenticated');
+			
 			connection.removeListener('connect', onConnect);
 			connection.removeListener('data', onData);
 
@@ -81,9 +91,12 @@ const kerberosAuthentication = (kerberosAuthProcess, connection) => (options) =>
 			});
 		};
 		const onConnect = () => {
+			logger.log('kerberos authentication. Successfully connected to server');
+			
 			connection.write(createPackage(START, new Buffer(options.authMech)));
 
 			inst.transition('', (err, token) => {
+				logger.log('kerberos authentication. Step 2. Start authentication.');
 				if (err) {
 					return onError(err);
 				}
@@ -92,9 +105,13 @@ const kerberosAuthentication = (kerberosAuthProcess, connection) => (options) =>
 			});
 		};
 		const onData = (data) => {
+			logger.log('kerberos authentication. Step 3. Transition.');
+
 			const result = data[0];
 
 			if (result === OK) {
+				logger.log('kerberos authentication. Step 3. Transition: succeed');
+				
 				const payload = data.slice(5).toString('base64');
 					
 				inst.transition(payload, (err, response) => {
@@ -105,8 +122,12 @@ const kerberosAuthentication = (kerberosAuthProcess, connection) => (options) =>
 					connection.write(createPackage(OK, new Buffer(response || '', 'base64')));
 				});
 			} else if (result === COMPLETE) {
+				logger.log('kerberos authentication. Step 3. Transition: completed');
+				
 				onSuccess();
 			} else {
+				logger.log('kerberos authentication. Step 3. Transition: failed. Code: ' + result);
+
 				const message = data.slice(5).toString();
 
 				onError(new Error('Authenticated error: ' + message));

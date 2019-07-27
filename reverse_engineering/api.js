@@ -8,12 +8,10 @@ const hiveHelper = require('./thriftService/hiveHelper');
 const entityLevelHelper = require('./entityLevelHelper');
 const TCLIService = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService');
 const TCLIServiceTypes = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService_types');
+const logHelper = require('./logHelper');
 
 module.exports = {
 	connect: function(connectionInfo, logger, cb, app){
-		logger.clear();
-		logger.log('info', connectionInfo, 'connectionInfo', connectionInfo.hiddenKeys);
-		
 		if (connectionInfo.path && (connectionInfo.path || '').charAt(0) !== '/') {
 			connectionInfo.path = '/' + connectionInfo.path;
 		}
@@ -26,6 +24,8 @@ module.exports = {
 
 		getSslCerts(connectionInfo, app)
 		.then((sslCerts) => {
+			logger.log('info', 'SSL certificates got successfully', 'Connection')
+
 			return thriftService.connect({
 				host: connectionInfo.host,
 				port: connectionInfo.port,
@@ -52,8 +52,6 @@ module.exports = {
 		.then(({ cursor, session }) => {
 			cb(null, session, cursor);
 		}).catch(err => {
-			logger.log('error', err);
-
 			setTimeout(() => {
 				cb(err);
 			}, 1000);
@@ -65,14 +63,25 @@ module.exports = {
 	},
 
 	testConnection: function(connectionInfo, logger, cb, app){
-		this.connect(connectionInfo, logger, cb, app);
+		logInfo('Test connection', connectionInfo, logger);
+		this.connect(connectionInfo, logger, (err) => {
+			if (err) {
+				logger.log('error', { message: err.message, stack: err.stack, error: err }, 'Connection failed');
+			}
+
+			return cb(err);
+		}, app);
 	},
 
 	getDbCollectionsNames: function(connectionInfo, logger, cb, app) {
+		logInfo('Retrieving databases and tables information', connectionInfo, logger);
+		
 		const { includeSystemCollection } = connectionInfo;
 
 		this.connect(connectionInfo, logger, (err, session, cursor) => {
 			if (err) {
+				logger.log('error', err, 'Connection failed');
+
 				return cb(err);
 			}
 			const exec = cursor.asyncExecute.bind(null, session.sessionHandle);
@@ -102,7 +111,7 @@ module.exports = {
 							.catch(err => next(err))
 					}, (err, result) => {
 						if (err) {
-							logger.log('error', err);
+							logger.log('error', { message: err.message, stack: err.stack, error: err }, 'Retrieving databases and tables information');
 						}
 
 						setTimeout(() => {
@@ -114,6 +123,8 @@ module.exports = {
 	},
 
 	getDbCollectionsData: function(data, logger, cb, app){
+		logInfo('Retrieving schema', data, logger);
+
 		const tables = data.collectionData.collections;
 		const databases = data.collectionData.dataBaseNames;
 		const pagination = data.pagination;
@@ -123,6 +134,7 @@ module.exports = {
 	
 		this.connect(data, logger, (err, session, cursor) => {
 			if (err) {
+				logger.log('error', err, 'Retrieving schema');
 				return cb(err);
 			}
 
@@ -257,7 +269,7 @@ module.exports = {
 					});
 			}, (err, data) => {
 				if (err) {
-					logger.log('error', err);
+					logger.log('error', { message: err.message, stack: err.stack, error: err }, 'Retrieving databases and tables information');
 
 					setTimeout(() => {
 						cb(err);
@@ -268,6 +280,12 @@ module.exports = {
 			});
 		}, app);
 	}
+};
+
+const logInfo = (step, connectionInfo, logger) => {
+	logger.clear();
+	logger.log('info', logHelper.getSystemInfo(connectionInfo.appVersion), step);
+	logger.log('info', connectionInfo, 'connectionInfo', connectionInfo.hiddenKeys);
 };
 
 const expandPackages = (packages) => {
