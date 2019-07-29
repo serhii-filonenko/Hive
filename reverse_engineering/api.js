@@ -24,7 +24,9 @@ module.exports = {
 
 		getSslCerts(connectionInfo, app)
 		.then((sslCerts) => {
-			logger.log('info', 'SSL certificates got successfully', 'Connection')
+			if (isSsl(connectionInfo.ssl)) {
+				logger.log('info', 'SSL certificates got successfully', 'Connection')
+			}
 
 			return thriftService.connect({
 				host: connectionInfo.host,
@@ -123,7 +125,7 @@ module.exports = {
 	},
 
 	getDbCollectionsData: function(data, logger, cb, app){
-		logInfo('Retrieving schema', data, logger);
+		logger.log('info', data, 'Retrieving schema', data.hiddenKeys);
 
 		const tables = data.collectionData.collections;
 		const databases = data.collectionData.dataBaseNames;
