@@ -144,6 +144,9 @@
 					"label": "None",
 					"value": false
 				}, {
+					"label": "HTTPs",
+					"value": "https"
+				}, {
 					"label": "Java Keystore",
 					"value": "jks"
 				}, {

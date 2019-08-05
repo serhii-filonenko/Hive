@@ -128,8 +128,8 @@ const getHttpConnectionParams = ({ host, port, username, password, authMech, opt
 	const headers = options.headers || {};
 
 	if (authMech === 'PLAIN' || authMech === 'NOSASL') {
-		username = 'anonymous';
-		password = 'anonymous';
+		username = username || 'anonymous';
+		password = password || 'anonymous';
 	}
 
 	if (username && password) {
