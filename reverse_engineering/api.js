@@ -283,7 +283,7 @@ module.exports = {
 	}
 };
 
-const retrieveData = (tableName, limit, offset) => {
+const retrieveData = (query, tableName, limit, offset) => {
 	return query(`select * from ${tableName} limit ${limit} offset ${offset}`).then(data => data, error => {
 		if (typeof error !== 'string') {
 			return Promise.reject(error);
