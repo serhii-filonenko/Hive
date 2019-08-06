@@ -19,7 +19,7 @@ module.exports = {
 		const MongoAuthProcess = app.require('kerberos').processes.MongoAuthProcess;
 
 		connectionInfo.isHTTPS = Boolean(
-			connectionInfo.mode === 'http' && connectionInfo.ssl
+			connectionInfo.mode === 'http' && connectionInfo.ssl === 'https'
 		); 
 
 		getSslCerts(connectionInfo, app)
@@ -160,8 +160,7 @@ module.exports = {
 									logger.progress({ message: 'Start getting data from database', containerName: dbName, entityName: tableName });
 
 									return getDataByPagination(pagination, countDocuments, (limit, offset, next) => {
-										query(`select * from ${tableName} limit ${limit} offset ${offset}`)
-											.then(data => {
+										retrieveData(query, tableName, limit, offset).then(data => {
 												logger.progress({ message: `${limit * (offset + 1)}/${countDocuments}`, containerName: dbName, entityName: tableName });
 												next(null, data);
 											}, err => next(err));
@@ -282,6 +281,16 @@ module.exports = {
 			});
 		}, app);
 	}
+};
+
+const retrieveData = (query, tableName, limit, offset) => {
+	return query(`select * from ${tableName} limit ${limit} offset ${offset}`).then(data => data, error => {
+		if (typeof error !== 'string') {
+			return Promise.reject(error);
+		} else if (error.includes('missing EOF at \'offset\'')) {
+			return query(`select * from ${tableName} limit ${limit}`);
+		}
+	});
 };
 
 const logInfo = (step, connectionInfo, logger) => {
@@ -453,4 +462,4 @@ const getSslCerts = (options, app) => {
 	}
 };
 
-const isSsl = (ssl) => ssl && ssl !== 'false';
+const isSsl = (ssl) => ssl && ssl !== 'false' && ssl !== 'https';
