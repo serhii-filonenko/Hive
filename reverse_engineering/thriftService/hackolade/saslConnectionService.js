@@ -21,8 +21,8 @@ const createKerberosConnection = (kerberosAuthProcess, logger) => (host, port, o
 		password: options.krb5.password,
 		host,
 		port,
-	}).then(() => {
-		return connection.assignStream(ThriftConnection);
+	}).then((data) => {
+		return connection.assignStream(ThriftConnection, data.client);
 	});
 };
 
