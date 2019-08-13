@@ -1,16 +1,7 @@
 const net = require('net');
 
-const createPackage = (body) => {
-	const bodyLength = new Buffer(4);
-
-	bodyLength.writeUInt32BE(body.length);
-
-	return Buffer.concat([ bodyLength, body ]);
-};
-
 const tcpConnection = (port, host, options) => {
 	let stream;
-	let encoder = (data, cb) => cb(null, data); 
 
 	return {
 		connect() {
@@ -19,36 +10,7 @@ const tcpConnection = (port, host, options) => {
 			return stream;
 		},
 
-		assignStream(connection, client) {
-			const savedWrite = connection.prototype.write;
-			const savedReceiver = options.transport.receiver;
-
-			connection.prototype.write = function (data) {
-				client.wrap(data.slice(4).toString('base64'), { encode: 1 }, (err, encodedData) => {
-					if (err) {
-						throw err;
-					}
-
-					const payload = Buffer.from(encodedData, 'base64');
-
-					savedWrite.call(this, createPackage(payload));
-				});
-			};
-
-			options.transport.receiver = (handle, seqid) => {
-				return savedReceiver((frame) => {
-					client.unwrap(frame.inBuf.toString('base64'), (err, decodedData) => {
-						if (err) {
-							throw err;
-						} else {
-							const payload = Buffer.from(decodedData, 'base64');
-
-							handle(new options.transport(payload, seqid));
-						}
-					});
-				});
-			};
-
+		assignStream(connection) {
 			const conn = new connection(stream, options);
 
 			conn.host = host;
