@@ -63,6 +63,16 @@ const createPackage = (status, body) => {
 	return Buffer.concat([ new Buffer([ status ]), bodyLength, body ]);
 };
 
+const getQopName = (qop) => {
+	if (qop === QOP_AUTH) {
+		return 'auth';
+	} else if (qop === QOP_AUTH_INTEGRITY) {
+		return 'auth-int';
+	} else {
+		return 'auth-conf';
+	}
+};
+
 const kerberosAuthentication = (kerberosAuthProcess, connection, logger) => (options) => new Promise((resolve, reject) => {
 	const inst = new kerberosAuthProcess(
 		options.krb_host,
@@ -138,6 +148,9 @@ const kerberosAuthentication = (kerberosAuthProcess, connection, logger) => (opt
 					}
 
 					qualityOfProtection = qop;
+
+					logger.log('kerberos authentication. Step 3. Transition #' + transition + ': quality of protection is ' + getQopName(qop));
+
 					connection.write(createPackage(OK, new Buffer(response || '', 'base64')));
 				});
 			} else if (result === COMPLETE) {
