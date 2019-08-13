@@ -148,13 +148,10 @@ const kerberosAuthentication = (kerberosAuthProcess, connection, logger) => (opt
 					}
 
 					qualityOfProtection = qop;
-
-					logger.log('kerberos authentication. Step 3. Transition #' + transition + ': quality of protection is ' + getQopName(qop));
-
 					connection.write(createPackage(OK, new Buffer(response || '', 'base64')));
 				});
 			} else if (result === COMPLETE) {
-				logger.log('kerberos authentication. Step 3. Transition #' + transition + ': completed');
+				logger.log('kerberos authentication. Step 3. Transition #' + transition + ': completed. Chosen QOP: ' + getQopName(qualityOfProtection));
 				
 				onSuccess();
 			} else {
