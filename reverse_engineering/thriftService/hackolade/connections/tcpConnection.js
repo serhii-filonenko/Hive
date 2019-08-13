@@ -36,19 +36,17 @@ const tcpConnection = (port, host, options) => {
 			};
 
 			options.transport.receiver = (handle) => {
-				const mainReceiver = savedReceiver(handle);
-
-				return (data) => {
-					client.unwrap(data.slice(4).toString('base64'), (err, decodedData) => {
+				return savedReceiver((frame) => {
+					client.unwrap(frame.inBuf.toString('base64'), (err, decodedData) => {
 						if (err) {
 							throw err;
+						} else {
+							const payload = Buffer.from(decodedData, 'base64');
+
+							handle(new options.transport(payload));
 						}
-
-						const payload = Buffer.from(decodedData, 'base64');
-
-						mainReceiver(createPackage(payload));
 					});
-				};
+				});
 			};
 
 			const conn = new connection(stream, options);
