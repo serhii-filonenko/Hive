@@ -35,7 +35,7 @@ const tcpConnection = (port, host, options) => {
 				});
 			};
 
-			options.transport.receiver = (handle) => {
+			options.transport.receiver = (handle, seqid) => {
 				return savedReceiver((frame) => {
 					client.unwrap(frame.inBuf.toString('base64'), (err, decodedData) => {
 						if (err) {
@@ -43,7 +43,7 @@ const tcpConnection = (port, host, options) => {
 						} else {
 							const payload = Buffer.from(decodedData, 'base64');
 
-							handle(new options.transport(payload));
+							handle(new options.transport(payload, seqid));
 						}
 					});
 				});
