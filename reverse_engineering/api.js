@@ -194,11 +194,11 @@ module.exports = {
 								.then((documentPackage) => {
 									logger.progress({ message: `Start creating schema`, containerName: dbName, entityName: tableName });
 
-									return Promise.all([
-										query(`describe formatted ${tableName}`),
-										query(`describe extended ${tableName}`),
-										exec(`select * from ${tableName} limit 1`).then(cursor.getSchema),
-									]).then(([formattedTable, extendedTable, tableSchema]) => {
+									return allChain(
+										() => query(`describe formatted ${tableName}`),
+										() => query(`describe extended ${tableName}`),
+										() => exec(`select * from ${tableName} limit 1`).then(cursor.getSchema)
+									).then(([formattedTable, extendedTable, tableSchema]) => {
 										const tableInfo = hiveHelper
 											.getFormattedTable(
 												...cursor.getTCLIService(),
@@ -353,15 +353,34 @@ const getDataByPagination = (pagination, limit, callback) => new Promise((resolv
 	);
 });
 
+const allChain = (...promises) => {
+	let result = [];
+
+	return promises.reduce((promise, next, i) => {
+		return promise.then((data) => {
+			if (i !== 0) {
+				result.push(data);
+			}
+
+			return next();
+		});
+	}, Promise.resolve())
+	.then(data => {
+		result.push(data);
+
+		return result;
+	});
+};
+
 const getExecutorWithResult = (cursor, handler) => {
 	const resultParser = hiveHelper.getResultParser(...cursor.getTCLIService());
 	
 	return (...args) => {
 		return handler(...args).then(resp => {
-			return Promise.all([
-				cursor.fetchResult(resp),
-				cursor.getSchema(resp)
-			]);
+			return allChain(
+				() => cursor.fetchResult(resp),
+				() => cursor.getSchema(resp)
+			);
 		}).then(([ resultResp, schemaResp ]) => {
 			return resultParser(schemaResp, resultResp)
 		});
