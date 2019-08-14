@@ -12,7 +12,7 @@ const tcpConnection = (port, host, options) => {
 
 		assignStream(connection) {
 			const conn = new connection(stream, options);
-	
+
 			conn.host = host;
 			conn.port = port;
 			stream.emit('connect');
