@@ -126,6 +126,10 @@
 				"inputKeyword": "path",
 				"inputType": "text",
 				"inputPlaceholder": "hive2",
+				"disable": {
+					"key": "authMechanism",
+					"value": "GSSAPI"
+				},
 				"dependency": {
 					"key": "mode",
 					"value": "http"
