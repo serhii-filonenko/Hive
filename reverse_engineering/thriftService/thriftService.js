@@ -1,6 +1,7 @@
 const thrift = require('thrift');
 const createKerberosConnection = require('./hackolade/saslConnectionService').createKerberosConnection;
 const createLdapConnection = require('./hackolade/saslConnectionService').createLdapConnection;
+const createHttpConnection = require('./hackolade/httpConnection').createHttpConnection;
 
 const getConnectionByMechanism = (authMech, mode) => {
 	if (authMech === 'NOSASL') {
@@ -14,15 +15,22 @@ const getConnectionByMechanism = (authMech, mode) => {
 			transport: thrift.TFramedTransport
 		};
 	} else if (authMech === 'LDAP') {
-		return {
-			protocol: thrift.TBinaryProtocol,
-			transport: thrift.TFramedTransport
-		};
+		if (mode ==='http') {
+			return {
+				protocol: thrift.TBinaryProtocol,
+				transport: thrift.TBufferedTransport
+			};
+		} else {
+			return {
+				protocol: thrift.TBinaryProtocol,
+				transport: thrift.TFramedTransport
+			};
+		}
 	} else if (authMech === 'PLAIN') {
 		if (mode ==='http') {
 			return {
-				transport: thrift.TBufferedTransport,
-				protocol: thrift.TBinaryProtocol
+				protocol: thrift.TBinaryProtocol,
+				transport: thrift.TBufferedTransport
 			};
 		} else {
 			return {
@@ -61,27 +69,24 @@ const getConnection = cacheCall((TCLIService, kerberosAuthProcess, parameters, l
 	let connectionHandler = options.ssl ? thrift.createSSLConnection : thrift.createConnection;
 
 	if (mode === 'http') {
-		connectionHandler = thrift.createHttpConnection;
+		connectionHandler = createHttpConnection;
 	}
 
 	if (authMech === 'GSSAPI') {
 		connectionHandler = createKerberosConnection(kerberosAuthProcess, logger);
 	}
 
-	if (authMech === 'LDAP') {
+	if (authMech === 'LDAP' && mode !== 'http') {
 		connectionHandler = createLdapConnection(kerberosAuthProcess);
 	}
 
-	if (authMech === 'PLAIN') {
-		if (mode === 'http') {
-			connectionHandler = thrift.createHttpConnection;
-		} else {
-			options.username = options.username || 'anonymous';
-			options.password = options.password || 'anonymous';
+	if (authMech === 'PLAIN' && mode !== 'http') {
+		options.username = options.username || 'anonymous';
+		options.password = options.password || 'anonymous';
 
-			connectionHandler = createLdapConnection(kerberosAuthProcess);
-		}
+		connectionHandler = createLdapConnection(kerberosAuthProcess);
 	}
+
 	const connection = connectionHandler(host, port, Object.assign({
 		https: false,
 		debug: true,
@@ -127,7 +132,7 @@ const getBinaryConnectionParams = ({ host, port, authMech, options }) => {
 const getHttpConnectionParams = ({ host, port, username, password, authMech, options }) => {
 	const headers = options.headers || {};
 
-	if (authMech === 'PLAIN' || authMech === 'NOSASL') {
+	if (authMech === 'PLAIN' || authMech === 'NOSASL' || authMech === 'LDAP') {
 		username = username || 'anonymous';
 		password = password || 'anonymous';
 	}
