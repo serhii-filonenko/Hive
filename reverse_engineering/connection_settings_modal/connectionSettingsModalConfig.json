@@ -105,7 +105,7 @@
 				],
 				"dependency": {
 					"key": "authMechanism",
-					"value": ["NOSASL", "PLAIN", ""]
+					"value": ["NOSASL", "PLAIN", "LDAP", ""]
 				}
 			},
 			{
@@ -118,7 +118,7 @@
 				"disable": true,
 				"dependency": {
 					"key": "authMechanism",
-					"value": [ "GSSAPI", "LDAP" ]
+					"value": [ "GSSAPI" ]
 				}
 			},
 			{
