@@ -19,7 +19,7 @@ module.exports = {
 		const MongoAuthProcess = app.require('kerberos').processes.MongoAuthProcess;
 
 		connectionInfo.isHTTPS = Boolean(
-			connectionInfo.mode === 'http' && connectionInfo.ssl === 'https'
+			connectionInfo.mode === 'http' && (isSsl(connectionInfo.ssl) || connectionInfo.ssl === 'https')
 		); 
 
 		getSslCerts(connectionInfo, app)
@@ -476,8 +476,14 @@ const getKeystoreCertificates = (options, app) => new Promise((resolve, reject) 
 const getSslCerts = (options, app) => {
 	if (options.ssl === 'jks') {
 		return getKeystoreCertificates(options, app);
-	} else {
+	} else if (isSsl(options.ssl)) {
 		return Promise.resolve(getAuthorityCertificates(options));
+	} else {
+		return Promise.resolve({
+			cert: '',
+			key: '',
+			ca: ''
+		});
 	}
 };
 
