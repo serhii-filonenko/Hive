@@ -2,9 +2,15 @@ const thrift = require('thrift');
 const createKerberosConnection = require('./hackolade/saslConnectionService').createKerberosConnection;
 const createLdapConnection = require('./hackolade/saslConnectionService').createLdapConnection;
 const createHttpConnection = require('./hackolade/httpConnection').createHttpConnection;
+const createKerberosHttpConnection = require('./hackolade/kerberosHttpConnection').createKerberosHttpConnection;
 
 const getConnectionByMechanism = (authMech, mode) => {
-	if (authMech === 'NOSASL') {
+	if (mode === 'http') {
+		return {
+			protocol: thrift.TBinaryProtocol,
+			transport: thrift.TBufferedTransport
+		};
+	} else if (authMech === 'NOSASL') {
 		return {
 			transport: thrift.TBufferedTransport,
 			protocol: thrift.TBinaryProtocol
@@ -15,29 +21,15 @@ const getConnectionByMechanism = (authMech, mode) => {
 			transport: thrift.TFramedTransport
 		};
 	} else if (authMech === 'LDAP') {
-		if (mode ==='http') {
-			return {
-				protocol: thrift.TBinaryProtocol,
-				transport: thrift.TBufferedTransport
-			};
-		} else {
-			return {
-				protocol: thrift.TBinaryProtocol,
-				transport: thrift.TFramedTransport
-			};
-		}
+		return {
+			protocol: thrift.TBinaryProtocol,
+			transport: thrift.TFramedTransport
+		};
 	} else if (authMech === 'PLAIN') {
-		if (mode ==='http') {
-			return {
-				protocol: thrift.TBinaryProtocol,
-				transport: thrift.TBufferedTransport
-			};
-		} else {
-			return {
-				protocol: thrift.TBinaryProtocol,
-				transport: thrift.TFramedTransport
-			};
-		}
+		return {
+			protocol: thrift.TBinaryProtocol,
+			transport: thrift.TFramedTransport
+		};
 	} else {
 		throw new Error("The authentication mechanism " + authMech + " is not supported!");
 	}
@@ -63,8 +55,17 @@ const cacheCall = (func) => {
 	};
 };
 
-const getConnection = cacheCall((TCLIService, kerberosAuthProcess, parameters, logger) => {
-	const { host, port, authMech, mode, options } = parameters;
+const getConnection = cacheCall((connectionData = {}) => {
+	const TCLIService = connectionData.TCLIService;
+	const kerberosAuthProcess = connectionData.kerberosAuthProcess;
+	const kerberos = connectionData.kerberos;
+	const parameters = connectionData.parameters;
+	const logger = connectionData.logger;
+	const host = parameters.host;
+	const port = parameters.port;
+	const authMech = parameters.authMech;
+	const mode = parameters.mode;
+	const options = parameters.options;
 
 	let connectionHandler = options.ssl ? thrift.createSSLConnection : thrift.createConnection;
 
@@ -73,7 +74,11 @@ const getConnection = cacheCall((TCLIService, kerberosAuthProcess, parameters, l
 	}
 
 	if (authMech === 'GSSAPI') {
-		connectionHandler = createKerberosConnection(kerberosAuthProcess, logger);
+		if (mode === 'http') {
+			connectionHandler = createKerberosHttpConnection(kerberos, logger);
+		} else {
+			connectionHandler = createKerberosConnection(kerberosAuthProcess, logger);
+		}
 	}
 
 	if (authMech === 'LDAP' && mode !== 'http') {
@@ -114,7 +119,9 @@ const getProtocolByVersion = cacheCall((TCLIServiceTypes, version) => {
 });
 
 const getConnectionParamsByMode = (mode, data) => {
-	if (mode === 'http') {
+	if (mode === 'http' && data.authMech === 'GSSAPI') {
+		return getKerberosHttpConnectionParams(data);
+	} else if (mode === 'http') {
 		return getHttpConnectionParams(data);
 	} else if (data.authMech === 'GSSAPI') {
 		return getKerberosConnectionParams(data);
@@ -127,6 +134,21 @@ const getConnectionParamsByMode = (mode, data) => {
 
 const getBinaryConnectionParams = ({ host, port, authMech, options }) => {
 	return { host, port, authMech, options, mode: 'binary' };
+};
+
+const getKerberosHttpConnectionParams = (data) => {
+	const httpParameters = getHttpConnectionParams(data);
+	const kerberosParameters = (getKerberosConnectionParams(data).options || {}).krb5;
+
+	return {
+		host: data.host,
+		port: data.port,
+		authMech: data.authMech,
+		mode: 'http',
+		options: Object.assign({}, httpParameters.options, {
+			krb5: kerberosParameters
+		})
+	};
 };
 
 const getHttpConnectionParams = ({ host, port, username, password, authMech, options }) => {
@@ -212,7 +234,7 @@ const filterConfiguration = (configuration) => {
 	}), {});
 };
 
-const connect = ({ host, port, username, password, authMech, version, options, configuration, mode }) => (handler) => (TCLIService, TCLIServiceTypes, logger, kerberosAuthProcess) => {
+const connect = ({ host, port, username, password, authMech, version, options, configuration, mode }) => (handler) => (TCLIService, TCLIServiceTypes, logger, kerberosAuthProcess, kerberos) => {
 	const connectionsParams = getConnectionParamsByMode(mode, { host, port, username, password, authMech, version, options, mode, configuration });
 	const protocol = getProtocolByVersion(TCLIServiceTypes, version);
 
@@ -475,7 +497,13 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 		getCurrentProtocol
 	};
 
-	return getConnection(TCLIService, kerberosAuthProcess, connectionsParams, logger)
+	return getConnection({
+		parameters: connectionsParams,
+		TCLIService,
+		kerberosAuthProcess,
+		logger,
+		kerberos
+	})
 		.then(client => new Promise((resolve, reject) => {
 			logger.log('Connection established successfully');
 			logger.log('Starting session...');
