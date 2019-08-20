@@ -102,34 +102,13 @@
 				"options": [
 					{ "value": "binary", "label": "binary" },
 					{ "value": "http", "label": "http" }
-				],
-				"dependency": {
-					"key": "authMechanism",
-					"value": ["NOSASL", "PLAIN", "LDAP", ""]
-				}
-			},
-			{
-				"inputLabel": "Transport mode",
-				"inputKeyword": "mode",
-				"inputType": "select",
-				"options": [
-					{ "value": "binary", "label": "binary" }
-				],
-				"disable": true,
-				"dependency": {
-					"key": "authMechanism",
-					"value": [ "GSSAPI" ]
-				}
+				]
 			},
 			{
 				"inputLabel": "HTTP path",
 				"inputKeyword": "path",
 				"inputType": "text",
 				"inputPlaceholder": "hive2",
-				"disable": {
-					"key": "authMechanism",
-					"value": "GSSAPI"
-				},
 				"dependency": {
 					"key": "mode",
 					"value": "http"
