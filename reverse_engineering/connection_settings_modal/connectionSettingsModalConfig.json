@@ -63,7 +63,21 @@
 				"inputLabel": "User Name",
 				"inputKeyword": "user",
 				"inputType": "text",
-				"inputPlaceholder": "User Name"
+				"inputPlaceholder": "<USERNAME>@<REALM>",
+				"dependency": {
+					"key": "authMechanism",
+					"value": "GSSAPI"
+				}
+			},
+			{
+				"inputLabel": "User Name",
+				"inputKeyword": "user",
+				"inputType": "text",
+				"inputPlaceholder": "Username",
+				"dependency": {
+					"key": "authMechanism",
+					"value": ["NOSASL", "PLAIN", "LDAP", ""]
+				}
 			},
 			{
 				"inputLabel": "Password",
@@ -75,7 +89,7 @@
 				"inputLabel": "Service Name",
 				"inputKeyword": "krb_service",
 				"inputType": "text",
-				"inputPlaceholder": "hive",
+				"inputPlaceholder": "<service name, e.g.; hive>",
 				"dependency": {
 					"key": "authMechanism",
 					"value": "GSSAPI"
@@ -85,7 +99,7 @@
 				"inputLabel": "Kerberos host",
 				"inputKeyword": "krb_host",
 				"inputType": "text",
-				"inputPlaceholder": "",
+				"inputPlaceholder": "<fully qualified hostname>",
 				"dependency": {
 					"key": "authMechanism",
 					"value": "GSSAPI"
@@ -102,24 +116,7 @@
 				"options": [
 					{ "value": "binary", "label": "binary" },
 					{ "value": "http", "label": "http" }
-				],
-				"dependency": {
-					"key": "authMechanism",
-					"value": ["NOSASL", "PLAIN", "LDAP", ""]
-				}
-			},
-			{
-				"inputLabel": "Transport mode",
-				"inputKeyword": "mode",
-				"inputType": "select",
-				"options": [
-					{ "value": "binary", "label": "binary" }
-				],
-				"disable": true,
-				"dependency": {
-					"key": "authMechanism",
-					"value": [ "GSSAPI" ]
-				}
+				]
 			},
 			{
 				"inputLabel": "HTTP path",

@@ -169,6 +169,7 @@ const kerberosAuthentication = (kerberosAuthProcess, connection, logger) => (opt
 					return callback(err);
 				}
 				const qop = Buffer.from(response, 'base64')[0];
+				logger.log('kerberos authentication. Step 3. Transition #' + transition + '. Chosen QOP: ' + getQopName(qop));
 
 				client.wrap(response, { user }, (err, wrapped) => {
 					if (err) {

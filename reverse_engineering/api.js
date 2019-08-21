@@ -16,6 +16,7 @@ module.exports = {
 			connectionInfo.path = '/' + connectionInfo.path;
 		}
 
+		const kerberos = app.require('kerberos');
 		const MongoAuthProcess = app.require('kerberos').processes.MongoAuthProcess;
 
 		connectionInfo.isHTTPS = Boolean(
@@ -49,7 +50,7 @@ module.exports = {
 				log: (message) => {
 					logger.log('info', { message }, 'Query info')
 				}
-			}, MongoAuthProcess);
+			}, MongoAuthProcess, kerberos);
 		})
 		.then(({ cursor, session }) => {
 			cb(null, session, cursor);
