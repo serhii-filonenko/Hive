@@ -70,7 +70,7 @@
 				}
 			},
 			{
-				"inputLabel": "User Name",
+				"inputLabel": "User name",
 				"inputKeyword": "user",
 				"inputType": "text",
 				"inputPlaceholder": "Username",
@@ -86,7 +86,7 @@
 				"isHiddenKey": true
 			},
 			{
-				"inputLabel": "Service Name",
+				"inputLabel": "Service name",
 				"inputKeyword": "krb_service",
 				"inputType": "text",
 				"inputPlaceholder": "<service name, e.g.; hive>",
@@ -99,7 +99,7 @@
 				"inputLabel": "Kerberos host",
 				"inputKeyword": "krb_host",
 				"inputType": "text",
-				"inputPlaceholder": "<fully qualified hostname>",
+				"inputPlaceholder": "<fully qualified domain name>",
 				"dependency": {
 					"key": "authMechanism",
 					"value": "GSSAPI"
