@@ -181,8 +181,9 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Precision",
 				"propertyKeyword": "precision",
-				"propertyType": "text",
+				"propertyType": "numeric",
 				"valueType": "number",
+				"allowNegative": false,
 				"dependency": {
 					"key": "mode",
 					"value": "decimal"
@@ -191,8 +192,9 @@ making sure that you maintain a proper JSON format.
 			{
 				"propertyName": "Scale",
 				"propertyKeyword": "scale",
-				"propertyType": "text",
+				"propertyType": "numeric",
 				"valueType": "number",
+				"allowNegative": false,
 				"dependency": {
 					"key": "mode",
 					"value": "decimal"
