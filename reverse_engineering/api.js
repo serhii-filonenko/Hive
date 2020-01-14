@@ -16,8 +16,7 @@ module.exports = {
 			connectionInfo.path = '/' + connectionInfo.path;
 		}
 
-		const kerberos = app.require('kerberos');
-		const MongoAuthProcess = app.require('kerberos').processes.MongoAuthProcess;
+		const kerberos = () => app.require('kerberos');
 
 		connectionInfo.isHTTPS = Boolean(
 			connectionInfo.mode === 'http' && (isSsl(connectionInfo.ssl) || connectionInfo.ssl === 'https')
@@ -34,7 +33,7 @@ module.exports = {
 				port: connectionInfo.port,
 				username: connectionInfo.user,
 				password: connectionInfo.password,
-				authMech: connectionInfo.authMechanism || 'NOSASL',
+				authMech: connectionInfo.authMechanism || 'PLAIN',
 				version: connectionInfo.version,
 				mode: connectionInfo.mode,
 				configuration: {
@@ -50,7 +49,7 @@ module.exports = {
 				log: (message) => {
 					logger.log('info', { message }, 'Query info')
 				}
-			}, MongoAuthProcess, kerberos);
+			}, kerberos);
 		})
 		.then(({ cursor, session }) => {
 			cb(null, session, cursor);

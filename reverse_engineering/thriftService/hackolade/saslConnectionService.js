@@ -35,10 +35,10 @@ const createKerberosConnection = (kerberosAuthProcess, logger) => (host, port, o
 	});
 };
 
-const createLdapConnection = (kerberosAuthProcess) => (host, port, options) => {
+const createLdapConnection = () => (host, port, options) => {
 	const connection = getConnection(port, host, options);
 
-	return ldapAuthentication(kerberosAuthProcess, connection)({
+	return ldapAuthentication(connection)({
 		authMech: 'PLAIN',
 		username: options.username,
 		password: options.password,
@@ -186,58 +186,45 @@ const kerberosAuthentication = (kerberosAuthProcess, connection, logger) => (opt
 	});
 });
 
-const ldapAuthentication = (kerberosAuthProcess, connection) => (options) => new Promise((resolve, reject) => {
-	const inst = new kerberosAuthProcess(
-		'',
-		'',
-		options.port
-	);
+const ldapAuthentication = (connection) => (options) => new Promise((resolve, reject) => {
+	connection.connect();
 
-	inst.init(options.username, options.password, (err, client) => {
-		if (err) {
-			return reject(err);
+	const onError = (err) => {
+		connection.end();
+
+		reject(err);
+	};
+	const onSuccess = () => {
+		connection.removeListener('connect', onConnect);
+		connection.removeListener('data', onData);
+
+		resolve();
+	};
+	const onConnect = () => {
+		connection.write(createPackage(START, new Buffer(options.authMech)));
+		connection.write(createPackage(OK, Buffer.concat([
+			new Buffer(options.username || ""),
+			Buffer.from([0]),
+			new Buffer(options.username || ""),
+			Buffer.from([0]),
+			new Buffer(options.password || ""),
+		])));
+	};
+	const onData = (data) => {
+		const result = data[0];
+
+		if (result === COMPLETE) {
+			onSuccess();
+		} else {
+			const message = data.slice(5).toString();
+
+			onError(new Error('Authenticated error: ' + message));
 		}
+	};
 
-		connection.connect();
-
-		const onError = (err) => {
-			connection.end();
-
-			reject(err);
-		};
-		const onSuccess = () => {
-			connection.removeListener('connect', onConnect);
-			connection.removeListener('data', onData);
-
-			resolve({
-				client: client
-			});
-		};
-		const onConnect = () => {
-			connection.write(createPackage(START, new Buffer(options.authMech)));
-			connection.write(createPackage(OK, Buffer.concat([
-				new Buffer(options.username || ""),
-				Buffer.from([0]),
-				new Buffer(options.username || ""),
-				Buffer.from([0]),
-				new Buffer(options.password || ""),
-			])));
-		};
-		const onData = (data) => {
-			const result = data[0];
-
-			if (result === COMPLETE) {
-				onSuccess();
-			} else {
-				const message = data.slice(5).toString();
-
-				onError(new Error('Authenticated error: ' + message));
-			}
-		};
-
-		connection.addListener('connect', onConnect);
-		connection.addListener('data', onData);
-	});
+	connection.addListener('connect', onConnect);
+	connection.addListener('data', onData);
+	connection.addListener('error', onError);
 });
 
 exports.createKerberosConnection = createKerberosConnection;
