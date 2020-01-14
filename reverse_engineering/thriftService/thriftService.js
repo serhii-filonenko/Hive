@@ -57,7 +57,6 @@ const cacheCall = (func) => {
 
 const getConnection = cacheCall((connectionData = {}) => {
 	const TCLIService = connectionData.TCLIService;
-	const kerberosAuthProcess = connectionData.kerberosAuthProcess;
 	const kerberos = connectionData.kerberos;
 	const parameters = connectionData.parameters;
 	const logger = connectionData.logger;
@@ -75,21 +74,21 @@ const getConnection = cacheCall((connectionData = {}) => {
 
 	if (authMech === 'GSSAPI') {
 		if (mode === 'http') {
-			connectionHandler = createKerberosHttpConnection(kerberos, logger);
+			connectionHandler = createKerberosHttpConnection(kerberos(), logger);
 		} else {
-			connectionHandler = createKerberosConnection(kerberosAuthProcess, logger);
+			connectionHandler = createKerberosConnection(kerberos().processes.MongoAuthProcess, logger);
 		}
 	}
 
 	if (authMech === 'LDAP' && mode !== 'http') {
-		connectionHandler = createLdapConnection(kerberosAuthProcess);
+		connectionHandler = createLdapConnection();
 	}
 
 	if (authMech === 'PLAIN' && mode !== 'http') {
 		options.username = options.username || 'anonymous';
 		options.password = options.password || 'anonymous';
 
-		connectionHandler = createLdapConnection(kerberosAuthProcess);
+		connectionHandler = createLdapConnection();
 	}
 
 	const connection = connectionHandler(host, port, Object.assign({
@@ -234,7 +233,7 @@ const filterConfiguration = (configuration) => {
 	}), {});
 };
 
-const connect = ({ host, port, username, password, authMech, version, options, configuration, mode }) => (handler) => (TCLIService, TCLIServiceTypes, logger, kerberosAuthProcess, kerberos) => {
+const connect = ({ host, port, username, password, authMech, version, options, configuration, mode }) => (handler) => (TCLIService, TCLIServiceTypes, logger, kerberos) => {
 	const connectionsParams = getConnectionParamsByMode(mode, { host, port, username, password, authMech, version, options, mode, configuration });
 	const protocol = getProtocolByVersion(TCLIServiceTypes, version);
 
@@ -500,7 +499,6 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 	return getConnection({
 		parameters: connectionsParams,
 		TCLIService,
-		kerberosAuthProcess,
 		logger,
 		kerberos
 	})
