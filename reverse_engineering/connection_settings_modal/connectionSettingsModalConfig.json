@@ -34,7 +34,8 @@
 				"inputType": "select",
 				"options": [
 					{ "value": "3.x", "label": "3.x" },
-					{ "value": "2.x", "label": "2.x" }
+					{ "value": "2.x", "label": "2.x" },
+					{ "value": "1.x", "label": "1.x" }
 				]
 			}
 		]
