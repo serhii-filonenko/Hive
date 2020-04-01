@@ -1,7 +1,7 @@
 {
 	"name": "Hive",
-	"version": "0.1.20",
-	"versionDate": "2020-01-14",
+	"version": "0.1.21",
+	"versionDate": "2020-04-01",
 	"author": "hackolade",
 	"engines": {
 		"hackolade": "3.4.0",
@@ -12,6 +12,7 @@
 			"applicationTarget": "HIVE",
 			"title": "Apache Hive",
 			"versions": [
+				"1.x",
 				"2.x",
 				"3.x"
 			]
