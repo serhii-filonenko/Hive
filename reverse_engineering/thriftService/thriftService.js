@@ -110,7 +110,9 @@ const getConnection = cacheCall((connectionData = {}) => {
 });
 
 const getProtocolByVersion = cacheCall((TCLIServiceTypes, version) => {
-	if (version === '2.x') {
+	if (version === '1.x') {
+		return TCLIServiceTypes.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V7;
+	} else if (version === '2.x') {
 		return TCLIServiceTypes.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8;
 	} else {
 		return TCLIServiceTypes.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V9;
