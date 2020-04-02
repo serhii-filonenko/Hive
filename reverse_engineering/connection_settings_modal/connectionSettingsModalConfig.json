@@ -37,6 +37,13 @@
 					{ "value": "2.x", "label": "2.x" },
 					{ "value": "1.x", "label": "1.x" }
 				]
+			},
+			{
+				"inputLabel": "Database name",
+				"inputKeyword": "dbName",
+				"inputType": "text",
+				"inputPlaceholder": "",
+				"description": "Name of the database (optional)"
 			}
 		]
 	}, {

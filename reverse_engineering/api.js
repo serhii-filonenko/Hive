@@ -78,7 +78,7 @@ module.exports = {
 	getDbCollectionsNames: function(connectionInfo, logger, cb, app) {
 		logInfo('Retrieving databases and tables information', connectionInfo, logger);
 		
-		const { includeSystemCollection } = connectionInfo;
+		const { includeSystemCollection, dbName } = connectionInfo;
 
 		this.connect(connectionInfo, logger, (err, session, cursor) => {
 			if (err) {
@@ -89,9 +89,15 @@ module.exports = {
 			const exec = cursor.asyncExecute.bind(null, session.sessionHandle);
 			const execWithResult = getExecutorWithResult(cursor, exec);
 			const getTables = getExecutorWithResult(cursor, cursor.getTables.bind(null, session.sessionHandle));
+			const getDbNames = () => {
+				if (dbName) {
+					return Promise.resolve([dbName]);
+				}
 
-			execWithResult('show databases')
-				.then(databases => databases.map(d => d.database_name))
+				return execWithResult('show databases').then(databases => databases.map(d => d.database_name));
+			};
+
+			getDbNames()
 				.then(databases => {
 					async.mapSeries(databases, (dbName, next) => {
 						const tableTypes = [ "TABLE", "VIEW", "GLOBAL TEMPORARY", "TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM" ];

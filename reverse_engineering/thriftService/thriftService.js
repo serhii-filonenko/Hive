@@ -277,11 +277,22 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 			return Promise.resolve([]);
 		}
 	
-		const getResult = (res, next) => {
+		const getResult = ([res, next]) => {
 			if (typeof next === 'function') {
-				next()
+				return next()
+					.then((res) => {
+						if (hasMoreRows(res)) {
+							return Promise.resolve([[res], () => {
+								return fetchNextResult(executeStatementResponse.operationHandle, limit);
+							}]);
+						} else {
+							return Promise.resolve([[res]]);
+						}
+					})
 					.then(getResult)
-					.then(prevRes => [...res, ...prevRes]);
+					.then(prevRes => {
+						return [...res, ...prevRes];
+					});
 			} else {
 				return Promise.resolve(res);
 			}
@@ -289,15 +300,33 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 	
 		return fetchFirstResult(executeStatementResponse.operationHandle, limit)
 			.then(res => {
-				if (res.hasMoreRows) {
-					return Promise.resolve([res], () => {
+				if (hasMoreRows(res)) {
+					return Promise.resolve([[res], () => {
 						return fetchNextResult(executeStatementResponse.operationHandle, limit);
-					});
+					}]);
 				} else {
-					return Promise.resolve([res]);
+					return Promise.resolve([[res]]);
 				}
 			})
 			.then(getResult);
+	};
+
+	const hasMoreRows = (response) => {
+		if (response.hasMoreRows) {
+            return true;
+        }
+
+        const columns = (response.results || {}).columns || [];
+
+        if (!columns.length) {
+            return false;
+        }
+
+        const column = columns[0];
+
+        const columnValue = column['binaryVal'] || column['boolVal'] || column['byteVal'] || column['doubleVal'] || column['i16Val'] || column['i32Val'] || column['i64Val'] || column['stringVal'];
+
+        return (((columnValue || {}).values || {}).length || 0) > 0;
 	};
 	
 	const getSchema = (executeStatementResponse) => {
