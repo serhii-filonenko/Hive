@@ -177,7 +177,8 @@ const getHttpConnectionParams = ({ host, port, username, password, authMech, opt
 				nodeOptions: options.https ? {
 					ca: options.ca,
 					cert: options.cert,
-					key: options.key
+					key: options.key,
+					rejectUnauthorized: options.rejectUnauthorized === false ? false : true
 				} : {}
 			}
 		)

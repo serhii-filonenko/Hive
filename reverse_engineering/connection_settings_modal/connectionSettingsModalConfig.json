@@ -222,6 +222,15 @@
 					"key": "ssl",
 					"value": "jks"
 				}
+			},
+			{
+				"inputLabel": "Disable Reject Unauthorized",
+				"inputKeyword": "disableRejectUnauthorized",
+				"inputType": "checkbox",
+				"dependency": {
+					"key": "ssl",
+					"value": "https"
+				}
 			}
 		]	
 	}
