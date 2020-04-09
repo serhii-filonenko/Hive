@@ -43,7 +43,7 @@
 				"inputKeyword": "dbName",
 				"inputType": "text",
 				"inputPlaceholder": "",
-				"description": "Name of the database (optional)"
+				"description": "Optionally specify database name to limit scope of delivery"
 			}
 		]
 	}, {
@@ -221,6 +221,15 @@
 				"dependency": {
 					"key": "ssl",
 					"value": "jks"
+				}
+			},
+			{
+				"inputLabel": "Disable Reject Unauthorized",
+				"inputKeyword": "disableRejectUnauthorized",
+				"inputType": "checkbox",
+				"dependency": {
+					"key": "ssl",
+					"value": "https"
 				}
 			}
 		]	

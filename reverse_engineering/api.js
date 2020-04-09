@@ -22,6 +22,11 @@ module.exports = {
 			connectionInfo.mode === 'http' && (isSsl(connectionInfo.ssl) || connectionInfo.ssl === 'https')
 		); 
 
+		if (connectionInfo.ssl === 'https') {
+			const rootCas = require('ssl-root-cas/latest').create();
+			require('https').globalAgent.options.ca = rootCas;
+		}
+
 		getSslCerts(connectionInfo, app)
 		.then((sslCerts) => {
 			if (isSsl(connectionInfo.ssl)) {
@@ -44,6 +49,7 @@ module.exports = {
 					https: connectionInfo.isHTTPS,
 					path: connectionInfo.path,
 					ssl: isSsl(connectionInfo.ssl),
+					rejectUnauthorized: connectionInfo.disableRejectUnauthorized === true ? false : true,
 				}, sslCerts)
 			})()(TCLIService, TCLIServiceTypes, {
 				log: (message) => {
