@@ -25,7 +25,6 @@ module.exports = {
 		if (connectionInfo.ssl === 'https') {
 			const rootCas = require('ssl-root-cas/latest').create();
 			require('https').globalAgent.options.ca = rootCas;
-			require('https').globalAgent.options.secureProtocol = 'SSLv3_method';
 		}
 
 		getSslCerts(connectionInfo, app)
