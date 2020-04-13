@@ -23,7 +23,10 @@ module.exports = {
 		); 
 
 		if (connectionInfo.ssl === 'https') {
-			const rootCas = require('ssl-root-cas/latest').create();
+			const rootCas = require('ssl-root-cas/latest').inject();
+			if (connectionInfo.httpsCA) {
+				rootCas.addFile(connectionInfo.httpsCA);
+			}
 			require('https').globalAgent.options.ca = rootCas;
 		}
 

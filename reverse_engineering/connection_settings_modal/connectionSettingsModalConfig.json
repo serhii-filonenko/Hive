@@ -232,6 +232,18 @@
 					"key": "ssl",
 					"value": "jks"
 				}
+			},
+			{
+				"inputLabel": "Certificate Authority",
+				"inputKeyword": "httpsCA",
+				"inputPlaceholder": "ca.crt",
+				"description": "Issued Certificate Authority",
+				"inputType": "file",
+				"extensions": ["*"],
+				"dependency": {
+					"key": "ssl",
+					"value": "https"
+				}
 			}
 		]	
 	}
