@@ -25,7 +25,9 @@ module.exports = {
 		if (connectionInfo.ssl === 'https') {
 			const rootCas = require('ssl-root-cas/latest').inject();
 			if (connectionInfo.httpsCA) {
-				rootCas.addFile(connectionInfo.httpsCA);
+				connectionInfo.httpsCA.split(',').filter(Boolean).forEach(
+					certPath => rootCas.addFile(certPath.trim())
+				);
 			}
 			require('https').globalAgent.options.ca = rootCas;
 		}
