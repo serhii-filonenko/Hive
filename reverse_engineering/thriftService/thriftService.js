@@ -543,6 +543,7 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 					logger.log('Session was not started');
 				} else {
 					logger.log('Session started successfully');
+					logger.log(JSON.stringify(session));
 				}
 
 				if (typeof handler === 'function') {
