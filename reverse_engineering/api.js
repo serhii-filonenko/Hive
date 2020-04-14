@@ -47,8 +47,8 @@ module.exports = {
 				version: connectionInfo.version,
 				mode: connectionInfo.mode,
 				configuration: {
-					krb_host: connectionInfo.krb_host,
-					krb_service: connectionInfo.krb_service
+					krb_host: connectionInfo.authMechanism === 'GSSAPI' ? connectionInfo.krb_host : undefined,
+					krb_service: connectionInfo.authMechanism === 'GSSAPI' ? connectionInfo.krb_service : undefined
 				},
 				options: Object.assign({}, {
 					https: connectionInfo.isHTTPS,

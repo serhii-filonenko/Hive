@@ -541,9 +541,13 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 			client.OpenSession(request, (err, session) => {
 				if (err) {
 					logger.log('Session was not started');
+				} else if (session && session.status.statusCode === TCLIServiceTypes.TStatusCode.ERROR_STATUS) {
+					logger.log('Session was not started');
+					logger.log('Status: ' + session.status.statusCode + '\nInfo Message: ' + (session.status.infoMessages || []).join('\n'));
+					err = new Error(session.status.errorMessage);
 				} else {
 					logger.log('Session started successfully');
-					logger.log(JSON.stringify(session));
+					logger.log('Status: ' + session.status.statusCode);
 				}
 
 				if (typeof handler === 'function') {
