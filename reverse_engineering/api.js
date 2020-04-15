@@ -143,6 +143,10 @@ module.exports = {
 
 	getDbCollectionsData: function(data, logger, cb, app){
 		logger.log('info', data, 'Retrieving schema', data.hiddenKeys);
+		const progress = (message) => {
+			logger.log('info', message, 'Retrieving schema', data.hiddenKeys);
+			logger.progress(message);
+		};
 
 		const tables = data.collectionData.collections;
 		const databases = data.collectionData.dataBaseNames;
@@ -170,21 +174,22 @@ module.exports = {
 					.then(() => query(`describe database ${dbName}`))
 					.then((databaseInfo) => {
 						async.mapSeries(tableNames, (tableName, nextTable) => {
-							logger.progress({ message: 'Start sampling data', containerName: dbName, entityName: tableName });
+							progress({ message: 'Start sampling data', containerName: dbName, entityName: tableName });
 
 							getLimitByCount(recordSamplingSettings, query.bind(null, `select count(*) as count from ${tableName}`))
 								.then(countDocuments => {
-									logger.progress({ message: 'Start getting data from database', containerName: dbName, entityName: tableName });
+									progress({ message: 'Start getting data from database', containerName: dbName, entityName: tableName });
 
 									return getDataByPagination(pagination, countDocuments, (limit, offset, next) => {
 										retrieveData(query, tableName, limit, offset).then(data => {
-												logger.progress({ message: `${limit * (offset + 1)}/${countDocuments}`, containerName: dbName, entityName: tableName });
+												progress({ message: `${limit * (offset + 1)}/${countDocuments}`, containerName: dbName, entityName: tableName });
 												next(null, data);
 											}, err => next(err));
 									});
 								})
+								.then(documents => documents || [])
 								.then((documents) => {
-									logger.progress({ message: `Data has successfully got`, containerName: dbName, entityName: tableName });									
+									progress({ message: `Data has successfully got`, containerName: dbName, entityName: tableName });									
 
 									const documentPackage = {
 										dbName,
@@ -208,7 +213,7 @@ module.exports = {
 									return documentPackage;
 								})
 								.then((documentPackage) => {
-									logger.progress({ message: `Start creating schema`, containerName: dbName, entityName: tableName });
+									progress({ message: `Start creating schema`, containerName: dbName, entityName: tableName });
 
 									return allChain(
 										() => query(`describe formatted ${tableName}`),
@@ -229,7 +234,7 @@ module.exports = {
 											relationships: convertForeignKeysToRelationships(dbName, tableName, tableInfo.foreignKeys || [])
 										};
 									}).then(({ jsonSchema, relationships }) => {
-										logger.progress({ message: `Schema has created successfully`, containerName: dbName, entityName: tableName });
+										progress({ message: `Schema has created successfully`, containerName: dbName, entityName: tableName });
 										
 										return getPrimaryKeys(dbName, tableName)
 											.then(keys => {
@@ -240,7 +245,7 @@ module.exports = {
 												return jsonSchema;
 											})
 											.then(jsonSchema => {
-												logger.progress({ message: `Primary keys have retrieved successfully`, containerName: dbName, entityName: tableName });
+												progress({ message: `Primary keys have retrieved successfully`, containerName: dbName, entityName: tableName });
 
 												return ({ jsonSchema, relationships });
 											})
@@ -253,7 +258,7 @@ module.exports = {
 												return getIndexes(result);
 											})
 											.then(indexes => {
-												logger.progress({ message: `Indexes have retrieved successfully`, containerName: dbName, entityName: tableName });
+												progress({ message: `Indexes have retrieved successfully`, containerName: dbName, entityName: tableName });
 												
 												documentPackage.entityLevel.SecIndxs = indexes;
 
