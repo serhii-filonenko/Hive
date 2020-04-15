@@ -35,7 +35,7 @@ module.exports = {
 		getSslCerts(connectionInfo, app)
 		.then((sslCerts) => {
 			if (isSsl(connectionInfo.ssl)) {
-				logger.log('info', 'SSL certificates got successfully', 'Connection')
+				logger.log('info', 'SSL certificates successfully retrieved', 'Connection')
 			}
 
 			return thriftService.connect({
@@ -189,7 +189,7 @@ module.exports = {
 								})
 								.then(documents => documents || [])
 								.then((documents) => {
-									progress({ message: `Data has successfully got`, containerName: dbName, entityName: tableName });									
+									progress({ message: `Data fetched successfully`, containerName: dbName, entityName: tableName });									
 
 									const documentPackage = {
 										dbName,
@@ -234,7 +234,7 @@ module.exports = {
 											relationships: convertForeignKeysToRelationships(dbName, tableName, tableInfo.foreignKeys || [])
 										};
 									}).then(({ jsonSchema, relationships }) => {
-										progress({ message: `Schema has created successfully`, containerName: dbName, entityName: tableName });
+										progress({ message: `Schema successfully created`, containerName: dbName, entityName: tableName });
 										
 										return getPrimaryKeys(dbName, tableName)
 											.then(keys => {
@@ -245,7 +245,7 @@ module.exports = {
 												return jsonSchema;
 											})
 											.then(jsonSchema => {
-												progress({ message: `Primary keys have retrieved successfully`, containerName: dbName, entityName: tableName });
+												progress({ message: `Primary keys successfully retrieved`, containerName: dbName, entityName: tableName });
 
 												return ({ jsonSchema, relationships });
 											})
@@ -258,7 +258,7 @@ module.exports = {
 												return getIndexes(result);
 											})
 											.then(indexes => {
-												progress({ message: `Indexes have retrieved successfully`, containerName: dbName, entityName: tableName });
+												progress({ message: `Indexes successfully retrieved`, containerName: dbName, entityName: tableName });
 												
 												documentPackage.entityLevel.SecIndxs = indexes;
 
