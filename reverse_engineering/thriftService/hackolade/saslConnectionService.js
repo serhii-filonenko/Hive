@@ -1,6 +1,11 @@
 const ThriftConnection = require('thrift').Connection;
 const sslTcpConnection = require('./connections/sslTcpConnection');
 const tcpConnection = require('./connections/tcpConnection');
+const getQopConnection = require('./createQualityOfProtectionCodec');
+
+const QOP_AUTH = 1;
+const QOP_AUTH_INTEGRITY = 2;
+const QOP_AUTH_CONFIDENTIALITY = 4;
 
 const getConnection = (port, host, options) => {
 	if (options.ssl) {
@@ -10,10 +15,10 @@ const getConnection = (port, host, options) => {
 	}
 };
 
-const createKerberosConnection = (kerberosAuthProcess) => (host, port, options) => {
+const createKerberosConnection = (kerberosAuthProcess, logger) => (host, port, options) => {
 	const connection = getConnection(port, host, options);
 
-	return kerberosAuthentication(kerberosAuthProcess, connection)({
+	return kerberosAuthentication(kerberosAuthProcess, connection, logger)({
 		authMech: 'GSSAPI',
 		krb_host: options.krb5.krb_host,
 		krb_service: options.krb5.krb_service,
@@ -21,15 +26,19 @@ const createKerberosConnection = (kerberosAuthProcess) => (host, port, options) 
 		password: options.krb5.password,
 		host,
 		port,
-	}).then(() => {
-		return connection.assignStream(ThriftConnection);
+	}).then((data) => {
+		if (data.qop === QOP_AUTH) {
+			return connection.assignStream(ThriftConnection);
+		} else {
+			return connection.assignStream(getQopConnection(ThriftConnection, data.client));
+		}
 	});
 };
 
-const createLdapConnection = (kerberosAuthProcess) => (host, port, options) => {
+const createLdapConnection = () => (host, port, options) => {
 	const connection = getConnection(port, host, options);
 
-	return ldapAuthentication(kerberosAuthProcess, connection)({
+	return ldapAuthentication(connection)({
 		authMech: 'PLAIN',
 		username: options.username,
 		password: options.password,
@@ -54,36 +63,62 @@ const createPackage = (status, body) => {
 	return Buffer.concat([ new Buffer([ status ]), bodyLength, body ]);
 };
 
-const kerberosAuthentication = (kerberosAuthProcess, connection) => (options) => new Promise((resolve, reject) => {
+const getQopName = (qop) => {
+	if (qop === QOP_AUTH) {
+		return 'auth';
+	} else if (qop === QOP_AUTH_INTEGRITY) {
+		return 'auth-int';
+	} else {
+		return 'auth-conf';
+	}
+};
+
+const kerberosAuthentication = (kerberosAuthProcess, connection, logger) => (options) => new Promise((resolve, reject) => {
 	const inst = new kerberosAuthProcess(
 		options.krb_host,
 		options.port,
 		options.krb_service
 	);
+	let transition = 0;
+	let qualityOfProtection = QOP_AUTH;
+
+	logger.log('Start Kerberos authentication');
 
 	inst.init(options.username, options.password, (err, client) => {
 		if (err) {
+			logger.log('kerberos authentication. Step 1. Initialization: failed');
+
 			return reject(err);
+		} else {
+			logger.log('kerberos authentication. Step 1. Initialization: succeed');
 		}
 
 		connection.connect();
 		const onError = (err) => {
+			logger.log('kerberos authentication. Connection error');
+			
 			connection.end();
 
 			reject(err);
 		};
 		const onSuccess = () => {
+			logger.log('kerberos authentication. Successfully authenticated');
+			
 			connection.removeListener('connect', onConnect);
 			connection.removeListener('data', onData);
 
 			resolve({
-				client: client
+				client: client,
+				qop: qualityOfProtection
 			});
 		};
 		const onConnect = () => {
+			logger.log('kerberos authentication. Successfully connected to server');
+			
 			connection.write(createPackage(START, new Buffer(options.authMech)));
 
 			inst.transition('', (err, token) => {
+				logger.log('kerberos authentication. Step 2. Start authentication.');
 				if (err) {
 					return onError(err);
 				}
@@ -91,26 +126,59 @@ const kerberosAuthentication = (kerberosAuthProcess, connection) => (options) =>
 				connection.write(createPackage(OK, new Buffer(token || '', 'base64')));
 			});
 		};
+
 		const onData = (data) => {
+			transition++;
+			logger.log('kerberos authentication. Step 3. Transition #' + transition + '.');
+
 			const result = data[0];
 
 			if (result === OK) {
+				logger.log('kerberos authentication. Step 3. Transition #' + transition + ': succeed');
+				
 				const payload = data.slice(5).toString('base64');
-					
-				inst.transition(payload, (err, response) => {
+				const isLastTransition = (transition === 2);
+				const nextTransition = isLastTransition
+					? thirdTransition.bind(null, client, inst.username)
+					: inst.transition.bind(inst);
+				
+				nextTransition(payload, (err, response, qop) => {
 					if (err) {
 						return onError(err);
 					}
 
+					qualityOfProtection = qop;
 					connection.write(createPackage(OK, new Buffer(response || '', 'base64')));
 				});
 			} else if (result === COMPLETE) {
+				logger.log('kerberos authentication. Step 3. Transition #' + transition + ': completed. Chosen QOP: ' + getQopName(qualityOfProtection));
+				
 				onSuccess();
 			} else {
+				logger.log('kerberos authentication. Step 3. Transition #' + transition + ': failed. Code: ' + result);
+
 				const message = data.slice(5).toString();
 
 				onError(new Error('Authenticated error: ' + message));
 			}
+		};
+
+		const thirdTransition = (client, user, payload, callback) => {
+			client.unwrap(payload, (err, response) => {
+				if (err) {
+					return callback(err);
+				}
+				const qop = Buffer.from(response, 'base64')[0];
+				logger.log('kerberos authentication. Step 3. Transition #' + transition + '. Chosen QOP: ' + getQopName(qop));
+
+				client.wrap(response, { user }, (err, wrapped) => {
+					if (err) {
+						return callback(err);
+					}
+
+					callback(null, wrapped, qop);
+				});
+			});
 		};
 
 		connection.addListener('connect', onConnect);
@@ -118,58 +186,45 @@ const kerberosAuthentication = (kerberosAuthProcess, connection) => (options) =>
 	});
 });
 
-const ldapAuthentication = (kerberosAuthProcess, connection) => (options) => new Promise((resolve, reject) => {
-	const inst = new kerberosAuthProcess(
-		'',
-		'',
-		options.port
-	);
+const ldapAuthentication = (connection) => (options) => new Promise((resolve, reject) => {
+	connection.connect();
 
-	inst.init(options.username, options.password, (err, client) => {
-		if (err) {
-			return reject(err);
+	const onError = (err) => {
+		connection.end();
+
+		reject(err);
+	};
+	const onSuccess = () => {
+		connection.removeListener('connect', onConnect);
+		connection.removeListener('data', onData);
+
+		resolve();
+	};
+	const onConnect = () => {
+		connection.write(createPackage(START, new Buffer(options.authMech)));
+		connection.write(createPackage(OK, Buffer.concat([
+			new Buffer(options.username || ""),
+			Buffer.from([0]),
+			new Buffer(options.username || ""),
+			Buffer.from([0]),
+			new Buffer(options.password || ""),
+		])));
+	};
+	const onData = (data) => {
+		const result = data[0];
+
+		if (result === COMPLETE) {
+			onSuccess();
+		} else {
+			const message = data.slice(5).toString();
+
+			onError(new Error('Authenticated error: ' + message));
 		}
+	};
 
-		connection.connect();
-
-		const onError = (err) => {
-			connection.end();
-
-			reject(err);
-		};
-		const onSuccess = () => {
-			connection.removeListener('connect', onConnect);
-			connection.removeListener('data', onData);
-
-			resolve({
-				client: client
-			});
-		};
-		const onConnect = () => {
-			connection.write(createPackage(START, new Buffer(options.authMech)));
-			connection.write(createPackage(OK, Buffer.concat([
-				new Buffer(options.username || ""),
-				Buffer.from([0]),
-				new Buffer(options.username || ""),
-				Buffer.from([0]),
-				new Buffer(options.password || ""),
-			])));
-		};
-		const onData = (data) => {
-			const result = data[0];
-
-			if (result === COMPLETE) {
-				onSuccess();
-			} else {
-				const message = data.slice(5).toString();
-
-				onError(new Error('Authenticated error: ' + message));
-			}
-		};
-
-		connection.addListener('connect', onConnect);
-		connection.addListener('data', onData);
-	});
+	connection.addListener('connect', onConnect);
+	connection.addListener('data', onData);
+	connection.addListener('error', onError);
 });
 
 exports.createKerberosConnection = createKerberosConnection;

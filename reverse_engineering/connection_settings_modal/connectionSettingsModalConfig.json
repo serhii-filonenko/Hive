@@ -34,8 +34,16 @@
 				"inputType": "select",
 				"options": [
 					{ "value": "3.x", "label": "3.x" },
-					{ "value": "2.x", "label": "2.x" }
+					{ "value": "2.x", "label": "2.x" },
+					{ "value": "1.x", "label": "1.x" }
 				]
+			},
+			{
+				"inputLabel": "Database name",
+				"inputKeyword": "dbName",
+				"inputType": "text",
+				"inputPlaceholder": "",
+				"description": "Optionally specify database name to limit scope of discovery"
 			}
 		]
 	}, {
@@ -63,7 +71,21 @@
 				"inputLabel": "User Name",
 				"inputKeyword": "user",
 				"inputType": "text",
-				"inputPlaceholder": "User Name"
+				"inputPlaceholder": "<USERNAME>@<REALM>",
+				"dependency": {
+					"key": "authMechanism",
+					"value": "GSSAPI"
+				}
+			},
+			{
+				"inputLabel": "User name",
+				"inputKeyword": "user",
+				"inputType": "text",
+				"inputPlaceholder": "Username",
+				"dependency": {
+					"key": "authMechanism",
+					"value": ["NOSASL", "PLAIN", "LDAP", ""]
+				}
 			},
 			{
 				"inputLabel": "Password",
@@ -72,10 +94,10 @@
 				"isHiddenKey": true
 			},
 			{
-				"inputLabel": "Service Name",
+				"inputLabel": "Service name",
 				"inputKeyword": "krb_service",
 				"inputType": "text",
-				"inputPlaceholder": "hive",
+				"inputPlaceholder": "<service name, e.g.; hive>",
 				"dependency": {
 					"key": "authMechanism",
 					"value": "GSSAPI"
@@ -85,7 +107,7 @@
 				"inputLabel": "Kerberos host",
 				"inputKeyword": "krb_host",
 				"inputType": "text",
-				"inputPlaceholder": "",
+				"inputPlaceholder": "<fully qualified domain name>",
 				"dependency": {
 					"key": "authMechanism",
 					"value": "GSSAPI"
@@ -102,24 +124,7 @@
 				"options": [
 					{ "value": "binary", "label": "binary" },
 					{ "value": "http", "label": "http" }
-				],
-				"dependency": {
-					"key": "authMechanism",
-					"value": ["NOSASL", "PLAIN", ""]
-				}
-			},
-			{
-				"inputLabel": "Transport mode",
-				"inputKeyword": "mode",
-				"inputType": "select",
-				"options": [
-					{ "value": "binary", "label": "binary" }
-				],
-				"disable": true,
-				"dependency": {
-					"key": "authMechanism",
-					"value": [ "GSSAPI", "LDAP" ]
-				}
+				]
 			},
 			{
 				"inputLabel": "HTTP path",
@@ -137,9 +142,22 @@
 		"lowerTab": "SSL",
 		"structure": [
 			{
-				"inputLabel": "Enable SSL",
+				"inputLabel": "SSL Type",
 				"inputKeyword": "ssl",
-				"inputType": "checkbox"
+				"inputType": "select",
+				"options": [{
+					"label": "None",
+					"value": false
+				}, {
+					"label": "HTTPs",
+					"value": "https"
+				}, {
+					"label": "Java Keystore",
+					"value": "jks"
+				}, {
+					"label": "Certificates",
+					"value": true
+				}]
 			},
 			{
 				"inputLabel": "Certificate Authority",
@@ -147,7 +165,10 @@
 				"inputType": "file",
 				"inputPlaceholder": "Certificate Authority",
 				"extensions": ["pem", "crt", "key"],
-				"isHiddenKey": true
+				"dependency": {
+					"key": "ssl",
+					"value": [true, "true"]
+				}
 			},
 			{
 				"inputLabel": "Client Certificate",
@@ -155,7 +176,10 @@
 				"inputType": "file",
 				"inputPlaceholder": "Client Certificate",
 				"extensions": ["pem", "crt", "key"],
-				"isHiddenKey": true
+				"dependency": {
+					"key": "ssl",
+					"value": [true, "true"]
+				}
 			},
 			{
 				"inputLabel": "Client Private Key",
@@ -163,7 +187,63 @@
 				"inputType": "file",
 				"inputPlaceholder": "Client Private Key",
 				"extensions": ["pem", "crt", "key"],
-				"isHiddenKey": true
+				"dependency": {
+					"key": "ssl",
+					"value": [true, "true"]
+				}
+			},
+			{
+				"inputLabel": "Keystore",
+				"inputKeyword": "keystore",
+				"inputType": "file",
+				"inputPlaceholder": "Keystore path and filename",
+				"extensions": ["*"],
+				"dependency": {
+					"key": "ssl",
+					"value": "jks"
+				}
+			},
+			{
+				"inputLabel": "Keystore password",
+				"inputKeyword": "keystorepass",
+				"inputType": "password",
+				"isHiddenKey": true,
+				"dependency": {
+					"key": "ssl",
+					"value": "jks"
+				}
+			},
+/*			{
+				"inputLabel": "Disable Reject Unauthorized",
+				"inputKeyword": "disableRejectUnauthorized",
+				"inputType": "checkbox",
+				"dependency": {
+					"key": "ssl",
+					"value": "https"
+				}
+			},
+*/
+			{
+				"inputLabel": "Alias Name",
+				"inputKeyword": "alias",
+				"inputType": "text",
+				"isHiddenKey": true,
+				"dependency": {
+					"key": "ssl",
+					"value": "jks"
+				}
+			},
+			{
+				"inputLabel": "Certificate Authority",
+				"inputKeyword": "httpsCA",
+				"inputPlaceholder": "ca.crt",
+				"description": "Issued Certificate Authority",
+				"inputType": "file",
+				"extensions": ["*"],
+				"dependency": {
+					"key": "ssl",
+					"value": "https"
+				}
 			}
 		]	
 	}
