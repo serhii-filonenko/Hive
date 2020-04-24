@@ -218,7 +218,6 @@ making sure that you maintain a proper JSON format.
 			},
 			"pattern",
 			"unit",
-			"default",
 			"enum",
 			{
 				"propertyName": "Not null",
@@ -252,7 +251,6 @@ making sure that you maintain a proper JSON format.
 			"schemaId",
 			"description",
 			"type",
-			"default",
 			{
 				"propertyName": "Not null",
 				"propertyKeyword": "required",
@@ -309,7 +307,6 @@ making sure that you maintain a proper JSON format.
 			"description",
 			"type",
 			"pattern",
-			"default",
 			"enum",
 			{
 				"propertyName": "Not null",
@@ -343,7 +340,6 @@ making sure that you maintain a proper JSON format.
 			"description",
 			"type",
 			"pattern",
-			"default",
 			"enum",
 			{
 				"propertyName": "Not null",
@@ -376,7 +372,6 @@ making sure that you maintain a proper JSON format.
 			"description",
 			"type",
 			"pattern",
-			"default",
 			"enum",
 			{
 				"propertyName": "Not null",
