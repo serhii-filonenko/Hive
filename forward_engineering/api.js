@@ -14,14 +14,22 @@ module.exports = {
 			const externalDefinitions = JSON.parse(data.externalDefinitions);
 			const containerData = data.containerData;
 			const entityData = data.entityData;
+			const areColumnConstraintsAvailable = data.modelData[0].dbVersion.startsWith('3');
 			
 			callback(null, buildScript(
 				getDatabaseStatement(containerData),
-				getTableStatement(containerData, entityData, jsonSchema, [
-					modelDefinitions,
-					internalDefinitions,
-					externalDefinitions
-				]),
+				getTableStatement(
+					containerData,
+					entityData,
+					jsonSchema,
+					[
+						modelDefinitions,
+						internalDefinitions,
+						externalDefinitions
+					],
+					null,
+					areColumnConstraintsAvailable
+				),
 				getIndexes(containerData, entityData, jsonSchema, [
 					modelDefinitions,
 					internalDefinitions,
@@ -45,6 +53,7 @@ module.exports = {
 			const databaseStatement = getDatabaseStatement(containerData);
 			const jsonSchema = parseEntities(data.entities, data.jsonSchema);
 			const internalDefinitions = parseEntities(data.entities, data.internalDefinitions);
+			const areColumnConstraintsAvailable = data.modelData[0].dbVersion.startsWith('3');
 			const foreignKeyHashTable = foreignKeyHelper.getForeignKeyHashTable(
 				data.relationships,
 				data.entities,
@@ -69,7 +78,7 @@ module.exports = {
 				];
 
 				return result.concat([
-					getTableStatement(...args),
+					getTableStatement(...args, null, areColumnConstraintsAvailable),
 					getIndexes(...args),
 				]);
 			}, []);

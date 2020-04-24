@@ -222,13 +222,14 @@ const getTypeByProperty = (property) => {
 	}
 };
 
-const getColumn = (name, type, comment) => ({
-	[name]: { type, comment }
+const getColumn = (name, type, comment, constraints) => ({
+	[name]: { type, comment, constraints }
 });
 
-const getColumns = jsonSchema => {
+const getColumns = (jsonSchema, areColumnConstraintsAvailable) => {
 	let columns = Object.keys(jsonSchema.properties || {}).reduce((hash, columnName) => {
 		const property = jsonSchema.properties[columnName];
+		const isRequired = (jsonSchema.required || []).includes(columnName);
 
 		return Object.assign(
 			{},
@@ -236,7 +237,13 @@ const getColumns = jsonSchema => {
 			getColumn(
 				(getName(property) || columnName),
 				getTypeByProperty(property),
-				property.comments
+				property.comments,
+				areColumnConstraintsAvailable ? {
+					notNull: isRequired,
+					unique: property.unique,
+					check: property.check,
+					defaultValue: property.default
+				} : {}
 			)
 		);
 	}, {});
@@ -264,12 +271,13 @@ const getColumns = jsonSchema => {
 	return columns;
 };
 
-const getColumnStatement = ({ name, type, comment }) => {
+const getColumnStatement = ({ name, type, comment, constraints }) => {
 	const commentStatement = comment 
 		? ` COMMENT '${comment}'`
 		: '';
+	const constraintsStaitment = getColumnConstraintsStaitment(constraints);
 	
-	return `${name} ${type}${commentStatement}`;
+	return `${name} ${type}${commentStatement}${constraintsStaitment}`;
 };
 
 const getColumnsStatement = (columns) => {
@@ -280,6 +288,18 @@ const getColumnsStatement = (columns) => {
 			{ name }
 		))
 	}).join(',\n');
+};
+
+const getColumnConstraintsStaitment = ({ notNull, unique, check, defaultValue }) => {
+	const constraints = [
+		(notNull && !unique) ? 'NOT NULL' : '',
+		unique ? 'UNIQUE' : '',
+		defaultValue ? `DEFAULT ${defaultValue}` : '',
+		check ? `CHECK ${check}` : ''
+	].filter(Boolean);
+	const constraintsStaitment = constraints.join(' ');
+
+	return constraintsStaitment ? ` ${constraintsStaitment} DISABLE NOVALIDATE` : '';
 };
 
 module.exports = {

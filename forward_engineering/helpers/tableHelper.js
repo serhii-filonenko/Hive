@@ -122,11 +122,11 @@ const getStoredAsStatement = (tableData) => {
 	return `STORED AS ${tableData.storedAsTable.toUpperCase()}`;
 };
 
-const getTableStatement = (containerData, entityData, jsonSchema, definitions, foreignKeyStatement) => {
+const getTableStatement = (containerData, entityData, jsonSchema, definitions, foreignKeyStatement, areColumnConstraintsAvailable) => {
 	const dbName = getName(getTab(0, containerData));
 	const tableData = getTab(0, entityData);
 	const tableName = getName(tableData);
-	const columns = getColumns(jsonSchema);
+	const columns = getColumns(jsonSchema, areColumnConstraintsAvailable);
 	const keyNames = keyHelper.getKeyNames(tableData, jsonSchema, definitions);
 
 	const tableStatement = getCreateStatement({
