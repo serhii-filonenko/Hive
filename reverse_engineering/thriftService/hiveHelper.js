@@ -271,7 +271,7 @@ const getJsonSchemaByTypeDescriptor = (TCLIServiceTypes) => (typeDescriptor) => 
 	}
 };
 
-const getJsonSchemaCreator = (TCLIService, TCLIServiceTypes, tableInfo) => (schemaResp, sample) => {
+const getJsonSchemaCreator = (TCLIService, TCLIServiceTypes, tableInfo) => (schemaResp, sample, tableColumnsConstraints, notNullColumns) => {
 	const columnDescriptors = _.get(schemaResp, 'schema.columns', []);
 
 	const jsonSchema = columnDescriptors.reduce((jsonSchema, columnDescriptor) => {
@@ -292,7 +292,8 @@ const getJsonSchemaCreator = (TCLIService, TCLIServiceTypes, tableInfo) => (sche
 			jsonSchema.properties[columnName] = Object.assign(
 				{},
 				schema,
-				jsonSchemaFromInfo
+				jsonSchemaFromInfo,
+				tableColumnsConstraints[columnName]
 			);
 		}
 
@@ -301,7 +302,8 @@ const getJsonSchemaCreator = (TCLIService, TCLIServiceTypes, tableInfo) => (sche
 		$schema: "http://json-schema.org/draft-04/schema#",
 		type: "object",
 		additionalProperties: false,
-		properties: {}
+		properties: {},
+		required: notNullColumns
 	});
 
 	return jsonSchema;
@@ -492,9 +494,66 @@ const getDetailInfoFromExtendedTable = (extendedTable) => {
 	}
 };
 
+const getTableColumnsConstraints = (extendedTable = []) => {
+	const columnToConstraints = {};
+	const uniqueConstraint = extendedTable.find(item => item.data_type.startsWith('Unique Constraints'));
+	if (uniqueConstraint) {
+		setBooleanConstraint(uniqueConstraint.data_type, 'unique', columnToConstraints);
+	}
+
+	const notNullConstraint = extendedTable.find(item => item.col_name.startsWith('Not Null Constraints'));
+	let notNullColumns = [];
+	if (notNullConstraint) {
+		notNullColumns = getConstraintColumeNames(notNullConstraint.col_name);
+	}
+
+	const checkConstraint = extendedTable.find(item => item.col_name.startsWith('Check Constraints'));
+	if (checkConstraint) {
+		setConstraintWithValue(
+			checkConstraint.col_name,
+			'check',
+			/Column Name: (.*?), Check Expression : (.*?)\)}/g,
+			columnToConstraints
+		);
+	}
+
+	const defaultConstraint = extendedTable.find(item => item.col_name.startsWith('Default Constraints'));
+	if (defaultConstraint) {
+		setConstraintWithValue(
+			defaultConstraint.col_name,
+			'default',
+			/Column Name: (.*?), Default Value: (.*?)\)}/g,
+			columnToConstraints
+		);
+	}
+
+	return { columnToConstraints, notNullColumns };
+}
+
+const getConstraintColumeNames = (constraintString) => {
+	return Array.from(constraintString.matchAll(/Column Name: (.*?)[,}]/g)).map(item => item[1]);
+}
+
+const setBooleanConstraint = (constraintString, constraintKeyword, columnToConstraints) => {
+	const columnsNames = getConstraintColumeNames(constraintString);
+	columnsNames.forEach(name => {
+		columnToConstraints[name] = Object.assign({}, columnToConstraints[name], { [constraintKeyword]: true });
+	});
+}
+
+const setConstraintWithValue = (constraintString, constraintKeyword, regExp, columnToConstraints) => {
+	const columnsData = Array.from(
+		constraintString.matchAll(regExp)
+  	).map((item) => ({ name: item[1], value: item[2] }));
+	columnsData.forEach(({ name, value }) => {
+		columnToConstraints[name] = Object.assign({}, columnToConstraints[name], { [constraintKeyword]: value });
+	});
+}
+
 module.exports = {
 	getResultParser,
 	getJsonSchemaCreator,
 	getFormattedTable,
-	getDetailInfoFromExtendedTable
+	getDetailInfoFromExtendedTable,
+	getTableColumnsConstraints
 };
