@@ -24,7 +24,10 @@
 			"disableMultipleTypes": false,
 			"enableReverseEngineering": true,
 			"disableChoices": false,
-			"enableJsonType": true
+			"enableJsonType": true,
+			"relationships": {
+                "compositeRelationships": true                
+            }
 		}
 	},
 	"description": "Hackolade plugin for Apache Hive"

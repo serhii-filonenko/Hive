@@ -44,8 +44,8 @@ const getForeignKeyHashTable = (relationships, entities, entityData, jsonSchemas
 			disableNoValidate: disableNoValidate,
 			parentTableName: parentTableName,
 			childTableName: childTableName,
-			parentColumn: schemaHelper.getNameByPath(idToNameHashTable, (relationship.parentField || []).slice(1)),
-			childColumn: schemaHelper.getNameByPath(idToNameHashTable, (relationship.childField || []).slice(1))
+			parentColumn: getPreparedForeignColumns(relationship.parentField, idToNameHashTable),
+			childColumn: getPreparedForeignColumns(relationship.childField, idToNameHashTable)
 		});
 		
 		return hashTable;
@@ -65,6 +65,16 @@ const getForeignKeyStatementsByHashItem = (hashItem) => {
 		return `ALTER TABLE ${childTableName} ADD CONSTRAINT ${constraintName} FOREIGN KEY (${childColumns}) REFERENCES ${parentTableName}(${parentColumns}) ${disableNoValidate ? 'DISABLE NOVALIDATE' : ''};`;
 	}).join('\n');
 };
+
+const getPreparedForeignColumns = (columnsPaths, idToNameHashTable) => {
+	if (columnsPaths.length > 0 && Array.isArray(columnsPaths[0])) {
+		return columnsPaths
+			.map(path => schemaHelper.getNameByPath(idToNameHashTable, (path || []).slice(1)))
+			.join(', ');
+	} else {
+		return schemaHelper.getNameByPath(idToNameHashTable, (columnsPaths || []).slice(1));
+	}
+}
 
 module.exports = {
 	getForeignKeyHashTable,

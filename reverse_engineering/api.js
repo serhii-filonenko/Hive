@@ -231,7 +231,7 @@ module.exports = {
 										const { columnToConstraints, notNullColumns } = hiveHelper.getTableColumnsConstraints(extendedTable);
 										return {
 											jsonSchema: hiveHelper.getJsonSchemaCreator(...cursor.getTCLIService(), tableInfo)(tableSchema, sample, columnToConstraints, notNullColumns),
-											relationships: convertForeignKeysToRelationships(dbName, tableName, tableInfo.foreignKeys || [])
+											relationships: convertForeignKeysToRelationships(dbName, tableName, tableInfo.foreignKeys || [], data.appVersion)
 										};
 									}).then(({ jsonSchema, relationships }) => {
 										progress({ message: `Schema successfully created`, containerName: dbName, entityName: tableName });
@@ -418,8 +418,14 @@ const getExecutorWithResult = (cursor, handler) => {
 	};
 };
 
-const convertForeignKeysToRelationships = (childDbName, childCollection, foreignKeys) => {
-	return foreignKeys.map(foreignKey => ({
+const convertForeignKeysToRelationships = (childDbName, childCollection, foreignKeys, appVersion) => {
+	let preparedForeignKeys = foreignKeys;
+	
+	if (appVersion) {
+		preparedForeignKeys = mergeCompositeForeignKeys(foreignKeys);
+	}
+
+	return preparedForeignKeys.map(foreignKey => ({
 		relationshipName: foreignKey.name,
 		dbName: foreignKey.parentDb,
 		parentCollection: foreignKey.parentTable,
@@ -429,6 +435,31 @@ const convertForeignKeysToRelationships = (childDbName, childCollection, foreign
 		childField: foreignKey.childField
 	}));
 };
+
+const mergeCompositeForeignKeys = (foreignKeys) => {
+	return foreignKeys.reduce((acc, foreignKey) => {
+		const compositeSiblingIndex = acc.findIndex(item => {
+			return (
+				foreignKey.parentDb === item.parentDb
+				&& foreignKey.parentTable === item.parentTable
+				&& foreignKey.name === item.name
+			);
+		});
+
+		if (compositeSiblingIndex === -1) {
+			const compositeForeignKey = {
+				...foreignKey,
+				parentField: [foreignKey.parentField],
+				childField: [foreignKey.childField]
+			};
+			acc.push(compositeForeignKey);
+		} else {
+			acc[compositeSiblingIndex].parentField.push(foreignKey.parentField);
+			acc[compositeSiblingIndex].childField.push(foreignKey.childField);
+		}
+		return acc;
+	}, [])
+}
 
 const getIndexes = (indexesFromDb) => {
 	const getValue = (value) => (value || '').trim();
