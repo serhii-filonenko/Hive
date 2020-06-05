@@ -26,6 +26,13 @@ const buildStatement = (mainStatement) => {
 	return chain;
 };
 
+const prepareName = name => {
+	const containSpaces = /\s/g;
+	if (containSpaces.test(name)) {
+		return `\`${name}\``;
+	}
+	return name;
+};
 const getName = (entity) => entity.code || entity.collectionName || entity.name || '';
 const getTab = (tabNum, configData) => Array.isArray(configData) ? (configData[tabNum] || {}) : {};
 const indentString = (str, tab = 4) => (str || '').split('\n').map(s => ' '.repeat(tab) + s).join('\n');
@@ -50,5 +57,6 @@ module.exports = {
 	getName,
 	getTab,
 	indentString,
-	getTypeDescriptor
+	getTypeDescriptor,
+	prepareName
 };

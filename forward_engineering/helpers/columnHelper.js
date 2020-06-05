@@ -1,6 +1,6 @@
 'use strict'
 
-const { buildStatement, getName, getTab, indentString, getTypeDescriptor } = require('./generalHelper');
+const { buildStatement, getName, getTab, indentString, getTypeDescriptor, prepareName } = require('./generalHelper');
 
 const getStructChild = (name, type, comment) => `${name}: ${type}` + (comment ? ` COMMENT ${comment}` : '');
 
@@ -235,7 +235,7 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable) => {
 			{},
 			hash,
 			getColumn(
-				(getName(property) || columnName),
+				prepareName((getName(property) || columnName)),
 				getTypeByProperty(property),
 				property.comments,
 				areColumnConstraintsAvailable ? {
