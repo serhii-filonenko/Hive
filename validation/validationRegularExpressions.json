@@ -1,3 +1,4 @@
 {
-	"name": "^\\S*$"
+	"name": "^\\S*$",
+	"collectionName": "^\\S*$"
 }
