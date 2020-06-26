@@ -121,7 +121,14 @@ making sure that you maintain a proper JSON format.
 			"name",
 			"code",
 			"schemaId",
-			"description",
+			{
+				"propertyName": "Comments",
+				"propertyKeyword": "description",
+				"propertyTooltip": "comments",
+				"addTimestampButton": false,
+				"propertyType": "details",
+				"template": "textarea"
+			},
 			"type",
 			{
 				"propertyName": "Subtype",
@@ -166,13 +173,28 @@ making sure that you maintain a proper JSON format.
 			"foreignField",
 			"relationshipType",
 			"sample",
-			"comments"
+			{
+				"propertyName": "Remarks",
+				"propertyKeyword": "comments",
+				"shouldValidate": false,
+				"propertyTooltip": "remarks",
+				"addTimestampButton": true,
+				"propertyType": "details",
+				"template": "textarea"
+			}
 		],
 		"numeric": [
 			"name",
 			"code",
 			"schemaId",
-			"description",
+			{
+				"propertyName": "Comments",
+				"propertyKeyword": "description",
+				"propertyTooltip": "comments",
+				"addTimestampButton": false,
+				"propertyType": "details",
+				"template": "textarea"
+			},
 			"type",
 			{
 				"propertyName": "Subtype",
@@ -247,13 +269,28 @@ making sure that you maintain a proper JSON format.
 			"foreignField",
 			"relationshipType",
 			"sample",
-			"comments"
+			{
+				"propertyName": "Remarks",
+				"propertyKeyword": "comments",
+				"shouldValidate": false,
+				"propertyTooltip": "remarks",
+				"addTimestampButton": true,
+				"propertyType": "details",
+				"template": "textarea"
+			}
 		],
 		"bool": [
 			"name",
 			"code",
 			"schemaId",
-			"description",
+			{
+				"propertyName": "Comments",
+				"propertyKeyword": "description",
+				"propertyTooltip": "comments",
+				"addTimestampButton": false,
+				"propertyType": "details",
+				"template": "textarea"
+			},
 			"type",
 			{
 				"propertyName": "Not null",
@@ -271,7 +308,15 @@ making sure that you maintain a proper JSON format.
 			},
 			"dependencies",
 			"sample",
-			"comments"
+			{
+				"propertyName": "Remarks",
+				"propertyKeyword": "comments",
+				"shouldValidate": false,
+				"propertyTooltip": "remarks",
+				"addTimestampButton": true,
+				"propertyType": "details",
+				"template": "textarea"
+			}
 		],
 		"binary": [
 			"name",
@@ -279,7 +324,14 @@ making sure that you maintain a proper JSON format.
 			"sampleName",
 			"schemaId",
 			"refPath",
-			"description",
+			{
+				"propertyName": "Comments",
+				"propertyKeyword": "description",
+				"propertyTooltip": "comments",
+				"addTimestampButton": false,
+				"propertyType": "details",
+				"template": "textarea"
+			},
 			"type",
 			{
 				"propertyName": "Not null",
@@ -303,7 +355,15 @@ making sure that you maintain a proper JSON format.
 				"markdown": false
 			},
 			"dependencies",
-			"comments"
+			{
+				"propertyName": "Remarks",
+				"propertyKeyword": "comments",
+				"shouldValidate": false,
+				"propertyTooltip": "remarks",
+				"addTimestampButton": true,
+				"propertyType": "details",
+				"template": "textarea"
+			}
 		],
 		"___1": [],
 		"timestamp": [
@@ -312,7 +372,14 @@ making sure that you maintain a proper JSON format.
 			"sampleName",
 			"schemaId",
 			"refPath",
-			"description",
+			{
+				"propertyName": "Comments",
+				"propertyKeyword": "description",
+				"propertyTooltip": "comments",
+				"addTimestampButton": false,
+				"propertyType": "details",
+				"template": "textarea"
+			},
 			"type",
 			"pattern",
 			"enum",
@@ -339,7 +406,15 @@ making sure that you maintain a proper JSON format.
 			},
 			"dependencies",
 			"sample",
-			"comments"
+			{
+				"propertyName": "Remarks",
+				"propertyKeyword": "comments",
+				"shouldValidate": false,
+				"propertyTooltip": "remarks",
+				"addTimestampButton": true,
+				"propertyType": "details",
+				"template": "textarea"
+			}
 		],
 		"date": [
 			"name",
@@ -347,7 +422,14 @@ making sure that you maintain a proper JSON format.
 			"sampleName",
 			"schemaId",
 			"refPath",
-			"description",
+			{
+				"propertyName": "Comments",
+				"propertyKeyword": "description",
+				"propertyTooltip": "comments",
+				"addTimestampButton": false,
+				"propertyType": "details",
+				"template": "textarea"
+			},
 			"type",
 			"pattern",
 			"enum",
@@ -374,14 +456,29 @@ making sure that you maintain a proper JSON format.
 			},
 			"dependencies",
 			"sample",
-			"comments"
+			{
+				"propertyName": "Remarks",
+				"propertyKeyword": "comments",
+				"shouldValidate": false,
+				"propertyTooltip": "remarks",
+				"addTimestampButton": true,
+				"propertyType": "details",
+				"template": "textarea"
+			}
 		],
 		"interval": [
 			"name",
 			"code",
 			"sampleName",
 			"schemaId",
-			"description",
+			{
+				"propertyName": "Comments",
+				"propertyKeyword": "description",
+				"propertyTooltip": "comments",
+				"addTimestampButton": false,
+				"propertyType": "details",
+				"template": "textarea"
+			},
 			"type",
 			"pattern",
 			"enum",
@@ -408,7 +505,15 @@ making sure that you maintain a proper JSON format.
 			},
 			"dependencies",
 			"sample",
-			"comments"
+			{
+				"propertyName": "Remarks",
+				"propertyKeyword": "comments",
+				"shouldValidate": false,
+				"propertyTooltip": "remarks",
+				"addTimestampButton": true,
+				"propertyType": "details",
+				"template": "textarea"
+			}
 		],
 		"___2": [],
 		"array": [
@@ -417,7 +522,14 @@ making sure that you maintain a proper JSON format.
 			"sampleName",
 			"schemaId",
 			"refPath",
-			"description",
+			{
+				"propertyName": "Comments",
+				"propertyKeyword": "description",
+				"propertyTooltip": "comments",
+				"addTimestampButton": false,
+				"propertyType": "details",
+				"template": "textarea"
+			},
 			"type",
 			{
 				"propertyName": "Subtype",
@@ -460,7 +572,15 @@ making sure that you maintain a proper JSON format.
 			},
 			"dependencies",
 			"additionalItems",
-			"comments"
+			{
+				"propertyName": "Remarks",
+				"propertyKeyword": "comments",
+				"shouldValidate": false,
+				"propertyTooltip": "remarks",
+				"addTimestampButton": true,
+				"propertyType": "details",
+				"template": "textarea"
+			}
 		],
 		"map": [
 			"name",
@@ -468,7 +588,14 @@ making sure that you maintain a proper JSON format.
 			"sampleName",
 			"schemaId",
 			"refPath",
-			"description",
+			{
+				"propertyName": "Comments",
+				"propertyKeyword": "description",
+				"propertyTooltip": "comments",
+				"addTimestampButton": false,
+				"propertyType": "details",
+				"template": "textarea"
+			},
 			"type",
 			{
 				"propertyName": "Key type",
@@ -553,7 +680,15 @@ making sure that you maintain a proper JSON format.
 			},
 			"dependencies",
 			"additionalProperties",
-			"comments"
+			{
+				"propertyName": "Remarks",
+				"propertyKeyword": "comments",
+				"shouldValidate": false,
+				"propertyTooltip": "remarks",
+				"addTimestampButton": true,
+				"propertyType": "details",
+				"template": "textarea"
+			}
 		],
 		"struct": [
 			"name",
@@ -561,7 +696,14 @@ making sure that you maintain a proper JSON format.
 			"sampleName",
 			"schemaId",
 			"refPath",
-			"description",
+			{
+				"propertyName": "Comments",
+				"propertyKeyword": "description",
+				"propertyTooltip": "comments",
+				"addTimestampButton": false,
+				"propertyType": "details",
+				"template": "textarea"
+			},
 			"type",
 			"dependencies",
 			"minProperties",
@@ -587,7 +729,15 @@ making sure that you maintain a proper JSON format.
 				"markdown": false
 			},
 			"additionalProperties",
-			"comments"
+			{
+				"propertyName": "Remarks",
+				"propertyKeyword": "comments",
+				"shouldValidate": false,
+				"propertyTooltip": "remarks",
+				"addTimestampButton": true,
+				"propertyType": "details",
+				"template": "textarea"
+			}
 		]
 	}
 } 

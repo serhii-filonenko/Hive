@@ -280,7 +280,7 @@ const getJsonSchemaCreator = (TCLIService, TCLIServiceTypes, tableInfo) => (sche
 		const schema = Object.assign(
 			{},
 			getJsonSchemaByTypeDescriptor(TCLIServiceTypes)(typeDescriptor),
-			{ comments: columnDescriptor.comment || "" }
+			{ description: columnDescriptor.comment || "" }
 		);
 		const jsonSchemaFromInfo = tableInfo.table[columnName] 
 			? schemaHelper.getJsonSchema(tableInfo.table[columnName], _.get(sample, columnName))

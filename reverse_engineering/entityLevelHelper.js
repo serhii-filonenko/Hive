@@ -149,7 +149,7 @@ const getEntityLevelData = (tableName, tableInfo, extendedTableInfo) => {
 		sortedByKey: getSortColumns(_.get(storageInfo, 'Sort Columns', '')),
 		skewedby: getFieldsArray(_.get(storageInfo, 'Skewed Columns', '')),
 		skewedOn: getSkewedOn(_.get(storageInfo, 'Skewed Values', '')),
-		comments: _.get(detailedInfo, 'Table Parameters.comment', ''),
+		description: _.get(detailedInfo, 'Table Parameters.comment', ''),
 		skewStoredAsDir: _.get(storageInfo, 'Stored As SubDirectories', '').trim().toLowerCase() === 'yes',
 		tableProperties: getTableProperties(_.get(detailedInfo, 'Table Parameters', {}))
 	}, getNumBuckets(storageInfo), getStoredAs(storageInfo));

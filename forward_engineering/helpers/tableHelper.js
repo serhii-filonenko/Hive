@@ -137,7 +137,7 @@ const getTableStatement = (containerData, entityData, jsonSchema, definitions, f
 		columnStatement: getColumnsStatement(removePartitions(columns, keyNames.compositePartitionKey)),
 		primaryKeyStatement: getPrimaryKeyStatement(keyNames.primaryKeys),
 		foreignKeyStatement: foreignKeyStatement,
-		comment: tableData.comments,
+		comment: tableData.description,
 		partitionedByKeys: getPartitionKeyStatement(getPartitionsKeys(columns, keyNames.compositePartitionKey)),
 		clusteredKeys: getClusteringKeys(keyNames.compositeClusteringKey),
 		sortedKeys: getSortedKeys(keyNames.sortedByKey), 

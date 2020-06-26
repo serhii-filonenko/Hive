@@ -202,7 +202,7 @@ module.exports = {
 										emptyBucket: false,
 										containerLevelKeys: [],
 										bucketInfo: {
-											comments: _.get(databaseInfo, '[0].comment', '')
+											description: _.get(databaseInfo, '[0].comment', '')
 										}
 									};
 
