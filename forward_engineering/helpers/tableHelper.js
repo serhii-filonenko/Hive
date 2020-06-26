@@ -122,7 +122,7 @@ const getStoredAsStatement = (tableData) => {
 	return `STORED AS ${tableData.storedAsTable.toUpperCase()}`;
 };
 
-const getTableStatement = (containerData, entityData, jsonSchema, definitions, foreignKeyStatement, areColumnConstraintsAvailable) => {
+const getTableStatement = (containerData, entityData, jsonSchema, definitions, foreignKeyStatement, areColumnConstraintsAvailable, areForeignPrimaryKeyConstraintsAvailable) => {
 	const dbName = replaceSpaceWithUnderscore(getName(getTab(0, containerData)));
 	const tableData = getTab(0, entityData);
 	const tableName = replaceSpaceWithUnderscore(getName(tableData));
@@ -135,8 +135,8 @@ const getTableStatement = (containerData, entityData, jsonSchema, definitions, f
 		isTemporary: tableData.temporaryTable,
 		isExternal: tableData.externalTable,
 		columnStatement: getColumnsStatement(removePartitions(columns, keyNames.compositePartitionKey)),
-		primaryKeyStatement: getPrimaryKeyStatement(keyNames.primaryKeys),
-		foreignKeyStatement: foreignKeyStatement,
+		primaryKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? getPrimaryKeyStatement(keyNames.primaryKeys) : null,
+		foreignKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? foreignKeyStatement : null,
 		comment: tableData.comments,
 		partitionedByKeys: getPartitionKeyStatement(getPartitionsKeys(columns, keyNames.compositePartitionKey)),
 		clusteredKeys: getClusteringKeys(keyNames.compositeClusteringKey),
