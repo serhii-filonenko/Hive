@@ -124,16 +124,19 @@ making sure that you maintain a proper JSON format.
 				"propertyType": "text"
 			},
 			{
-				"propertyName": "Description",
+				"propertyName": "Comments",
 				"propertyKeyword": "description",
-				"propertyTooltip": "description",
+				"propertyTooltip": "comments",
+				"addTimestampButton": false,
 				"propertyType": "details",
 				"template": "textarea"
 			},
 			{
-				"propertyName": "Comments",
+				"propertyName": "Remarks",
 				"propertyKeyword": "comments",
-				"propertyTooltip": "comments",
+				"shouldValidate": false,
+				"propertyTooltip": "remarks",
+				"addTimestampButton": true,
 				"propertyType": "details",
 				"template": "textarea"
 			}

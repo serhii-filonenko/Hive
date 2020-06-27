@@ -124,6 +124,14 @@ making sure that you maintain a proper JSON format.
 				"propertyType": "text"
 			},
 			{
+				"propertyName": "Comments",
+				"propertyKeyword": "description",
+				"propertyTooltip": "comments",
+				"addTimestampButton": false,
+				"propertyType": "details",
+				"template": "textarea"
+			},
+			{
 				"propertyName": "Temporary",
 				"propertyKeyword": "temporaryTable",
 				"propertyType": "checkbox"
@@ -342,12 +350,13 @@ making sure that you maintain a proper JSON format.
 				"valueType": "string"
 			},
 			{
-				"propertyName": "Comments",
+				"propertyName": "Remarks",
 				"propertyKeyword": "comments",
-				"propertyTooltip": "comments",
+				"shouldValidate": false,
+				"propertyTooltip": "remarks",
+				"addTimestampButton": true,
 				"propertyType": "details",
-				"template": "textarea",
-				"valueType": "string"
+				"template": "textarea"
 			}
 		],
 		"columnsRatio": [4.1, 5]

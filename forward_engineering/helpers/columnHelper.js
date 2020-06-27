@@ -13,7 +13,7 @@ const getStructChildProperties = getTypeByProperty => property => {
 			const childProperty = property.properties[propertyName];
 			const name = (getName(childProperty) || propertyName);
 
-			return getStructChild(name, getTypeByProperty(childProperty), childProperty.comments);
+			return getStructChild(name, getTypeByProperty(childProperty), childProperty.description);
 		});
 	}
 
@@ -237,7 +237,7 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable) => {
 			getColumn(
 				prepareName((getName(property) || columnName)),
 				getTypeByProperty(property),
-				property.comments,
+				property.description,
 				areColumnConstraintsAvailable ? {
 					notNull: isRequired,
 					unique: property.unique,

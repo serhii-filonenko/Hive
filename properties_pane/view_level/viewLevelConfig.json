@@ -120,9 +120,18 @@ making sure that you maintain a proper JSON format.
 		"structure": [
 			{
 				"propertyName": "Comments",
+				"propertyKeyword": "description",
+				"propertyTooltip": "comments",
+				"addTimestampButton": false,
+				"propertyType": "details",
+				"template": "textarea"
+			},
+			{
+				"propertyName": "Remarks",
 				"propertyKeyword": "comments",
 				"shouldValidate": false,
-				"propertyTooltip": "comments",
+				"propertyTooltip": "remarks",
+				"addTimestampButton": true,
 				"propertyType": "details",
 				"template": "textarea"
 			}
