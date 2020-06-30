@@ -15,6 +15,7 @@ module.exports = {
 			const containerData = data.containerData;
 			const entityData = data.entityData;
 			const areColumnConstraintsAvailable = data.modelData[0].dbVersion.startsWith('3');
+			const areForeignPrimaryKeyConstraintsAvailable = !data.modelData[0].dbVersion.startsWith('1');
 			
 			callback(null, buildScript(
 				getDatabaseStatement(containerData),
@@ -28,7 +29,8 @@ module.exports = {
 						externalDefinitions
 					],
 					null,
-					areColumnConstraintsAvailable
+					areColumnConstraintsAvailable,
+					areForeignPrimaryKeyConstraintsAvailable
 				),
 				getIndexes(containerData, entityData, jsonSchema, [
 					modelDefinitions,
@@ -54,6 +56,7 @@ module.exports = {
 			const jsonSchema = parseEntities(data.entities, data.jsonSchema);
 			const internalDefinitions = parseEntities(data.entities, data.internalDefinitions);
 			const areColumnConstraintsAvailable = data.modelData[0].dbVersion.startsWith('3');
+			const areForeignPrimaryKeyConstraintsAvailable = !data.modelData[0].dbVersion.startsWith('1');
 			const foreignKeyHashTable = foreignKeyHelper.getForeignKeyHashTable(
 				data.relationships,
 				data.entities,
@@ -78,20 +81,12 @@ module.exports = {
 				];
 
 				return result.concat([
-					getTableStatement(...args, null, areColumnConstraintsAvailable),
+					getTableStatement(...args, null, areColumnConstraintsAvailable, areForeignPrimaryKeyConstraintsAvailable),
 					getIndexes(...args),
 				]);
 			}, []);
 
-			const foreignKeys = data.entities.reduce((result, entityId) => {
-				const foreignKeyStatement = foreignKeyHelper.getForeignKeyStatementsByHashItem(foreignKeyHashTable[entityId] || {});
-			
-				if (foreignKeyStatement) {
-					return [...result, foreignKeyStatement];
-				}
-
-				return result;
-			}, []).join('\n');
+			const foreignKeys = getForeignKeys(data, foreignKeyHashTable, areForeignPrimaryKeyConstraintsAvailable);
 
 			callback(null, buildScript(
 				databaseStatement,
@@ -121,3 +116,18 @@ const parseEntities = (entities, serializedItems) => {
 		}
 	}, {});
 };
+
+const getForeignKeys = (data, foreignKeyHashTable, areForeignPrimaryKeyConstraintsAvailable) => {
+	if (!areForeignPrimaryKeyConstraintsAvailable) {
+		return null;
+	}
+	return data.entities.reduce((result, entityId) => {
+		const foreignKeyStatement = foreignKeyHelper.getForeignKeyStatementsByHashItem(foreignKeyHashTable[entityId] || {});
+	
+		if (foreignKeyStatement) {foreignKeyStatement
+			return [...result, foreignKeyStatement];
+		}
+
+		return result;
+	}, []).join('\n');
+}
