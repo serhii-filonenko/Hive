@@ -17,7 +17,7 @@ const getCreateStatement = ({
 		(primaryKeyStatement, indentString(primaryKeyStatement))
 		(foreignKeyStatement, indentString(foreignKeyStatement))
 		(true, ')')
-		(comment, `COMMENT "${comment}"`)
+		(comment, `COMMENT '${comment}'`)
 		(partitionedByKeys, `PARTITIONED BY (${partitionedByKeys})`)
 		(clusteredKeys, `CLUSTERED BY (${clusteredKeys})`)
 		(sortedKeys, `SORTED BY (${sortedKeys})`)
@@ -137,7 +137,7 @@ const getTableStatement = (containerData, entityData, jsonSchema, definitions, f
 		columnStatement: getColumnsStatement(removePartitions(columns, keyNames.compositePartitionKey)),
 		primaryKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? getPrimaryKeyStatement(keyNames.primaryKeys) : null,
 		foreignKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? foreignKeyStatement : null,
-		comment: tableData.comments,
+		comment: tableData.description,
 		partitionedByKeys: getPartitionKeyStatement(getPartitionsKeys(columns, keyNames.compositePartitionKey)),
 		clusteredKeys: getClusteringKeys(keyNames.compositeClusteringKey),
 		sortedKeys: getSortedKeys(keyNames.sortedByKey), 

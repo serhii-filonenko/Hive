@@ -271,16 +271,17 @@ const getJsonSchemaByTypeDescriptor = (TCLIServiceTypes) => (typeDescriptor) => 
 	}
 };
 
-const getJsonSchemaCreator = (TCLIService, TCLIServiceTypes, tableInfo) => (schemaResp, sample, tableColumnsConstraints, notNullColumns) => {
-	const columnDescriptors = _.get(schemaResp, 'schema.columns', []);
+const getJsonSchemaCreator = (TCLIService, TCLIServiceTypes, tableInfo) => ({ columns, tableSchema, sample, tableColumnsConstraints, notNullColumns }) => {
+	const columnDescriptors = _.get(tableSchema, 'schema.columns', []);
 
 	const jsonSchema = columnDescriptors.reduce((jsonSchema, columnDescriptor) => {
 		const typeDescriptor = getTypeDescriptorByColumnDescriptor(columnDescriptor);
 		const columnName = getColumnName(columnDescriptor);
+		const columnInfo = columns.find(({ col_name }) => col_name === columnName) || {};
 		const schema = Object.assign(
 			{},
 			getJsonSchemaByTypeDescriptor(TCLIServiceTypes)(typeDescriptor),
-			{ description: columnDescriptor.comment || "" }
+			{ description: columnDescriptor.comment || columnInfo.comment || "" }
 		);
 		const jsonSchemaFromInfo = tableInfo.table[columnName] 
 			? schemaHelper.getJsonSchema(tableInfo.table[columnName], _.get(sample, columnName))

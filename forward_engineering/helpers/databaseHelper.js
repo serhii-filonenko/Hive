@@ -5,7 +5,7 @@ const { buildStatement, getName, getTab, replaceSpaceWithUnderscore } = require(
 const getCreateStatement = ({
 	name, comment, location, dbProperties
 }) => buildStatement(`CREATE DATABASE IF NOT EXISTS ${name}`)
-	(comment, `COMMENT "${comment}"`)
+	(comment, `COMMENT '${comment}'`)
 	(location, `LOCATION "${location}"`)
 	(dbProperties, `WITH DBPROPERTIES (${dbProperties})`)
 	() + ';';

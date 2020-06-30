@@ -230,7 +230,7 @@ module.exports = {
 										documentPackage.entityLevel = entityLevelHelper.getEntityLevelData(tableName, tableInfo, extendedTableInfo);
 										const { columnToConstraints, notNullColumns } = hiveHelper.getTableColumnsConstraints(extendedTable);
 										return {
-											jsonSchema: hiveHelper.getJsonSchemaCreator(...cursor.getTCLIService(), tableInfo)(tableSchema, sample, columnToConstraints, notNullColumns),
+											jsonSchema: hiveHelper.getJsonSchemaCreator(...cursor.getTCLIService(), tableInfo)({ columns: extendedTable, tableColumnsConstraints: columnToConstraints, tableSchema, sample, notNullColumns }),
 											relationships: convertForeignKeysToRelationships(dbName, tableName, tableInfo.foreignKeys || [], data.appVersion)
 										};
 									}).then(({ jsonSchema, relationships }) => {
