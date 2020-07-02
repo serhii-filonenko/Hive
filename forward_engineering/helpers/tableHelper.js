@@ -126,7 +126,7 @@ const getTableStatement = (containerData, entityData, jsonSchema, definitions, f
 	const dbName = replaceSpaceWithUnderscore(getName(getTab(0, containerData)));
 	const tableData = getTab(0, entityData);
 	const tableName = replaceSpaceWithUnderscore(getName(tableData));
-	const columns = getColumns(jsonSchema, areColumnConstraintsAvailable);
+	const columns = getColumns(jsonSchema, areColumnConstraintsAvailable, definitions);
 	const keyNames = keyHelper.getKeyNames(tableData, jsonSchema, definitions);
 
 	const tableStatement = getCreateStatement({

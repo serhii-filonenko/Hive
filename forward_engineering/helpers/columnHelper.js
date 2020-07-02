@@ -192,15 +192,50 @@ const getUnionFromAllOf = getTypeByProperty => property => {
 	}, {});
 };
 
-const getTypeByProperty = (property) => {
+const getDefinitionByReference = (definitions, reference) => {
+	const definitionNamePath = reference.$ref.split('/');
+	const definitionName = definitionNamePath[definitionNamePath.length - 1];
+	let source = {};
+
+	switch (definitionNamePath[0]) {
+		case '#':
+			source = definitions[0] || {};
+			break;
+		case '#model':
+			source = definitions[1] || {};
+			break;
+		case '#external':
+			source = definitions[2] || {};
+			break;
+	}
+
+	const definitionsProperties = source.properties || {};
+
+	if (definitionsProperties[definitionName]) {
+		return definitionsProperties[definitionName];
+	}
+
+	const allDefinitions = definitions.reduce((result, { properties }) => ({
+		...result,
+		...(properties || {})
+	}), {});
+
+	return allDefinitions[definitionName] || definitionName;
+};
+
+const getTypeByProperty = (definitions = []) => property => {
 	if (Array.isArray(property.type)) {
-		return getUnionTypeFromMultiple(getTypeByProperty)(property);
+		return getUnionTypeFromMultiple(getTypeByProperty(definitions))(property);
+	}
+
+	if (property.$ref) {
+		property = getDefinitionByReference(definitions, property)
 	}
 	
 	switch(property.type) {
 		case 'jsonObject':
 		case 'jsonArray':
-			return getJsonType(getTypeByProperty)(property);
+			return getJsonType(getTypeByProperty(definitions))(property);
 		case 'text':
 			return getText(property);
 		case 'numeric':
@@ -210,11 +245,11 @@ const getTypeByProperty = (property) => {
 		case 'interval':
 			return 'string';
 		case 'struct':
-			return getStruct(getTypeByProperty)(property);
+			return getStruct(getTypeByProperty(definitions))(property);
 		case 'array':
-			return getArray(getTypeByProperty)(property);
+			return getArray(getTypeByProperty(definitions))(property);
 		case 'map':
-			return getMap(getTypeByProperty)(property);
+			return getMap(getTypeByProperty(definitions))(property);
 		case undefined:
 			return 'string';
 		default:
@@ -226,7 +261,7 @@ const getColumn = (name, type, comment, constraints) => ({
 	[name]: { type, comment, constraints }
 });
 
-const getColumns = (jsonSchema, areColumnConstraintsAvailable) => {
+const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 	let columns = Object.keys(jsonSchema.properties || {}).reduce((hash, columnName) => {
 		const property = jsonSchema.properties[columnName];
 		const isRequired = (jsonSchema.required || []).includes(columnName);
@@ -236,7 +271,7 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable) => {
 			hash,
 			getColumn(
 				prepareName((getName(property) || columnName)),
-				getTypeByProperty(property),
+				getTypeByProperty(definitions)(property),
 				property.description,
 				areColumnConstraintsAvailable ? {
 					notNull: isRequired,
