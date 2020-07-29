@@ -6,5 +6,12 @@
 	"level": {
 		"entity": true,
 		"container": true
-	}
+	},
+	"additionalOptions": [
+		{
+			"id": "minify",
+			"value": false,
+			"name": "Minify"
+		}
+	]
 }
