@@ -9,6 +9,7 @@ const entityLevelHelper = require('./entityLevelHelper');
 const TCLIService = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService');
 const TCLIServiceTypes = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService_types');
 const logHelper = require('./logHelper');
+const mapJsonSchema = require('./thriftService/mapJsonSchema');
 
 module.exports = {
 	connect: function(connectionInfo, logger, cb, app){
@@ -302,7 +303,48 @@ module.exports = {
 				}
 			});
 		}, app);
+	},
+
+	adaptJsonSchema(data, logger, callback, app) {
+		try {
+			const jsonSchema = JSON.parse(data.jsonSchema)
+			const result = mapJsonSchema(app.require('lodash'))(jsonSchema, {}, (schema, parentJsonSchema, key) => {
+				if (Array.isArray(schema.type)) {
+					clearOutRequired(parentJsonSchema, key);
+					const noNullType = schema.type.filter(type => type !== 'null');
+					return {
+						...schema,
+						type: noNullType.length === 1 ? noNullType[0] : noNullType,
+					};
+				} else if (schema.type === 'null') {
+					clearOutRequired(parentJsonSchema, key);
+
+					return schema;
+				} else {
+					return schema;
+				}
+			});
+		
+			callback(null, {
+				...data,
+				jsonSchema: JSON.stringify(result)
+			});
+		} catch (error) {
+			const err = {
+				message: error.message,
+				stack: error.stack,
+			};
+			logger.log('error', err, 'Remove nulls from JSON Schema');
+			callback(err);
+		}
 	}
+};
+
+const clearOutRequired = (parentJsonSchema, key) => {
+	if (!Array.isArray(parentJsonSchema.required)) {
+		return;
+	}
+	parentJsonSchema.required = parentJsonSchema.required.filter(propertyName => propertyName !== key);
 };
 
 const filterNullValues = (doc) => {
