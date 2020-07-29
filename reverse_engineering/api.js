@@ -194,7 +194,7 @@ module.exports = {
 									const documentPackage = {
 										dbName,
 										collectionName: tableName,
-										documents,
+										documents: filterNullValues(documents),
 										indexes: [],
 										bucketIndexes: [],
 										views: [],
@@ -302,6 +302,23 @@ module.exports = {
 				}
 			});
 		}, app);
+	}
+};
+
+const filterNullValues = (doc) => {
+	if (Array.isArray(doc)) {
+		return doc.filter(value => value !== null).map(filterNullValues);
+	} else if (doc && typeof doc === 'object') {
+		return Object.entries(doc).filter(([ key, value ]) => value !== null).reduce((result, [ key, value ]) => {
+			return {
+				...result,
+				[key]: filterNullValues(value),
+			};
+		}, {});
+	} else if (doc === null) {
+		return '';
+	} else {
+		return doc;
 	}
 };
 

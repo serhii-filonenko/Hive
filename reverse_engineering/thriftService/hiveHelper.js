@@ -280,12 +280,16 @@ const getJsonSchemaCreator = (TCLIService, TCLIServiceTypes, tableInfo) => ({ co
 		const columnInfo = columns.find(({ col_name }) => col_name === columnName) || {};
 		const schema = Object.assign(
 			{},
-			getJsonSchemaByTypeDescriptor(TCLIServiceTypes)(typeDescriptor),
+			getJsonSchemaByTypeDescriptor(TCLIServiceTypes)(typeDescriptor, columnInfo.data_type),
 			{ description: columnDescriptor.comment || columnInfo.comment || "" }
 		);
-		const jsonSchemaFromInfo = tableInfo.table[columnName] 
-			? schemaHelper.getJsonSchema(tableInfo.table[columnName], _.get(sample, columnName))
-			: {};
+		let jsonSchemaFromInfo = {};
+		
+		if (tableInfo.table[columnName]) {
+			jsonSchemaFromInfo = schemaHelper.getJsonSchema(tableInfo.table[columnName], _.get(sample, columnName));
+		} else if (columnInfo.data_type) {
+			jsonSchemaFromInfo = schemaHelper.getJsonSchema(columnInfo.data_type, _.get(sample, columnName));
+		}
 
 		if (jsonSchemaFromInfo.type === 'union') {
 			return schemaHelper.getChoice(jsonSchema, jsonSchemaFromInfo.subSchemas, columnName);
