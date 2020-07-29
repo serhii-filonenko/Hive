@@ -2,7 +2,7 @@
 
 const { buildStatement, getName, getTab, indentString, getTypeDescriptor, prepareName } = require('./generalHelper');
 
-const getStructChild = (name, type, comment) => `${name}: ${type}` + (comment ? ` COMMENT '${comment}'` : '');
+const getStructChild = (name, type, comment) => `${prepareName(name)}: ${type}` + (comment ? ` COMMENT '${comment}'` : '');
 
 const getStructChildProperties = getTypeByProperty => property => {
 	const childProperties = Object.keys(property.properties || {});
@@ -289,7 +289,7 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 		columns = Object.keys(unions).reduce((hash, typeName) => Object.assign(
 			{},
 			hash,
-			getColumn(typeName, unions[typeName])
+			getColumn(prepareName(typeName), unions[typeName])
 		), columns);
 	} 
 	
@@ -299,7 +299,7 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 		columns = Object.keys(unions).reduce((hash, typeName) => Object.assign(
 			{},
 			hash,
-			getColumn(typeName, unions[typeName])
+			getColumn(prepareName(typeName), unions[typeName])
 		), columns);
 	}
 
