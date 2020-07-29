@@ -280,7 +280,7 @@ const getJsonSchemaCreator = (TCLIService, TCLIServiceTypes, tableInfo) => ({ co
 		const columnInfo = columns.find(({ col_name }) => col_name === columnName) || {};
 		const schema = Object.assign(
 			{},
-			getJsonSchemaByTypeDescriptor(TCLIServiceTypes)(typeDescriptor, columnInfo.data_type),
+			getJsonSchemaByTypeDescriptor(TCLIServiceTypes)(typeDescriptor),
 			{ description: columnDescriptor.comment || columnInfo.comment || "" }
 		);
 		let jsonSchemaFromInfo = {};
