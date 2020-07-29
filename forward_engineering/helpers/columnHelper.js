@@ -284,7 +284,7 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 	}, {});
 
 	if (Array.isArray(jsonSchema.oneOf)) {
-		const unions = getUnionFromOneOf(getTypeByProperty)(jsonSchema);
+		const unions = getUnionFromOneOf(getTypeByProperty(definitions))(jsonSchema);
 
 		columns = Object.keys(unions).reduce((hash, typeName) => Object.assign(
 			{},
@@ -294,7 +294,7 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 	} 
 	
 	if (Array.isArray(jsonSchema.allOf)) {
-		const unions = getUnionFromAllOf(getTypeByProperty)(jsonSchema);
+		const unions = getUnionFromAllOf(getTypeByProperty(definitions))(jsonSchema);
 		
 		columns = Object.keys(unions).reduce((hash, typeName) => Object.assign(
 			{},
@@ -310,7 +310,7 @@ const getColumnStatement = ({ name, type, comment, constraints }) => {
 	const commentStatement = comment 
 		? ` COMMENT '${comment}'`
 		: '';
-	const constraintsStaitment = getColumnConstraintsStaitment(constraints);
+	const constraintsStaitment = constraints ? getColumnConstraintsStaitment(constraints) : '';
 	
 	return `${name} ${type}${commentStatement}${constraintsStaitment}`;
 };
