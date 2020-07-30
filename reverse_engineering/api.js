@@ -319,7 +319,7 @@ module.exports = {
 				} else if (schema.type === 'null') {
 					clearOutRequired(parentJsonSchema, key);
 
-					return schema;
+					return;
 				} else {
 					return schema;
 				}
