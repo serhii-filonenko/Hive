@@ -19,6 +19,6 @@
 		"format": ""
 	},
 	"descriptor": [{
-		"format": "duration"
+		"format": "PnYnMnDTnHnMnS"
 	}]
 }

@@ -9,5 +9,8 @@
 	},
 	"defaultValues": {
 		"primaryKey": false
+	},
+	"descriptor": {
+		"mode": "binary"
 	}
 }
