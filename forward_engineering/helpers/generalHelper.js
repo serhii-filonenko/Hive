@@ -18,6 +18,10 @@ const buildStatement = (mainStatement) => {
 	};
 
 	const getStatement = (condition, statement) => {
+		if (statement === ')') {
+			return '\n)';
+		}
+
 		if (condition) {
 			return '\n' + indentString(statement);
 		}

@@ -11,11 +11,12 @@ const getCreateStatement = ({
 	const temporary = isTemporary ? 'TEMPORARY' : '';
 	const external = isExternal ? 'EXTERNAL' : '';
 	const tempExtStatement = ' ' + [temporary, external].filter(d => d).map(item => item + ' ').join('');
+	const fullTableName = dbName ? `${dbName}.${tableName}` : tableName;
 
-	return buildStatement(`CREATE${tempExtStatement}TABLE IF NOT EXISTS ${dbName}.${tableName} (`)
-		(columnStatement, indentString(columnStatement + (primaryKeyStatement ? ',' : '')))
-		(primaryKeyStatement, indentString(primaryKeyStatement))
-		(foreignKeyStatement, indentString(foreignKeyStatement))
+	return buildStatement(`CREATE${tempExtStatement}TABLE IF NOT EXISTS ${fullTableName} (`)
+		(columnStatement, columnStatement + (primaryKeyStatement ? ',' : ''))
+		(primaryKeyStatement, primaryKeyStatement)
+		(foreignKeyStatement, foreignKeyStatement)
 		(true, ')')
 		(comment, `COMMENT '${comment}'`)
 		(partitionedByKeys, `PARTITIONED BY (${partitionedByKeys})`)
