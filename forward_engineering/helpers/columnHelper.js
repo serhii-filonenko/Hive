@@ -2,7 +2,7 @@
 
 const { buildStatement, getName, getTab, indentString, getTypeDescriptor, prepareName } = require('./generalHelper');
 
-const getStructChild = (name, type, comment) => `${name}: ${type}` + (comment ? ` COMMENT '${comment}'` : '');
+const getStructChild = (name, type, comment) => `${prepareName(name)}: ${type}` + (comment ? ` COMMENT '${comment}'` : '');
 
 const getStructChildProperties = getTypeByProperty => property => {
 	const childProperties = Object.keys(property.properties || {});
@@ -284,22 +284,22 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 	}, {});
 
 	if (Array.isArray(jsonSchema.oneOf)) {
-		const unions = getUnionFromOneOf(getTypeByProperty)(jsonSchema);
+		const unions = getUnionFromOneOf(getTypeByProperty(definitions))(jsonSchema);
 
 		columns = Object.keys(unions).reduce((hash, typeName) => Object.assign(
 			{},
 			hash,
-			getColumn(typeName, unions[typeName])
+			getColumn(prepareName(typeName), unions[typeName])
 		), columns);
 	} 
 	
 	if (Array.isArray(jsonSchema.allOf)) {
-		const unions = getUnionFromAllOf(getTypeByProperty)(jsonSchema);
+		const unions = getUnionFromAllOf(getTypeByProperty(definitions))(jsonSchema);
 		
 		columns = Object.keys(unions).reduce((hash, typeName) => Object.assign(
 			{},
 			hash,
-			getColumn(typeName, unions[typeName])
+			getColumn(prepareName(typeName), unions[typeName])
 		), columns);
 	}
 
@@ -310,7 +310,7 @@ const getColumnStatement = ({ name, type, comment, constraints }) => {
 	const commentStatement = comment 
 		? ` COMMENT '${comment}'`
 		: '';
-	const constraintsStaitment = getColumnConstraintsStaitment(constraints);
+	const constraintsStaitment = constraints ? getColumnConstraintsStaitment(constraints) : '';
 	
 	return `${name} ${type}${commentStatement}${constraintsStaitment}`;
 };
