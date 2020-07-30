@@ -24,11 +24,5 @@
 		"sample":"",
 		"comments":"",
 		"mode": "string"
-	},
-	"descriptor": [{
-		"schema": {
-			"format": "time"
-		},
-		"format": "hh:mm:ss"
-	}]
+	}
 }

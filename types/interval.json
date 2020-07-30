@@ -17,8 +17,5 @@
 		"pattern": "",
 		"comments":"",
 		"format": ""
-	},
-	"descriptor": [{
-		"format": "duration"
-	}]
+	}
 }

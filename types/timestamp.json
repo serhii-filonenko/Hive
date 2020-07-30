@@ -13,8 +13,5 @@
 		"comments":"",
 		"pattern":"",
 		"format": ""
-	},
-	"descriptor": [{
-		"format": "timestamp"
-	}]
+	}
 }
