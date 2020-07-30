@@ -12,9 +12,13 @@ const getCreateStatement = ({
 
 const getDatabaseStatement = (containerData) => {
 	const tab = getTab(0, containerData);
-	
+	const name = replaceSpaceWithUnderscore(getName(tab));
+	if (!name) {
+		return '';
+	}
+
 	return getCreateStatement({
-		name: replaceSpaceWithUnderscore(getName(tab)),
+		name: name,
 		comment: tab.description
 	});
 };

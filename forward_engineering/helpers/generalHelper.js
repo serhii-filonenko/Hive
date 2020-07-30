@@ -1,5 +1,7 @@
 'use strict'
 
+const RESERVED_WORDS = require('./reserverWords');
+
 const buildStatement = (mainStatement) => {
 	let composeStatements = (...statements) => {
 		return statements.reduce((result, statement) => result + statement, mainStatement);
@@ -16,6 +18,10 @@ const buildStatement = (mainStatement) => {
 	};
 
 	const getStatement = (condition, statement) => {
+		if (statement === ')') {
+			return '\n)';
+		}
+
 		if (condition) {
 			return '\n' + indentString(statement);
 		}
@@ -26,9 +32,13 @@ const buildStatement = (mainStatement) => {
 	return chain;
 };
 
+const isEscaped = (name) => /\`[\s\S]*\`/.test(name);
+
 const prepareName = name => {
 	const containSpaces = /\s/g;
-	if (containSpaces.test(name)) {
+	if (containSpaces.test(name) && !isEscaped(name)) {
+		return `\`${name}\``;
+	} else if (RESERVED_WORDS.includes(name.toLowerCase())) {
 		return `\`${name}\``;
 	}
 	return name;

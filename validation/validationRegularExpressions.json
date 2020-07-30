@@ -1,4 +1,4 @@
 {
-	"name": "^\\S*$",
-	"collectionName": "^\\S*$"
+	"name": "^((?![()]+)\\S)*$",
+	"collectionName": "^((?![()]+)\\S)*$"
 }

@@ -4,10 +4,13 @@ const { getDatabaseStatement } = require('./helpers/databaseHelper');
 const { getTableStatement } = require('./helpers/tableHelper');
 const { getIndexes } = require('./helpers/indexHelper');
 const foreignKeyHelper = require('./helpers/foreignKeyHelper');
+let _;
+const sqlFormatter = require('sql-formatter');
 
 module.exports = {
-	generateScript(data, logger, callback) {
+	generateScript(data, logger, callback, app) {
 		try {
+			initDependencies(app);
 			const jsonSchema = JSON.parse(data.jsonSchema);
 			const modelDefinitions = JSON.parse(data.modelDefinitions);
 			const internalDefinitions = JSON.parse(data.internalDefinitions);
@@ -16,8 +19,9 @@ module.exports = {
 			const entityData = data.entityData;
 			const areColumnConstraintsAvailable = data.modelData[0].dbVersion.startsWith('3');
 			const areForeignPrimaryKeyConstraintsAvailable = !data.modelData[0].dbVersion.startsWith('1');
+			const needMinify = (_.get(data, 'options.additionalOptions', []).find(option => option.id === 'minify') || {}).value;
 			
-			callback(null, buildScript(
+			callback(null, buildScript(needMinify)(
 				getDatabaseStatement(containerData),
 				getTableStatement(
 					containerData,
@@ -47,8 +51,9 @@ module.exports = {
 		}
 	},
 
-	generateContainerScript(data, logger, callback) {
+	generateContainerScript(data, logger, callback, app) {
 		try {
+			initDependencies(app);
 			const containerData = data.containerData;
 			const modelDefinitions = JSON.parse(data.modelDefinitions);
 			const externalDefinitions = JSON.parse(data.externalDefinitions);
@@ -57,6 +62,7 @@ module.exports = {
 			const internalDefinitions = parseEntities(data.entities, data.internalDefinitions);
 			const areColumnConstraintsAvailable = data.modelData[0].dbVersion.startsWith('3');
 			const areForeignPrimaryKeyConstraintsAvailable = !data.modelData[0].dbVersion.startsWith('1');
+			const needMinify = (_.get(data, 'options.additionalOptions', []).find(option => option.id === 'minify') || {}).value;
 			const foreignKeyHashTable = foreignKeyHelper.getForeignKeyHashTable(
 				data.relationships,
 				data.entities,
@@ -88,7 +94,7 @@ module.exports = {
 
 			const foreignKeys = getForeignKeys(data, foreignKeyHashTable, areForeignPrimaryKeyConstraintsAvailable);
 
-			callback(null, buildScript(
+			callback(null, buildScript(needMinify)(
 				databaseStatement,
 				...entities,
 				foreignKeys
@@ -103,8 +109,13 @@ module.exports = {
 	}
 };
 
-const buildScript = (...statements) => {
-	return statements.filter(statement => statement).join('\n\n');
+const buildScript = needMinify => (...statements) => {
+	const script = statements.filter(statement => statement).join('\n\n');
+	if (needMinify) {
+		return script;
+	}
+
+	return sqlFormatter.format(script, { indent: '    ' });
 };
 
 const parseEntities = (entities, serializedItems) => {
@@ -131,3 +142,7 @@ const getForeignKeys = (data, foreignKeyHashTable, areForeignPrimaryKeyConstrain
 		return result;
 	}, []).join('\n');
 }
+
+const initDependencies = app => {
+	_ = app.require('lodash');
+};
