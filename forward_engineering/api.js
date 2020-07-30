@@ -115,7 +115,7 @@ const buildScript = needMinify => (...statements) => {
 		return script;
 	}
 
-	return sqlFormatter.format(script);
+	return sqlFormatter.format(script, { indent: '    ' });
 };
 
 const parseEntities = (entities, serializedItems) => {
