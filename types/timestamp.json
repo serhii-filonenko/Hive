@@ -15,6 +15,12 @@
 		"format": ""
 	},
 	"descriptor": [{
-		"format": "timestamp"
+		"format": "YYYY-MM-DD hh:mm:ss"
+	}, {
+		"format": "YYYY-MM-DD hh:mm:ss.nnn"
+	}, {
+		"format": "YYYY-MM-DD hh:mm:ss.nnnnnn"
+	}, {
+		"format": "YYYY-MM-DD hh:mm:ss.nnnnnnnnn"
 	}]
 }
