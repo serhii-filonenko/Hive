@@ -24,5 +24,21 @@
 		"sample":"",
 		"comments":"",
 		"mode": "string"
-	}
+	},
+	"descriptor": [{
+		"schema": {
+			"format": "time"
+		},
+		"format": "hh:mm:ss"
+	}, {
+		"schema": {
+			"format": "time"
+		},
+		"format": "hh:mm:ss.nnn"
+	}, {
+		"schema": {
+			"format": "time"
+		},
+		"format": "hh:mm:ss.nnnnnn"
+	}]
 }
