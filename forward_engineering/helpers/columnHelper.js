@@ -1,6 +1,6 @@
 'use strict'
 
-const { buildStatement, getName, getTab, indentString, getTypeDescriptor, prepareName } = require('./generalHelper');
+const { buildStatement, getName, getTab, indentString, getTypeDescriptor, prepareName, commentDeactivatedStatements } = require('./generalHelper');
 
 const getStructChild = (name, type, comment) => `${prepareName(name)}: ${type}` + (comment ? ` COMMENT '${comment}'` : '');
 
@@ -257,20 +257,25 @@ const getTypeByProperty = (definitions = []) => property => {
 	}
 };
 
-const getColumn = (name, type, comment, constraints) => ({
-	[name]: { type, comment, constraints }
+const getColumn = (name, type, comment, constraints, isActivated) => ({
+	[name]: { type, comment, constraints, isActivated }
 });
 
 const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
+	const deactivatedColumnNames = new Set();
 	let columns = Object.keys(jsonSchema.properties || {}).reduce((hash, columnName) => {
 		const property = jsonSchema.properties[columnName];
 		const isRequired = (jsonSchema.required || []).includes(columnName);
-
+		const name = getName(property) || columnName;
+		if (!property.isActivated) {
+			deactivatedColumnNames.add(name);
+		}
+		
 		return Object.assign(
 			{},
 			hash,
 			getColumn(
-				prepareName((getName(property) || columnName)),
+				prepareName(name),
 				getTypeByProperty(definitions)(property),
 				property.description,
 				areColumnConstraintsAvailable ? {
@@ -278,7 +283,8 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 					unique: property.unique,
 					check: property.check,
 					defaultValue: property.default
-				} : {}
+				} : {},
+				property.isActivated
 			)
 		);
 	}, {});
@@ -303,24 +309,24 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 		), columns);
 	}
 
-	return columns;
+	return { columns, deactivatedColumnNames };
 };
 
-const getColumnStatement = ({ name, type, comment, constraints }) => {
+const getColumnStatement = ({ name, type, comment, constraints, isActivated, isParentActivated }) => {
 	const commentStatement = comment 
 		? ` COMMENT '${comment}'`
 		: '';
 	const constraintsStaitment = constraints ? getColumnConstraintsStaitment(constraints) : '';
-	
-	return `${name} ${type}${commentStatement}${constraintsStaitment}`;
+	const isColumnActivated = isParentActivated ? isActivated : true;
+	return commentDeactivatedStatements(`${name} ${type}${commentStatement}${constraintsStaitment}`, isColumnActivated);
 };
 
-const getColumnsStatement = (columns) => {
+const getColumnsStatement = (columns, isParentActivated) => {
 	return Object.keys(columns).map((name) => {
 		return getColumnStatement(Object.assign(
 			{},
 			columns[name],
-			{ name }
+			{ name, isParentActivated }
 		))
 	}).join(',\n');
 };

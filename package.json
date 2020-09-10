@@ -27,7 +27,8 @@
 			"enableJsonType": true,
 			"relationships": {
                 "compositeRelationships": true                
-            }
+			},
+			"FEScriptCommentsSupported": ["2.x", "3.x"]
 		}
 	},
 	"description": "Hackolade plugin for Apache Hive"
