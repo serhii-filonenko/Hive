@@ -1,7 +1,7 @@
 'use strict'
 
 const schemaHelper = require('./jsonSchemaHelper');
-const { getName, getTab } = require('./generalHelper');
+const { getName, getTab, commentDeactivatedStatements } = require('./generalHelper');
 
 const getIdToNameHashTable = (relationships, entities, jsonSchemas, internalDefinitions, otherDefinitions) => {
 	const entitiesForHashing = entities.filter(entityId => relationships.find(relationship => (
@@ -21,7 +21,7 @@ const getIdToNameHashTable = (relationships, entities, jsonSchemas, internalDefi
 	}, {});
 };
 
-const getForeignKeyHashTable = (relationships, entities, entityData, jsonSchemas, internalDefinitions, otherDefinitions) => {
+const getForeignKeyHashTable = (relationships, entities, entityData, jsonSchemas, internalDefinitions, otherDefinitions, isContainerActivated) => {
 	const idToNameHashTable = getIdToNameHashTable(relationships, entities, jsonSchemas, internalDefinitions, otherDefinitions);
 
 	return relationships.reduce((hashTable, relationship) => {
@@ -30,8 +30,10 @@ const getForeignKeyHashTable = (relationships, entities, entityData, jsonSchemas
 		}
 
 		const constraintName = relationship.name;
-		const parentTableName = getName(getTab(0, entityData[relationship.parentCollection]));
-		const childTableName = getName(getTab(0, entityData[relationship.childCollection]));
+		const parentTableData = getTab(0, entityData[relationship.parentCollection]);
+		const parentTableName = getName(parentTableData);
+		const childTableData = getTab(0, entityData[relationship.childCollection]);
+		const childTableName = getName(childTableData);
 		const groupKey = parentTableName + constraintName;
 
 		if (!hashTable[relationship.childCollection][groupKey]) {
@@ -44,8 +46,18 @@ const getForeignKeyHashTable = (relationships, entities, entityData, jsonSchemas
 			disableNoValidate: disableNoValidate,
 			parentTableName: parentTableName,
 			childTableName: childTableName,
-			parentColumn: getPreparedForeignColumns(relationship.parentField, idToNameHashTable),
-			childColumn: getPreparedForeignColumns(relationship.childField, idToNameHashTable)
+			parentColumn: getPreparedForeignColumns(
+				relationship.parentField,
+				idToNameHashTable
+			),
+			childColumn: getPreparedForeignColumns(
+				relationship.childField,
+				idToNameHashTable
+			),
+			isActivated:
+				isContainerActivated &&
+				(parentTableData && parentTableData.isActivated) &&
+				(childTableData && childTableData.isActivated),
 		});
 		
 		return hashTable;
@@ -61,8 +73,11 @@ const getForeignKeyStatementsByHashItem = (hashItem) => {
 		const disableNoValidate = keys.some(item => (item || {}).disableNoValidate);
 		const childColumns = keys.map(item => item.childColumn).join(', ');
 		const parentColumns = keys.map(item => item.parentColumn).join(', ');
+		const isActivated = (keys[0] || {}).isActivated;
 
-		return `ALTER TABLE ${childTableName} ADD CONSTRAINT ${constraintName} FOREIGN KEY (${childColumns}) REFERENCES ${parentTableName}(${parentColumns}) ${disableNoValidate ? 'DISABLE NOVALIDATE' : ''};`;
+		const statement = `ALTER TABLE ${childTableName} ADD CONSTRAINT ${constraintName} FOREIGN KEY (${childColumns}) REFERENCES ${parentTableName}(${parentColumns}) ${disableNoValidate ? 'DISABLE NOVALIDATE' : ''};`;
+		
+		return commentDeactivatedStatements(statement, isActivated);
 	}).join('\n');
 };
 

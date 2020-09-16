@@ -1,8 +1,12 @@
 'use strict'
 
 const RESERVED_WORDS = require('./reserverWords');
+const { dependencies } = require('./appDependencies');
+let _;
 
-const buildStatement = (mainStatement) => {
+const setDependencies = ({ lodash }) => _ = lodash;
+
+const buildStatement = (mainStatement, isActivated) => {
 	let composeStatements = (...statements) => {
 		return statements.reduce((result, statement) => result + statement, mainStatement);
 	};
@@ -14,12 +18,15 @@ const buildStatement = (mainStatement) => {
 			return chain;
 		}
 
-		return composeStatements();
+		return commentDeactivatedStatements(composeStatements(), isActivated);
 	};
 
 	const getStatement = (condition, statement) => {
 		if (statement === ')') {
 			return '\n)';
+		}
+		if (statement === ';') {
+			return statement;
 		}
 
 		if (condition) {
@@ -65,6 +72,33 @@ const getTypeDescriptor = (typeName) => {
 	}
 };
 
+const commentDeactivatedStatements = (statement, isActivated = true) => {
+	if (isActivated) {
+		return statement;
+	}
+	const insertBeforeEachLine = (statement, insertValue) =>
+		statement
+			.split('\n')
+			.map((line) => `${insertValue}${line}`)
+			.join('\n');
+
+	return insertBeforeEachLine(statement, '-- ');
+}
+
+const commentDeactivatedInlineKeys = (keys, deactivatedKeyNames) => {
+	setDependencies(dependencies);
+
+	const [activatedKeys, deactivatedKeys] = _.partition(keys, key => !deactivatedKeyNames.has(key));
+	if (activatedKeys.length === 0) {
+		return { isAllKeysDeactivated: true, keysString: deactivatedKeys.join(', ') };
+	}
+	if (deactivatedKeys.length === 0) {
+		return { isAllKeysDeactivated: false, keysString: activatedKeys.join(', ') };
+	}
+
+	return { isAllKeysDeactivated: false, keysString: `${activatedKeys.join(', ')} /*, ${deactivatedKeys.join(', ')} */` }
+}
+
 module.exports = {
 	buildStatement,
 	getName,
@@ -72,5 +106,7 @@ module.exports = {
 	indentString,
 	getTypeDescriptor,
 	prepareName,
-	replaceSpaceWithUnderscore
+	replaceSpaceWithUnderscore,
+	commentDeactivatedStatements,
+	commentDeactivatedInlineKeys
 };

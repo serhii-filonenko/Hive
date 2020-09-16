@@ -127,11 +127,31 @@ const getPrimaryKeys = (jsonSchema) => {
 	return primaryKeys;
 };
 
+const getItemByPath = (path, jsonSchema) => {
+	if (path.length === 0) {
+		return null;
+	}
+	// if (jsonSchema.GUID === path[0]) {
+	// 	return jsonSchema;
+	// }
+	if (jsonSchema.properties) {
+		const item = Object.values(jsonSchema.properties).find(item => item.GUID === path[0]);
+		if (item) {
+			if (path.length === 1) {
+				return item;
+			}
+			return getItemByPath(path.slice(1), item);
+		}
+	}
+	return null;
+}
+
 module.exports = {
 	getPathById,
 	getNamesByIds,
 	getPrimaryKeys,
 	getIdToNameHashTable,
 	getNameByPath,
-	getPathsByIds
+	getPathsByIds,
+	getItemByPath
 };
