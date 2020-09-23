@@ -131,17 +131,21 @@ const getItemByPath = (path, jsonSchema) => {
 	if (path.length === 0) {
 		return null;
 	}
-	// if (jsonSchema.GUID === path[0]) {
-	// 	return jsonSchema;
-	// }
+	let item;
 	if (jsonSchema.properties) {
-		const item = Object.values(jsonSchema.properties).find(item => item.GUID === path[0]);
-		if (item) {
-			if (path.length === 1) {
-				return item;
-			}
-			return getItemByPath(path.slice(1), item);
+		item = Object.values(jsonSchema.properties).find(item => item.GUID === path[0]);
+	} else if (jsonSchema.items) {
+		if (Array.isArray(jsonSchema.items)) {
+			item = jsonSchema.items.find(item => item.GUID === path[0]);
+		} else {
+			item = jsonSchema.items;
 		}
+	}
+	if (item) {
+		if (path.length === 1) {
+			return item;
+		}
+		return getItemByPath(path.slice(1), item);
 	}
 	return null;
 }
