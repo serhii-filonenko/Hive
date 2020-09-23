@@ -88,7 +88,14 @@ const commentDeactivatedStatements = (statement, isActivated = true) => {
 const commentDeactivatedInlineKeys = (keys, deactivatedKeyNames) => {
 	setDependencies(dependencies);
 
-	const [activatedKeys, deactivatedKeys] = _.partition(keys, key => !deactivatedKeyNames.has(key));
+	const [activatedKeys, deactivatedKeys] = _.partition(
+		keys,
+		(key) =>
+			!(
+				deactivatedKeyNames.has(key) ||
+				deactivatedKeyNames.has(key.slice(1, -1))
+			)
+	);
 	if (activatedKeys.length === 0) {
 		return { isAllKeysDeactivated: true, keysString: deactivatedKeys.join(', ') };
 	}
