@@ -88,7 +88,14 @@ const commentDeactivatedStatements = (statement, isActivated = true) => {
 const commentDeactivatedInlineKeys = (keys, deactivatedKeyNames) => {
 	setDependencies(dependencies);
 
-	const [activatedKeys, deactivatedKeys] = _.partition(keys, key => !deactivatedKeyNames.has(key));
+	const [activatedKeys, deactivatedKeys] = _.partition(
+		keys,
+		(key) =>
+			!(
+				deactivatedKeyNames.has(key) ||
+				deactivatedKeyNames.has(key.slice(1, -1))
+			)
+	);
 	if (activatedKeys.length === 0) {
 		return { isAllKeysDeactivated: true, keysString: deactivatedKeys.join(', ') };
 	}
@@ -99,6 +106,25 @@ const commentDeactivatedInlineKeys = (keys, deactivatedKeyNames) => {
 	return { isAllKeysDeactivated: false, keysString: `${activatedKeys.join(', ')} /*, ${deactivatedKeys.join(', ')} */` }
 }
 
+const removeRedundantTrailingCommaFromStatement = (statement) => {
+	setDependencies(dependencies);
+	
+	const splitedStatement = statement.split('\n');
+	if (splitedStatement.length < 4 || !splitedStatement[splitedStatement.length - 2].trim().startsWith('--')) {
+		return statement;
+	}
+	const lineWithTrailingCommaIndex = _.findLastIndex(splitedStatement, line => {
+		if (line.trim() !== ');' && !line.trim().startsWith('--')) {
+			return true;
+		}
+	});
+	if (lineWithTrailingCommaIndex !== -1) {
+		splitedStatement[lineWithTrailingCommaIndex] = `${splitedStatement[lineWithTrailingCommaIndex].slice(0,-1)} -- ,`;
+		return splitedStatement.join('\n');
+	}
+	return statement;
+} 
+
 module.exports = {
 	buildStatement,
 	getName,
@@ -108,5 +134,6 @@ module.exports = {
 	prepareName,
 	replaceSpaceWithUnderscore,
 	commentDeactivatedStatements,
-	commentDeactivatedInlineKeys
+	commentDeactivatedInlineKeys,
+	removeRedundantTrailingCommaFromStatement,
 };

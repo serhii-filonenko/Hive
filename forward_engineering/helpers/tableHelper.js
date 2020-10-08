@@ -1,6 +1,6 @@
 'use strict'
 
-const { buildStatement, getName, getTab, indentString, replaceSpaceWithUnderscore, commentDeactivatedInlineKeys } = require('./generalHelper');
+const { buildStatement, getName, getTab, indentString, replaceSpaceWithUnderscore, commentDeactivatedInlineKeys, removeRedundantTrailingCommaFromStatement } = require('./generalHelper');
 const { getColumnsStatement, getColumnStatement, getColumns } = require('./columnHelper');
 const keyHelper = require('./keyHelper');
 const { dependencies } = require('./appDependencies');
@@ -203,7 +203,7 @@ const getTableStatement = (containerData, entityData, jsonSchema, definitions, f
 		isActivated: isTableActivated,
 	});
 
-	return tableStatement;
+	return removeRedundantTrailingCommaFromStatement(tableStatement);
 };
 
 module.exports = {

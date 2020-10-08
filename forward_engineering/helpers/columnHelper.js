@@ -6,38 +6,50 @@ const getStructChild = (name, type, comment) => `${prepareName(name)}: ${type}` 
 
 const getStructChildProperties = getTypeByProperty => property => {
 	const childProperties = Object.keys(property.properties || {});
-	let result = [];
+	const activatedProps = [];
+	const deactivatedProps = [];
 
 	if (childProperties.length) {
-		result = childProperties.map(propertyName => {
+		childProperties.forEach(propertyName => {
 			const childProperty = property.properties[propertyName];
 			const name = (getName(childProperty) || propertyName);
-
-			return getStructChild(name, getTypeByProperty(childProperty), childProperty.description);
+			const isActivated = childProperty.isActivated !== false;
+			const structChild = getStructChild(name, getTypeByProperty(childProperty), childProperty.description);
+			if (isActivated) {
+				activatedProps.push(structChild);
+			} else {
+				deactivatedProps.push(structChild);
+			}
 		});
 	}
 
 	if (Array.isArray(property.oneOf)) {
 		const unions = getUnionFromOneOf(getTypeByProperty)(property);
-		result.push(...Object.keys(unions).map(name => getStructChild(name, unions[name])));
+		activatedProps.push(...Object.keys(unions).map(name => getStructChild(name, unions[name])));
 	}
 
 	if (Array.isArray(property.allOf)) {
 		const unions = getUnionFromAllOf(getTypeByProperty)(property);
-		result.push(...Object.keys(unions).map(name => getStructChild(name, unions[name])));
+		activatedProps.push(...Object.keys(unions).map(name => getStructChild(name, unions[name])));
 	}
 
-	if (!result.length) {
-		result.push('new_column: string');
+	if (!activatedProps.length) {
+		activatedProps.push('new_column: string');
 	}
 
-	return result;
+	return { activatedProps, deactivatedProps };
 };
 
 const getStruct = getTypeByProperty => property => {
-	const properties = getStructChildProperties(getTypeByProperty)(property);
-
-	return `struct<${properties.join(', ')}>`;
+	const getStructStatement = (propertiesString) => `struct<${propertiesString}>`;
+	
+	const { activatedProps, deactivatedProps } = getStructChildProperties(getTypeByProperty)(property);
+	if (deactivatedProps.length === 0) {
+		return getStructStatement(activatedProps.join(', '));
+	} else if (activatedProps.length === 0) {
+		return getStructStatement(`/* ${activatedProps.join(', ')} */`);
+	}
+	return getStructStatement(`${activatedProps.join(', ')} /*, ${deactivatedProps.join(', ')}*/`);
 };
 
 const getChildBySubtype = (parentType, subtype) => {
