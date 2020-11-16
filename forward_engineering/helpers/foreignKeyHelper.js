@@ -2,6 +2,10 @@
 
 const schemaHelper = require('./jsonSchemaHelper');
 const { getName, getTab, commentDeactivatedStatements } = require('./generalHelper');
+const { dependencies } = require('./appDependencies');
+const { getItemByPath } = require('./jsonSchemaHelper');
+let _;
+const setAppDependencies = ({ lodash }) => _ = lodash;
 
 const getIdToNameHashTable = (relationships, entities, jsonSchemas, internalDefinitions, otherDefinitions) => {
 	const entitiesForHashing = entities.filter(entityId => relationships.find(relationship => (
@@ -22,6 +26,7 @@ const getIdToNameHashTable = (relationships, entities, jsonSchemas, internalDefi
 };
 
 const getForeignKeyHashTable = (relationships, entities, entityData, jsonSchemas, internalDefinitions, otherDefinitions, isContainerActivated) => {
+	setAppDependencies(dependencies);
 	const idToNameHashTable = getIdToNameHashTable(relationships, entities, jsonSchemas, internalDefinitions, otherDefinitions);
 
 	return relationships.reduce((hashTable, relationship) => {
@@ -35,6 +40,14 @@ const getForeignKeyHashTable = (relationships, entities, entityData, jsonSchemas
 		const childTableData = getTab(0, entityData[relationship.childCollection]);
 		const childTableName = getName(childTableData);
 		const groupKey = parentTableName + constraintName;
+		const childFieldActivated = relationship.childField.reduce((isActivated, field) => {
+            const fieldData = getItemByPath(field.slice(1), jsonSchemas[relationship.childCollection]);
+            return isActivated && _.get(fieldData, 'isActivated');
+        }, true);
+        const parentFieldActivated = relationship.parentField.reduce((isActivated, field) => {
+			const fieldData = getItemByPath(field.slice(1), jsonSchemas[relationship.parentCollection]);
+			return isActivated && _.get(fieldData, 'isActivated');
+        }, true);
 
 		if (!hashTable[relationship.childCollection][groupKey]) {
 			hashTable[relationship.childCollection][groupKey] = [];
@@ -42,23 +55,19 @@ const getForeignKeyHashTable = (relationships, entities, entityData, jsonSchemas
 		const disableNoValidate = ((relationship || {}).customProperties || {}).disableNoValidate;
 		
 		hashTable[relationship.childCollection][groupKey].push({
-			name: relationship.name,
-			disableNoValidate: disableNoValidate,
-			parentTableName: parentTableName,
-			childTableName: childTableName,
-			parentColumn: getPreparedForeignColumns(
-				relationship.parentField,
-				idToNameHashTable
-			),
-			childColumn: getPreparedForeignColumns(
-				relationship.childField,
-				idToNameHashTable
-			),
-			isActivated:
-				isContainerActivated &&
-				(parentTableData && parentTableData.isActivated) &&
-				(childTableData && childTableData.isActivated),
-		});
+            name: relationship.name,
+            disableNoValidate: disableNoValidate,
+            parentTableName: parentTableName,
+            childTableName: childTableName,
+            parentColumn: getPreparedForeignColumns(relationship.parentField, idToNameHashTable),
+            childColumn: getPreparedForeignColumns(relationship.childField, idToNameHashTable),
+            isActivated:
+                isContainerActivated &&
+                _.get(parentTableData, 'isActivated') &&
+                _.get(childTableData, 'isActivated') &&
+                childFieldActivated &&
+                parentFieldActivated,
+        });
 		
 		return hashTable;
 	}, {});
