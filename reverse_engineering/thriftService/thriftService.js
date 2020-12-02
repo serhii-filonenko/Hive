@@ -507,7 +507,7 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 	const getCurrentProtocol = () => protocol;
 	
 	const request = createSessionRequest(TCLIServiceTypes, {
-		configuration: filterConfiguration(configuration),
+		// configuration: filterConfiguration(configuration),
 		client_protocol: protocol,
 		username,
 		password
