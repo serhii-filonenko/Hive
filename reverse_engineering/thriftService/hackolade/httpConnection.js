@@ -170,7 +170,9 @@ var HttpConnection = exports.HttpConnection = function(host, port, options) {
     var dataLen = 0;
 
     if (response.statusCode !== 200) {
-      this.emit("error", new THTTPException(response.statusCode, response));
+      return getError(response, function (error) {
+        self.emit("error", error);  
+      });
     }
 
     response.on('error', function (e) {
@@ -188,7 +190,7 @@ var HttpConnection = exports.HttpConnection = function(host, port, options) {
       if ((typeof chunk == 'string') ||
           (Object.prototype.toString.call(chunk) == '[object Uint8Array]')) {
         // Wrap ArrayBuffer/string in a Buffer so data[i].copy will work
-        data.push(new Buffer(chunk));
+        data.push(Buffer.from(chunk));
       } else {
         data.push(chunk);
       }
@@ -196,7 +198,7 @@ var HttpConnection = exports.HttpConnection = function(host, port, options) {
     });
 
     response.on('end', function(){
-      var buf = new Buffer(dataLen);
+      var buf = Buffer.alloc(dataLen);
       for (var i=0, len=data.length, pos=0; i<len; i++) {
         data[i].copy(buf, pos);
         pos += data[i].length;
@@ -247,6 +249,23 @@ exports.createHttpConnection = function(host, port, options) {
 
 exports.createHttpClient = createClient
 
+const getError = (response, callback) => {
+  let data = Buffer.from([]);
+  response.on('data', (chunk) => {
+    data = Buffer.concat([ data, chunk ]);
+  });
+  response.on('end', () => {
+    const message = data.toString();
+
+    callback(new THTTPException(
+      response.statusCode,
+      {
+        headers: response.headers,
+        message,
+      }
+    ));
+  });
+};
 
 function THTTPException(statusCode, response) {
   thrift.Thrift.TApplicationException.call(this);
@@ -255,6 +274,6 @@ function THTTPException(statusCode, response) {
   this.statusCode = statusCode;
   this.response = response;
   this.type = thrift.Thrift.TApplicationExceptionType.PROTOCOL_ERROR;
-  this.message = "Received a response with a bad HTTP status code: " + response.statusCode;
+  this.message = "Received a response with a bad HTTP status code: " + statusCode + '. Message: ' + response.message;
 }
 util.inherits(THTTPException, thrift.Thrift.TApplicationException);

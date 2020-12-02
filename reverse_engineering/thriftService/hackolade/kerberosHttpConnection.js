@@ -27,6 +27,10 @@ const createKerberosHttpConnection = (kerberos, logger) => (host, port, options)
 		.then(token => {
 			logger.log('Kerberos HTTP: token retrieved successfully');
 
+			if (!/^YII/.test(token)) {
+				logger.log('Kerberos HTTP: token has an incorrect format. Token: ' + token);
+			}
+
 			options.headers['Authorization'] = 'Negotiate : ' + token;
 
 			return createHttpConnection(host, port, options);
