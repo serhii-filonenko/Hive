@@ -16,5 +16,6 @@
 	},
 	"descriptor": [{
 		"format": "YYYY-MM-DD"
-	}]
+	}],
+	"hiddenOnEntity": "view"
 }

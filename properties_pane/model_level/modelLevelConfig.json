@@ -159,6 +159,103 @@ making sure that you maintain a proper JSON format.
 				"allowNegative": false
 			},
 			{
+				"propertyName": "Resource plans",
+				"propertyType": "group",
+				"propertyKeyword": "resourcePlans",
+				"propertyTooltip": "",
+				"structure": [
+					{
+						"propertyName": "Name",
+						"propertyKeyword": "name",
+						"propertyType": "text"
+					},
+					{
+						"propertyName": "Parallelism",
+						"propertyKeyword": "parallelism",
+						"propertyType": "numeric"
+					},
+					{
+						"propertyName": "Pools",
+						"propertyType": "group",
+						"propertyKeyword": "pools",
+						"propertyTooltip": "",
+						"structure": [
+							{
+								"propertyName": "Name",
+								"propertyKeyword": "name",
+								"propertyType": "text"
+							},
+							{
+								"propertyName": "Alloc fraction",
+								"propertyKeyword": "allocFraction",
+								"propertyType": "numeric"
+							},
+							{
+								"propertyName": "Parallelism",
+								"propertyKeyword": "parallelism",
+								"propertyType": "numeric"
+							},
+							{
+								"propertyName": "Scheduling policy",
+								"propertyKeyword": "schedulingPolicy",
+								"propertyType": "select",
+								"options": [
+									"default",
+									"fair",
+									"fcfs"
+								]
+							},
+							{
+								"propertyName": "Mappings",
+								"propertyType": "group",
+								"propertyKeyword": "mappings",
+								"propertyTooltip": "",
+								"structure": [
+									{
+										"propertyName": "Name",
+										"propertyKeyword": "name",
+										"propertyType": "text"
+									},
+									{
+										"propertyName": "Mapping type",
+										"propertyKeyword": "mappingType",
+										"propertyType": "select",
+										"options": [
+											"application",
+											"user",
+											"group"
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"propertyName": "Triggers",
+						"propertyType": "group",
+						"propertyKeyword": "triggers",
+						"propertyTooltip": "",
+						"structure": [
+							{
+								"propertyName": "Name",
+								"propertyKeyword": "name",
+								"propertyType": "text"
+							},
+							{
+								"propertyName": "Condition",
+								"propertyKeyword": "condition",
+								"propertyType": "text"
+							},
+							{
+								"propertyName": "Action",
+								"propertyKeyword": "action",
+								"propertyType": "text"
+							}
+						]
+					}
+				]
+			},
+			{
 				"propertyName": "Comments",
 				"propertyKeyword": "comments",
 				"shouldValidate": false,

@@ -119,6 +119,21 @@ making sure that you maintain a proper JSON format.
 		"lowerTab": "Details",
 		"structure": [
 			{
+				"propertyName": "Materialized",
+				"propertyKeyword": "materialized",
+				"shouldValidate": false,
+				"propertyTooltip": "is Materialized View",
+				"propertyType": "checkbox"
+			},
+			{
+				"propertyName": "Select Statement",
+				"propertyKeyword": "selectStatement",
+				"propertyType": "details",
+				"propertyTooltip": "select statement",
+				"template": "textarea",
+				"markdown": false
+			},
+			{
 				"propertyName": "Comments",
 				"propertyKeyword": "description",
 				"propertyTooltip": "comments",
@@ -134,6 +149,10 @@ making sure that you maintain a proper JSON format.
 				"addTimestampButton": true,
 				"propertyType": "details",
 				"template": "textarea"
+			},
+			{
+				"propertyKeyword": "pipeline",
+				"hidden": true
 			}
 		]
 	}

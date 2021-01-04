@@ -18,6 +18,11 @@
 			]
 		},
 		"features": {
+            "views": {
+                "enabled": true,
+                "viewLevel": "model",
+                "disablePipelines": true
+            },
 			"nestedCollections": false,
 			"disablePatternField": false,
 			"enableForwardEngineering": true,
