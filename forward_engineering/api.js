@@ -221,7 +221,7 @@ const getWorkloadManagementStatements = modelData => {
 	const resourcePlansData = _.get(_.first(modelData), 'resourcePlans');
 
 	return resourcePlansData.map(resourcePlan => {
-		const resourcePlanOptionsString = _.isUndefined(resourcePlan.parallelism) ? '' : ` WITH QUERY_PARALLELISM = ${resourcePlan.parallelism}}`
+		const resourcePlanOptionsString = _.isUndefined(resourcePlan.parallelism) ? '' : ` WITH QUERY_PARALLELISM = ${resourcePlan.parallelism}`
 		const resourcePlanStatement = `CREATE RESOURCE PLAN ${prepareName(resourcePlan.name)}${resourcePlanOptionsString};`;
 		const pools = _.get(resourcePlan, 'pools', []).filter(pool => pool.name);
 		const mappings = pools.flatMap(pool => _.get(pool, 'mappings', []).filter(mapping => mapping.name));
