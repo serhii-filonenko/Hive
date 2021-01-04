@@ -52,5 +52,6 @@
 		"numeric": {
 			"childValueName": "12345"
 		}
-	}
+	},
+	"hiddenOnEntity": "view"
 }

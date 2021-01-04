@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const uuid = require('uuid');
 const async = require('async');
 const fs = require('fs');
 const thriftService = require('./thriftService/thriftService');
@@ -67,7 +68,7 @@ module.exports = {
 			cb(null, session, cursor);
 		}).catch(err => {
 			setTimeout(() => {
-				cb(err);
+				cb(err.message || err);
 			}, 1000);
 		});
 	},
@@ -112,20 +113,26 @@ module.exports = {
 			getDbNames()
 				.then(databases => {
 					async.mapSeries(databases, (dbName, next) => {
-						const tableTypes = [ "TABLE", "VIEW", "GLOBAL TEMPORARY", "TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM" ];
-						
+						const tableTypes = [ "TABLE", "MATERIALIZED_VIEW", "VIEW", "GLOBAL TEMPORARY", "TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM" ];
 						if (includeSystemCollection) {
 							tableTypes.push("SYSTEM TABLE");
 						}
 						getTables(dbName, tableTypes)
-							.then((tables) => {
-								return tables.map(table => table.TABLE_NAME)
+							.then(tables => {
+								return tables.reduce(({ dbCollections, views }, table) => {
+									if (['MATERIALIZED_VIEW', 'VIEW'].includes(table.TABLE_TYPE)) {
+										return { dbCollections, views: [ ...views, table.TABLE_NAME] };
+									}
+
+									return { views, dbCollections: [ ...dbCollections, table.TABLE_NAME] };
+								}, { dbCollections: [], views: [] });
 							})
-							.then(dbCollections => {
+							.then(({ views, dbCollections }) => {
 								next(null, {
 									isEmpty: !Boolean(dbCollections.length),
 									dbName,
-									dbCollections
+									dbCollections,
+									views,
 								})
 							})
 							.catch(err => next(err))
@@ -153,15 +160,27 @@ module.exports = {
 		const databases = data.collectionData.dataBaseNames;
 		const pagination = data.pagination;
 		const includeEmptyCollection = data.includeEmptyCollection;
+		let modelData = null;
 		const recordSamplingSettings = data.recordSamplingSettings;
 		const fieldInference = data.fieldInference;
 	
-		this.connect(data, logger, (err, session, cursor) => {
+		this.connect(data, logger, async (err, session, cursor) => {
 			if (err) {
 				logger.log('error', err, 'Retrieving schema');
 				return cb(err);
 			}
 
+			try {
+				const exec = cursor.asyncExecute.bind(null, session.sessionHandle);
+				const query = getExecutorWithResult(cursor, exec);
+				const plans = await query('SHOW RESOURCE PLANS');
+				const resourcePlans = await Promise.all(plans.map(async plan => {
+					const resourcePlanData = await query(`SHOW RESOURCE PLAN ${plan.rp_name}`);
+
+					return parseResourcePlan(resourcePlanData);
+				}));
+				modelData = { resourcePlans };
+			} catch (err) {}
 			async.mapSeries(databases, (dbName, nextDb) => {
 				const exec = cursor.asyncExecute.bind(null, session.sessionHandle);
 				const query = getExecutorWithResult(cursor, exec);
@@ -170,12 +189,58 @@ module.exports = {
 					cursor.getPrimaryKeys.bind(null, session.sessionHandle)
 				);
 				const tableNames = tables[dbName] || [];
-
 				exec(`use ${dbName}`)
 					.then(() => query(`describe database ${dbName}`))
 					.then((databaseInfo) => {
 						async.mapSeries(tableNames, (tableName, nextTable) => {
 							progress({ message: 'Start sampling data', containerName: dbName, entityName: tableName });
+							const isView = tableName.slice(-4) === ' (v)';
+							if (isView) {
+								const viewName = tableName.slice(0, -4)
+								return query(`describe extended ${viewName}`).then(viewData => {
+									const { schema, additionalDescription } = viewData.reduce((data, item) => {
+										const { schema, isSchemaParsingFinished, additionalDescription } = data;
+										if (!item.col_name || item.col_name === 'Detailed Table Information') {
+											const originalDdl = item.data_type.split('viewOriginalText:')[1] || '';
+											return { ...data, isSchemaParsingFinished: true, additionalDescription: originalDdl};
+										}
+										if (isSchemaParsingFinished) {
+											return { ...data, additionalDescription: `${additionalDescription} ${item.col_name}`};
+										}
+				
+										return { ...data, schema: {
+											...schema,
+											[item.col_name]: { comment: item.comment }
+										}};
+									}, { schema: {}, isSchemaParsingFinished: false, additionalDescription: '' });
+
+									const metaInfoRegex = /(.*?)(, viewExpandedText:|, tableType:|, rewriteEnabled:)/;
+									
+									const isMaterialized = additionalDescription.includes('tableType:MATERIALIZED_VIEW');
+									const selectStatement = (metaInfoRegex.exec(additionalDescription)[1] || additionalDescription);
+
+									const viewPackage = {
+										dbName,
+										entityLevel: {},
+										views: [{
+											name: viewName,
+											data: {
+												materialized: isMaterialized
+											},
+											ddl: {
+												script: `CREATE VIEW ${viewName} AS ${selectStatement};`,
+												type: 'teradata'
+											}
+										}],
+										emptyBucket: false,
+										bucketInfo: {
+										}
+									};
+									return nextTable(null, { documentPackage: viewPackage, relationships: [] });
+								}).catch(err => {
+									nextTable(null, { documentPackage: false, relationships: [] })
+								});
+							}
 
 							getLimitByCount(recordSamplingSettings, query.bind(null, `select count(*) as count from ${tableName}`))
 								.then(countDocuments => {
@@ -299,7 +364,7 @@ module.exports = {
 						cb(err);
 					}, 1000);
 				} else {
-					cb(err, ...expandFinalPackages(data));
+					cb(err, ...expandFinalPackages(modelData, data));
 				}
 			});
 		}, app);
@@ -382,6 +447,10 @@ const logInfo = (step, connectionInfo, logger) => {
 
 const expandPackages = (packages) => {
 	return packages.reduce((result, pack) => {
+		if (!_.get(pack, 'documentPackage')) {
+			return result;
+		}
+
 		result.documentPackage.push(pack.documentPackage);
 		result.relationships = result.relationships.concat(pack.relationships);
 
@@ -389,13 +458,13 @@ const expandPackages = (packages) => {
 	}, { documentPackage: [], relationships: [] });
 };
 
-const expandFinalPackages = (packages) => {
+const expandFinalPackages = (modelData, packages) => {
 	return packages.reduce((result, pack) => {
 		result[0] = [...result[0], ...pack.documentPackage];
 		result[2] = [...result[2], ...pack.relationships];
 
 		return result;
-	}, [[], null, []])
+	}, [[], modelData, []])
 };
 
 const getLimitByCount = (recordSamplingSettings, getCount) => new Promise((resolve, reject) => {
@@ -600,3 +669,148 @@ const getSslCerts = (options, app) => {
 };
 
 const isSsl = (ssl) => ssl && ssl !== 'false' && ssl !== 'https';
+
+const parseMapping = line => {
+	const data = line.match(/mapped for (applications|users|groups)(?:\: (.*))/mi);
+	if (!data) {
+		return;
+	}
+	const [ all, mappingType, name ] = data;
+
+	return {
+		name,
+		mappingType: mappingType.slice(0, -1),
+	};
+};
+
+const parseTrigger = line => {
+	const data = line.match(/^trigger (.*): if \((.*)\) \{\s+(.*)\s+\}$/mi);
+	if (!data) {
+		return;
+	}
+	const [ all, name, condition, action ] = data;
+
+	return {
+		name,
+		condition,
+		action,
+	};
+};
+
+const parseLlapEntityProperties = line => {
+	const data = line.match(/(.*)\[([^\[]*)\]$/mi);
+	if (!data) {
+		return;
+	}
+	const [ all, name, options ] = line.match(/(.*)\[([^\[]*)\]$/mi);
+	const properties = Object.fromEntries(
+		options.split(',')
+			.map(keyValue => keyValue.split('='))
+			.map(([key, value]) => {
+				if (value === 'null') {
+					return;
+				}
+
+				return [key, isNaN(value) ? _.toLower(value) : Number(value)];
+			})
+			.filter(Boolean)
+		);
+
+	return {
+		name,
+		...properties
+	};
+};
+
+const parsePool = line => parseLlapEntityProperties(_.trim(line.slice(1)));
+
+const parseResourcePlanEntities = lines => lines.reduce((result, lineData) => {
+	const { pools, triggers, currentPool } = result;
+	const line = _.trim(lineData.line);
+	const isPool = _.startsWith(line, '+');
+	const isPoolProperty = _.startsWith(line, '|');
+	if (!isPool && !isPoolProperty) {
+		return result;
+	}
+	if (isPool) {
+		const pool = parsePool(line);
+		if (!pool) {
+			return {
+				currentPool: '',
+				pools,
+				triggers
+			}
+		}
+
+		return {
+			pools: {
+				...pools,
+				[pool.name]: pool
+			},
+			currentPool: pool.name,
+			triggers
+		}
+	}
+
+	const propertyLine = _.trim(line.slice(1));
+	const isTrigger = _.startsWith(propertyLine, 'trigger');
+	const isMapping = _.startsWith(propertyLine, 'mapped');
+	if (isTrigger) {
+		const trigger = parseTrigger(propertyLine);
+		if (!trigger) {
+			return result;
+		}
+
+		return {
+			pools,
+			currentPool,
+			triggers: {
+				...triggers,
+				[trigger.name]: trigger
+			}
+		}
+	}
+
+	if (!isMapping || !currentPool) {
+		return result;
+	}
+
+	const mapping = parseMapping(propertyLine);
+	if (!mapping) {
+		return result;
+	}
+	const pool = pools[currentPool];
+
+	return {
+		pools: {
+			...pools,
+			[currentPool]: {
+				...pool,
+				mappings: {
+					...(pool.mappings || {}),
+					[mapping.name]: mapping,
+				}
+			}
+		},
+		currentPool,
+		triggers
+	};
+}, { triggers: {}, pools: {}});
+
+const parseResourcePlan = planData => {
+	const [ resourcePlan, ...propertiesLines ] = planData;
+	const properties = parseLlapEntityProperties(resourcePlan.line);
+	const entities = parseResourcePlanEntities(propertiesLines);
+	const resourcePlanProperties = properties.parallelism ? { parallelism: properties.parallelism } : {};
+
+	return {
+		...setId(resourcePlanProperties),
+		pools: Object.values(entities.pools).map(pool => ({
+			...setId(pool),
+			mappings: Object.values(pool.mappings || {}).map(setId)
+		})),
+		triggers: Object.values(entities.triggers || {}).map(setId)
+	};
+};
+
+const setId = obj => ({ ...obj, GUID: uuid.v4() });

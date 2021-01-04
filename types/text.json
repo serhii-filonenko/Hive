@@ -40,5 +40,6 @@
 			"format": "time"
 		},
 		"format": "hh:mm:ss.nnnnnn"
-	}]
+	}],
+	"hiddenOnEntity": "view"
 }

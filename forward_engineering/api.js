@@ -4,6 +4,7 @@ const { setDependencies, dependencies } = require('./helpers/appDependencies');
 const { getDatabaseStatement } = require('./helpers/databaseHelper');
 const { getTableStatement } = require('./helpers/tableHelper');
 const { getIndexes } = require('./helpers/indexHelper');
+const { getViewScript } = require('./helpers/viewHelper');
 const foreignKeyHelper = require('./helpers/foreignKeyHelper');
 let _;
 const sqlFormatter = require('sql-formatter');
@@ -75,6 +76,7 @@ module.exports = {
 			const containerData = data.containerData;
 			const modelDefinitions = JSON.parse(data.modelDefinitions);
 			const externalDefinitions = JSON.parse(data.externalDefinitions);
+			const workloadManagementStatements = getWorkloadManagementStatements(data.modelData);
 			const databaseStatement = getDatabaseStatement(containerData);
 			const jsonSchema = parseEntities(data.entities, data.jsonSchema);
 			const internalDefinitions = parseEntities(
@@ -92,6 +94,18 @@ module.exports = {
 					(option) => option.id === 'minify'
 				) || {}
 			).value;
+			const viewsScripts = data.views.map(viewId => {
+				const viewSchema = JSON.parse(data.jsonSchema[viewId] || '{}');
+
+				return getViewScript({
+					schema: viewSchema,
+					viewData: data.viewData[viewId],
+					containerData: data.containerData,
+					collectionRefsDefinitionsMap: data.collectionRefsDefinitionsMap,
+					isKeyspaceActivated: true
+				})
+			});
+
 			const foreignKeyHashTable = foreignKeyHelper.getForeignKeyHashTable(
 				data.relationships,
 				data.entities,
@@ -134,8 +148,10 @@ module.exports = {
 			callback(
 				null,
 				buildScript(needMinify)(
+					...workloadManagementStatements,
 					databaseStatement,
 					...entities,
+					...viewsScripts,
 					foreignKeys
 				)
 			);
@@ -200,3 +216,38 @@ const getForeignKeys = (
 
 const setAppDependencies = ({ lodash }) => _ = lodash;
 
+const getWorkloadManagementStatements = modelData => {
+	const resourcePlansData = _.get(_.first(modelData), 'resourcePlans');
+
+	return resourcePlansData.map(resourcePlan => {
+		const resourcePlanOptionsString = _.isUndefined(resourcePlan.parallelism) ? '' : ` WITH QUERY_PARALLELISM = ${resourcePlan.parallelism}}`
+		const resourcePlanStatement = `CREATE RESOURCE PLAN ${resourcePlan.name}${resourcePlanOptionsString};`;
+		const pools = _.get(resourcePlan, 'pools', []).filter(pool => pool.name);
+		const mappings = pools.flatMap(pool => _.get(pool, 'mappings', []).filter(mapping => mapping.name));
+		const triggers = _.get(resourcePlan, 'triggers', []).filter(trigger => trigger.name);
+		const poolsStatements = pools.filter(pool => _.toUpper(pool.name) !== 'DEFAULT').map(pool => {
+			let poolOptions = [];
+			if (!_.isUndefined(pool.allocFraction)) {
+				poolOptions.push(`ALLOC_FRACTION = ${pool.allocFraction}`);
+			}
+			if (!_.isUndefined(pool.parallelism)) {
+				poolOptions.push(`QUERY_PARALLELISM = ${pool.parallelism}`);
+			}
+			if (!_.isUndefined(pool.schedulingPolicy)) {
+				poolOptions.push(`SCHEDULING_POLICY = ${pool.schedulingPolicy}`);
+			}
+			const poolOptionsString = _.isEmpty(poolOptions) ? '' : ` WITH ${poolOptions.join(', ')}`
+			return `CREATE POOL ${resourcePlan.name}.${pool.name}${poolOptionsString};`;
+		})
+
+		const mappingsStatements = mappings.map(mapping => {
+			return `CREATE ${_.toUpper(mapping.mappingType || 'application')} MAPPING ${mapping.name} IN ${resourcePlan.name};`;
+		});
+
+		const triggersStatements = triggers.map(trigger => {
+			return `CREATE TRIGGER ${resourcePlan.name}.${trigger.name} WHEN ${trigger.condition} DO ${trigger.action};`;
+		});
+
+		return [ resourcePlanStatement, ...poolsStatements, ...mappingsStatements, ...triggersStatements ].join('\n\n');
+	});
+};
