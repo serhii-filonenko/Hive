@@ -5,6 +5,7 @@ const { getDatabaseStatement } = require('./helpers/databaseHelper');
 const { getTableStatement } = require('./helpers/tableHelper');
 const { getIndexes } = require('./helpers/indexHelper');
 const { getViewScript } = require('./helpers/viewHelper');
+const { prepareName } = require('./helpers/generalHelper');
 const foreignKeyHelper = require('./helpers/foreignKeyHelper');
 let _;
 const sqlFormatter = require('sql-formatter');
@@ -221,7 +222,7 @@ const getWorkloadManagementStatements = modelData => {
 
 	return resourcePlansData.map(resourcePlan => {
 		const resourcePlanOptionsString = _.isUndefined(resourcePlan.parallelism) ? '' : ` WITH QUERY_PARALLELISM = ${resourcePlan.parallelism}}`
-		const resourcePlanStatement = `CREATE RESOURCE PLAN ${resourcePlan.name}${resourcePlanOptionsString};`;
+		const resourcePlanStatement = `CREATE RESOURCE PLAN ${prepareName(resourcePlan.name)}${resourcePlanOptionsString};`;
 		const pools = _.get(resourcePlan, 'pools', []).filter(pool => pool.name);
 		const mappings = pools.flatMap(pool => _.get(pool, 'mappings', []).filter(mapping => mapping.name));
 		const triggers = _.get(resourcePlan, 'triggers', []).filter(trigger => trigger.name);
@@ -237,15 +238,15 @@ const getWorkloadManagementStatements = modelData => {
 				poolOptions.push(`SCHEDULING_POLICY = ${pool.schedulingPolicy}`);
 			}
 			const poolOptionsString = _.isEmpty(poolOptions) ? '' : ` WITH ${poolOptions.join(', ')}`
-			return `CREATE POOL ${resourcePlan.name}.${pool.name}${poolOptionsString};`;
+			return `CREATE POOL ${prepareName(resourcePlan.name)}.${prepareName(pool.name)}${poolOptionsString};`;
 		})
 
 		const mappingsStatements = mappings.map(mapping => {
-			return `CREATE ${_.toUpper(mapping.mappingType || 'application')} MAPPING ${mapping.name} IN ${resourcePlan.name};`;
+			return `CREATE ${_.toUpper(mapping.mappingType || 'application')} MAPPING ${prepareName(mapping.name)} IN ${prepareName(resourcePlan.name)};`;
 		});
 
 		const triggersStatements = triggers.map(trigger => {
-			return `CREATE TRIGGER ${resourcePlan.name}.${trigger.name} WHEN ${trigger.condition} DO ${trigger.action};`;
+			return `CREATE TRIGGER ${prepareName(resourcePlan.name)}.${prepareName(trigger.name)} WHEN ${trigger.condition} DO ${trigger.action};`;
 		});
 
 		return [ resourcePlanStatement, ...poolsStatements, ...mappingsStatements, ...triggersStatements ].join('\n\n');
