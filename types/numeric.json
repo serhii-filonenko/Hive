@@ -62,5 +62,6 @@
 		},
 		"capacity": 16,
 		"mode": "decimal"
-	}]
+	}],
+	"hiddenOnEntity": "view"
 }

@@ -1,7 +1,7 @@
 {
 	"name": "Hive",
-	"version": "0.1.42",
-	"versionDate": "2020-12-02",
+	"version": "0.1.43",
+	"versionDate": "2021-01-06",
 	"author": "hackolade",
 	"engines": {
 		"hackolade": "3.4.0",
@@ -18,6 +18,11 @@
 			]
 		},
 		"features": {
+            "views": {
+                "enabled": true,
+                "viewLevel": "model",
+                "disablePipelines": true
+            },
 			"nestedCollections": false,
 			"disablePatternField": false,
 			"enableForwardEngineering": true,

@@ -10,5 +10,6 @@
 		"default": "",
 		"enum": [],
 		"sample": ""
-	}
+	},
+	"hiddenOnEntity": "view"
 }

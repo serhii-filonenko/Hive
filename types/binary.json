@@ -12,5 +12,6 @@
 	},
 	"descriptor": {
 		"mode": "binary"
-	}
+	},
+	"hiddenOnEntity": "view"
 }

@@ -20,5 +20,6 @@
 	},
 	"descriptor": [{
 		"format": "PnYnMnDTnHnMnS"
-	}]
+	}],
+	"hiddenOnEntity": "view"
 }

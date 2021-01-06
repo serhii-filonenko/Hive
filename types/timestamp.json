@@ -22,5 +22,6 @@
 		"format": "YYYY-MM-DD hh:mm:ss.nnnnnn"
 	}, {
 		"format": "YYYY-MM-DD hh:mm:ss.nnnnnnnnn"
-	}]
+	}],
+	"hiddenOnEntity": "view"
 }

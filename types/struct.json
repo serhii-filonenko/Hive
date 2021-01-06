@@ -13,5 +13,6 @@
 		"minProperties": "",
 		"maxProperties": "",
 		"additionalProperties": false
-	}
+	},
+	"hiddenOnEntity": "view"
 }
