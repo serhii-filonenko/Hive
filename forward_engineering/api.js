@@ -218,7 +218,7 @@ const getForeignKeys = (
 const setAppDependencies = ({ lodash }) => _ = lodash;
 
 const getWorkloadManagementStatements = modelData => {
-	const resourcePlansData = _.get(_.first(modelData), 'resourcePlans');
+	const resourcePlansData = _.get(_.first(modelData), 'resourcePlans', []);
 
 	return resourcePlansData.map(resourcePlan => {
 		const resourcePlanOptionsString = _.isUndefined(resourcePlan.parallelism) ? '' : ` WITH QUERY_PARALLELISM = ${resourcePlan.parallelism}`
