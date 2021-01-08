@@ -128,7 +128,7 @@ const getPrimaryKeys = (jsonSchema) => {
 };
 
 const getItemByPath = (path, jsonSchema) => {
-	if (path.length === 0) {
+	if (!jsonSchema || path.length === 0) {
 		return null;
 	}
 	let item;
