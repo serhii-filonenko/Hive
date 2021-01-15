@@ -220,7 +220,7 @@ const setAppDependencies = ({ lodash }) => _ = lodash;
 const getWorkloadManagementStatements = modelData => {
 	const resourcePlansData = _.get(_.first(modelData), 'resourcePlans', []);
 
-	return resourcePlansData.map(resourcePlan => {
+	return resourcePlansData.filter(resourcePlan => resourcePlan.name).map(resourcePlan => {
 		const resourcePlanOptionsString = _.isUndefined(resourcePlan.parallelism) ? '' : ` WITH QUERY_PARALLELISM = ${resourcePlan.parallelism}`
 		const resourcePlanStatement = `CREATE RESOURCE PLAN ${prepareName(resourcePlan.name)}${resourcePlanOptionsString};`;
 		const pools = _.get(resourcePlan, 'pools', []).filter(pool => pool.name);
@@ -234,8 +234,8 @@ const getWorkloadManagementStatements = modelData => {
 			if (!_.isUndefined(pool.parallelism)) {
 				poolOptions.push(`QUERY_PARALLELISM = ${pool.parallelism}`);
 			}
-			if (!_.isUndefined(pool.schedulingPolicy)) {
-				poolOptions.push(`SCHEDULING_POLICY = ${pool.schedulingPolicy}`);
+			if (!_.isUndefined(pool.schedulingPolicy) && pool.schedulingPolicy !== 'default') {
+				poolOptions.push(`SCHEDULING_POLICY = '${pool.schedulingPolicy}'`);
 			}
 			const poolOptionsString = _.isEmpty(poolOptions) ? '' : ` WITH ${poolOptions.join(', ')}`
 			return `CREATE POOL ${prepareName(resourcePlan.name)}.${prepareName(pool.name)}${poolOptionsString};`;

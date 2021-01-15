@@ -177,7 +177,7 @@ module.exports = {
 				const resourcePlans = await Promise.all(plans.map(async plan => {
 					const resourcePlanData = await query(`SHOW RESOURCE PLAN ${plan.rp_name}`);
 
-					return parseResourcePlan(resourcePlanData);
+					return { name: plan.rp_name, ...parseResourcePlan(resourcePlanData) };
 				}));
 				modelData = { resourcePlans };
 			} catch (err) {}
