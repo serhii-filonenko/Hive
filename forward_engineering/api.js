@@ -220,7 +220,7 @@ const setAppDependencies = ({ lodash }) => _ = lodash;
 const getWorkloadManagementStatements = modelData => {
 	const resourcePlansData = _.get(_.first(modelData), 'resourcePlans', []);
 
-	return resourcePlansData.map(resourcePlan => {
+	return resourcePlansData.filter(resourcePlan => resourcePlan.name).map(resourcePlan => {
 		const resourcePlanOptionsString = _.isUndefined(resourcePlan.parallelism) ? '' : ` WITH QUERY_PARALLELISM = ${resourcePlan.parallelism}`
 		const resourcePlanStatement = `CREATE RESOURCE PLAN ${prepareName(resourcePlan.name)}${resourcePlanOptionsString};`;
 		const pools = _.get(resourcePlan, 'pools', []).filter(pool => pool.name);
