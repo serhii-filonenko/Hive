@@ -1,7 +1,8 @@
 {
 	"WELCOME_PAGE___REVERSE_ENGINEER_DESCRIPTION": "Create a Hackolade model from an existing DB instance",
-	"MAIN_MENU___ADD_BUCKET": "Add database",
-	"MAIN_MENU___ADD_COLLECTION": "Add table",
+	"MAIN_MENU___ADD_BUCKET": "Add Database",
+	"MAIN_MENU___ADD_COLLECTION": "Add Table",
+	"MAIN_MENU___ADD_VIEW": "Add View",
 	"MAIN_MENU___ADD_RELATIONSHIP": "Add Relationship",
 	"MAIN_MENU___ADD_ATTRIBUTE": "Add Column",
 	"MAIN_MENU___INSERT_FIELD": "Insert Column",
