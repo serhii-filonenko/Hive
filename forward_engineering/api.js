@@ -234,8 +234,8 @@ const getWorkloadManagementStatements = modelData => {
 			if (!_.isUndefined(pool.parallelism)) {
 				poolOptions.push(`QUERY_PARALLELISM = ${pool.parallelism}`);
 			}
-			if (!_.isUndefined(pool.schedulingPolicy)) {
-				poolOptions.push(`SCHEDULING_POLICY = ${pool.schedulingPolicy}`);
+			if (!_.isUndefined(pool.schedulingPolicy) && pool.schedulingPolicy !== 'default') {
+				poolOptions.push(`SCHEDULING_POLICY = '${pool.schedulingPolicy}'`);
 			}
 			const poolOptionsString = _.isEmpty(poolOptions) ? '' : ` WITH ${poolOptions.join(', ')}`
 			return `CREATE POOL ${prepareName(resourcePlan.name)}.${prepareName(pool.name)}${poolOptionsString};`;
