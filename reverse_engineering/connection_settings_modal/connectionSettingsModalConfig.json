@@ -94,16 +94,6 @@
 				"isHiddenKey": true
 			},
 			{
-				"inputLabel": "Keytab file",
-				"inputKeyword": "keytab",
-				"inputType": "file",
-				"extensions": ["*"],
-				"dependency": {
-					"key": "authMechanism",
-					"value": "GSSAPI"
-				}
-			},
-			{
 				"inputLabel": "Service name",
 				"inputKeyword": "krb_service",
 				"inputType": "text",
@@ -118,6 +108,17 @@
 				"inputKeyword": "krb_host",
 				"inputType": "text",
 				"inputPlaceholder": "<fully qualified domain name>",
+				"dependency": {
+					"key": "authMechanism",
+					"value": "GSSAPI"
+				}
+			},
+			{
+				"inputLabel": "Keytab file",
+				"inputKeyword": "keytab",
+				"inputType": "file",
+				"extensions": ["*"],
+				"inputTooltip": "Allowed only in HTTP Transport mode",
 				"dependency": {
 					"key": "authMechanism",
 					"value": "GSSAPI"
