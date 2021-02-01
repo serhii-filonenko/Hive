@@ -94,6 +94,16 @@
 				"isHiddenKey": true
 			},
 			{
+				"inputLabel": "Keytab file",
+				"inputKeyword": "keytab",
+				"inputType": "file",
+				"extensions": ["*"],
+				"dependency": {
+					"key": "authMechanism",
+					"value": "GSSAPI"
+				}
+			},
+			{
 				"inputLabel": "Service name",
 				"inputKeyword": "krb_service",
 				"inputType": "text",

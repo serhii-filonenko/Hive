@@ -11,6 +11,7 @@ const TCLIService = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService')
 const TCLIServiceTypes = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService_types');
 const logHelper = require('./logHelper');
 const mapJsonSchema = require('./thriftService/mapJsonSchema');
+const createKerberos = require('./thriftService/hackolade/createKerberos/createKerberos');
 
 module.exports = {
 	connect: function(connectionInfo, logger, cb, app){
@@ -18,7 +19,7 @@ module.exports = {
 			connectionInfo.path = '/' + connectionInfo.path;
 		}
 
-		const kerberos = () => app.require('kerberos');
+		const kerberos = () => createKerberos(app, connectionInfo, logger);
 
 		connectionInfo.isHTTPS = Boolean(
 			connectionInfo.mode === 'http' && (isSsl(connectionInfo.ssl) || connectionInfo.ssl === 'https')
