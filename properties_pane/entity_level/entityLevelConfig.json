@@ -147,7 +147,6 @@ making sure that you maintain a proper JSON format.
 				"propertyTooltip": "Select from list of options",
 				"propertyType": "select",
 				"options": [
-					"directories",
 					"textfile",
 					"sequencefile",
 					"ORC",
@@ -179,8 +178,17 @@ making sure that you maintain a proper JSON format.
 				"propertyKeyword": "fieldsTerminatedBy",
 				"propertyType": "text",
 				"dependency": {
-					"key": "rowFormat",
-					"value": "delimited"
+					"type": "and",
+					"values": [
+						{
+							"key": "rowFormat",
+							"value": "delimited"
+						},
+						{
+							"key": "storedAsTable",
+							"value": "textfile"
+						}
+					]
 				}
 			},
 			{
@@ -188,8 +196,17 @@ making sure that you maintain a proper JSON format.
 				"propertyKeyword": "fieldsescapedBy",
 				"propertyType": "text",
 				"dependency": {
-					"key": "rowFormat",
-					"value": "delimited"
+					"type": "and",
+					"values": [
+						{
+							"key": "rowFormat",
+							"value": "delimited"
+						},
+						{
+							"key": "storedAsTable",
+							"value": "textfile"
+						}
+					]
 				}
 			},
 			{
@@ -197,8 +214,17 @@ making sure that you maintain a proper JSON format.
 				"propertyKeyword": "collectionItemsTerminatedBy",
 				"propertyType": "text",
 				"dependency": {
-					"key": "rowFormat",
-					"value": "delimited"
+					"type": "and",
+					"values": [
+						{
+							"key": "rowFormat",
+							"value": "delimited"
+						},
+						{
+							"key": "storedAsTable",
+							"value": "textfile"
+						}
+					]
 				}
 			},
 			{
@@ -206,8 +232,17 @@ making sure that you maintain a proper JSON format.
 				"propertyKeyword": "mapKeysTerminatedBy",
 				"propertyType": "text",
 				"dependency": {
-					"key": "rowFormat",
-					"value": "delimited"
+					"type": "and",
+					"values": [
+						{
+							"key": "rowFormat",
+							"value": "delimited"
+						},
+						{
+							"key": "storedAsTable",
+							"value": "textfile"
+						}
+					]
 				}
 			},
 			{
@@ -215,8 +250,17 @@ making sure that you maintain a proper JSON format.
 				"propertyKeyword": "linesTerminatedBy",
 				"propertyType": "text",
 				"dependency": {
-					"key": "rowFormat",
-					"value": "delimited"
+					"type": "and",
+					"values": [
+						{
+							"key": "rowFormat",
+							"value": "delimited"
+						},
+						{
+							"key": "storedAsTable",
+							"value": "textfile"
+						}
+					]
 				}
 			},
 			{
@@ -224,8 +268,17 @@ making sure that you maintain a proper JSON format.
 				"propertyKeyword": "nullDefinedAs",
 				"propertyType": "text",
 				"dependency": {
-					"key": "rowFormat",
-					"value": "delimited"
+					"type": "and",
+					"values": [
+						{
+							"key": "rowFormat",
+							"value": "delimited"
+						},
+						{
+							"key": "storedAsTable",
+							"value": "textfile"
+						}
+					]
 				}
 			},
 			{
@@ -233,8 +286,17 @@ making sure that you maintain a proper JSON format.
 				"propertyKeyword": "serDeLibrary",
 				"propertyType": "text",
 				"dependency": {
-					"key": "rowFormat",
-					"value": "SerDe"
+					"type": "and",
+					"values": [
+						{
+							"key": "rowFormat",
+							"value": "SerDe"
+						},
+						{
+							"key": "storedAsTable",
+							"value": "textfile"
+						}
+					]
 				}
 			},
 			{
@@ -246,8 +308,17 @@ making sure that you maintain a proper JSON format.
 				"markdown": false,
 				"valueType": "string",
 				"dependency": {
-					"key": "rowFormat",
-					"value": "SerDe"
+					"type": "and",
+					"values": [
+						{
+							"key": "rowFormat",
+							"value": "SerDe"
+						},
+						{
+							"key": "storedAsTable",
+							"value": "textfile"
+						}
+					]
 				}
 			},
 			{
@@ -255,17 +326,17 @@ making sure that you maintain a proper JSON format.
 				"propertyKeyword": "serDeLibrary",
 				"propertyType": "text",
 				"dependency": {
-					"key": "storedAsTable",
-					"value": "input/output format"
-				}
-			},
-			{
-				"propertyName": "SerDe Library",
-				"propertyKeyword": "serDeLibrary",
-				"propertyType": "text",
-				"dependency": {
-					"key": "storedAsTable",
-					"value": "by"
+					"type": "or",
+					"values": [
+						{
+							"key": "storedAsTable",
+							"value": "input/output format"
+						},
+						{
+							"key": "storedAsTable",
+							"value": "by"
+						}
+					]
 				}
 			},
 			{
