@@ -9,6 +9,8 @@ const {
     getCurrentBucket, 
 } = require("./helpers/commandsHelper");
 
+const _ = require('lodash');
+
 const CREATE_COLLECTION_COMMAND = 'createCollection';
 const REMOVE_COLLECTION_COMMAND = 'removeCollection';
 const CREATE_BUCKET_COMMAND = 'createBucket';
@@ -412,17 +414,16 @@ const addRelationship = (entitiesData, bucket, statementData) => {
 }
 
 const updateProperties = (properties, statementData) => {
-    const updatedProperties = statementData.fields.reduce((updatedProps, fieldName) => {
-        return {
-            ...updatedProps,
-            [fieldName]: {
-                ...properties[fieldName],
-                [statementData.type]: true,
-            },
-        };
-    }, {});
+    return _.fromPairs(_.keys(properties).map(columnName => {
+        if(!statementData.fields.includes(columnName)) {
+            return [columnName, properties[columnName]];
+        }
 
-    return { ...properties, ...updatedProperties };
+        return [columnName, {
+            ...properties[columnName],
+            [statementData.type]: statementData.value,
+        }]
+    }));
 };
 
 module.exports = {

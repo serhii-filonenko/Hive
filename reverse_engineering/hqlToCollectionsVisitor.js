@@ -370,6 +370,7 @@ class Visitor extends HiveParserVisitor {
                 data: {
                     type: type === 'primary' ? 'primaryKey' : type,
                     fields,
+                    value: true,
                 }
             };
         }

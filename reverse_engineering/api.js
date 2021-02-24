@@ -423,8 +423,8 @@ module.exports = {
 			const hqlToCollectionsGenerator = new hqlToCollectionsVisitor();
 
 			const commands = tree.accept(hqlToCollectionsGenerator);
-			const result = commandsService.convertCommandsToReDocs(_.flatten(commands).filter(Boolean), input);
-			callback(null, result, {}, [], 'multipleSchema');
+			const { result, relationships } = commandsService.convertCommandsToReDocs(_.flatten(commands).filter(Boolean), input);
+			callback(null, result, {}, relationships, 'multipleSchema');
 		} catch(err) {
 			const { error, title, name } = err;
 			const handledError = handleErrorObject(error || err, title || name);
