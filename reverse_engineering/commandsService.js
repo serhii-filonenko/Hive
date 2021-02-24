@@ -11,75 +11,76 @@ const ADD_BUCKET_DATA_COMMAND = 'addBucketData';
 
 const DEFAULT_BUCKET = 'New database';
 
+const convertCommandsToEntities = (commands, originalScript) => {
+    return commands.reduce(
+        (entitiesData, statementData) => {
+            const command = statementData && statementData.type;
 
-const convertCommandsToEntities = commands => {
-    return commands.reduce((entitiesData, statementData) => {
-        const command = statementData && statementData.type;
-    
-        if (!command) {
+            if (!command) {
+                return entitiesData;
+            }
+
+            const bucket = statementData.bucketName || entitiesData.currentBucket;
+            if (command === CREATE_COLLECTION_COMMAND) {
+                return createCollection(entitiesData, bucket, statementData);
+            }
+
+            if (command === REMOVE_COLLECTION_COMMAND) {
+                return removeCollection(entitiesData, bucket, statementData);
+            }
+
+            if (command === CREATE_BUCKET_COMMAND) {
+                return createBucket(entitiesData, statementData);
+            }
+
+            if (command === REMOVE_BUCKET_COMMAND) {
+                return removeBucket(entitiesData, statementData);
+            }
+
+            if (command === USE_BUCKET_COMMAND) {
+                return useBucket(entitiesData, statementData);
+            }
+
+            if (command === CREATE_DEFINITION_COMMAND) {
+                return createDefinition(entitiesData, statementData);
+            }
+
+            if (command === ADD_FIELDS_TO_COLLECTION_COMMAND) {
+                return addFieldsToCollection(entitiesData, bucket, statementData);
+            }
+
+            if (command === RENAME_FIELD_COMMAND) {
+                return renameField(entitiesData, bucket, statementData);
+            }
+
+            if (command === CREATE_VIEW_COMMAND) {
+                return createView(entitiesData, bucket, statementData, originalScript);
+            }
+
+            if (command === ADD_BUCKET_DATA_COMMAND) {
+                return addDataToBucket(entitiesData, bucket, statementData);
+            }
+
             return entitiesData;
+        },
+        {
+            entities: [],
+            views: [],
+            currentBucket: DEFAULT_BUCKET,
+            buckets: {},
+            definitions: {},
         }
-    
-        const bucket = statementData.bucketName || entitiesData.currentBucket;
-        if (command === CREATE_COLLECTION_COMMAND) {
-            return createCollection(entitiesData, bucket, statementData);
-        }
-    
-        if (command === REMOVE_COLLECTION_COMMAND) {
-            return removeCollection(entitiesData, bucket, statementData);
-        }
-    
-        if (command === CREATE_BUCKET_COMMAND) {
-            return createBucket(entitiesData, statementData);
-        }
-    
-        if (command === REMOVE_BUCKET_COMMAND) {
-            return removeBucket(entitiesData, statementData)
-        }
-    
-        if (command === USE_BUCKET_COMMAND) {
-            return useBucket(entitiesData, statementData);
-        }
-    
-        if (command === CREATE_DEFINITION_COMMAND) {
-            return createDefinition(entitiesData, statementData);
-        }
-    
-        if (command === ADD_FIELDS_TO_COLLECTION_COMMAND) {
-            return addFieldsToCollection(entitiesData, bucket, statementData);
-        }
-    
-        if (command === RENAME_FIELD_COMMAND) {
-            return renameField(entitiesData, bucket, statementData);
-        }
-    
-        if (command === CREATE_VIEW_COMMAND) {
-            return createView(entitiesData, bucket, statementData);
-        }
+    );
+};
 
-        if (command === ADD_BUCKET_DATA_COMMAND) {
-            return addDataToBucket(entitiesData, bucket, statementData);
-        }
+const convertCommandsToReDocs = (commands, originalScript) => {
+    const reData = convertCommandsToEntities(commands, originalScript);
 
-        return entitiesData;
-    }, {
-        entities: [],
-        views: [],
-        currentBucket: DEFAULT_BUCKET,
-        buckets: {},
-        definitions: {},
-    });
-}
-
-
-const convertCommandsToReDocs = commands => {
-    const reData = convertCommandsToEntities(commands);
-
-    return reData.entities.map(entity => {
+    return reData.entities.map((entity) => {
         const relatedViews = reData.views.filter(view => view.collectionName === entity.collectionName);
         return {
             objectNames: {
-                collectionName: entity.collectionName
+                collectionName: entity.collectionName,
             },
             doc: {
                 dbName: entity.bucketName,
@@ -87,41 +88,40 @@ const convertCommandsToReDocs = commands => {
                 modelDefinitions: { definitions: reData.definitions },
                 bucketInfo: reData.buckets[entity.bucketName] || {},
                 entityLevel: entity.entityLevelData,
-                views: relatedViews.map(view => ({
-                    name: view.name,
-                    jsonSchema: view.jsonSchema
-                }))
+                views: relatedViews,
             },
-            jsonSchema: entity.schema
-        }
+            jsonSchema: entity.schema,
+        };
     });
 };
 
 const createCollection = (entitiesData, bucket, statementData) => {
     const { entities, currentBucket } = entitiesData;
-    if (!statementData.bucketName) {
-        return { ...entitiesData, entities: [ ...entities, { ...statementData, bucketName: bucket } ] };
+    const updatedEntityData = getTableMergedWithReferencedTable(entities, statementData);
+
+    if (!updatedEntityData.bucketName) {
+        return { ...entitiesData, entities: [...entities, { ...updatedEntityData, bucketName: bucket }] };
     }
 
     if (currentBucket === DEFAULT_BUCKET) {
         return {
             ...entitiesData,
-            entities: [ ...entities, statementData ],
-            bucketName: statementData.bucketName
+            entities: [...entities, updatedEntityData],
+            bucketName: updatedEntityData.bucketName,
         };
     } else {
-        return { ...entitiesData, entities: [ ...entities, statementData ] };
+        return { ...entitiesData, entities: [...entities, updatedEntityData] };
     }
 };
 
 const removeCollection = (entitiesData, bucket, statementData) => {
     const { entities } = entitiesData;
-    const index = findEntityIndex(entities, bucket, statementData.collectionName)
+    const index = findEntityIndex(entities, bucket, statementData.collectionName);
     if (index === -1) {
         return entitiesData;
     }
 
-    return { ...entitiesData, entities: remove(entities, index) }
+    return { ...entitiesData, entities: remove(entities, index) };
 };
 
 const createBucket = (entitiesData, statementData) => {
@@ -130,7 +130,7 @@ const createBucket = (entitiesData, statementData) => {
     return {
         ...entitiesData,
         currentBucket: bucketName,
-        buckets: { ...buckets, [bucketName]: statementData.data || {}}
+        buckets: { ...buckets, [bucketName]: statementData.data || {} },
     };
 };
 
@@ -141,7 +141,7 @@ const removeBucket = (entitiesData, statementData) => {
     return {
         currentBucket: DEFAULT_BUCKET,
         buckets: omitCaseInsensitive(buckets, bucketName),
-        entities: entities.filter(entity => !isEqualCaseInsensitive(entity.bucketName, bucketName))
+        entities: entities.filter((entity) => !isEqualCaseInsensitive(entity.bucketName, bucketName)),
     };
 };
 
@@ -161,9 +161,9 @@ const createDefinition = (entitiesData, statementData) => {
             ...definitions,
             [statementData.name]: {
                 type: 'udt',
-                properties:	statementData.properties
-            }
-        }
+                properties: statementData.properties,
+            },
+        },
     };
 };
 
@@ -185,18 +185,18 @@ const addFieldsToCollection = (entitiesData, bucket, statementData) => {
                     ...entity.schema,
                     properties: {
                         ...entity.schema.properties,
-                        ...statementData.data
-                    }
-                }
+                        ...statementData.data,
+                    },
+                },
             },
-            ...entities.slice(index + 1)
-        ]
+            ...entities.slice(index + 1),
+        ],
     };
 };
 
 const renameField = (entitiesData, bucket, statementData) => {
     const { entities } = entitiesData;
-    
+
     const index = findEntityIndex(entities, bucket, statementData.collectionName);
     if (index === -1) {
         return entitiesData;
@@ -215,23 +215,32 @@ const renameField = (entitiesData, bucket, statementData) => {
                     ...entity.schema,
                     properties: {
                         ...omitCaseInsensitive(entity.schema.properties, statementData.nameFrom),
-                        [statementData.nameTo]: field
-                    }
-                }
+                        [statementData.nameTo]: field,
+                    },
+                },
             },
-            ...entities.slice(index + 1)
-        ]
-    }
+            ...entities.slice(index + 1),
+        ],
+    };
 };
 
-const createView = (entitiesData, bucket, statementData) => {
+const createView = (entitiesData, bucket, statementData, originalScript) => {
     const { views } = entitiesData;
+    const selectStatement = `AS ${originalScript.substring(statementData.select.start, statementData.select.stop)}`;
+
     return {
         ...entitiesData,
-        views: [ ...views, {
-            ...statementData,
-            bucketName: statementData.bucketName || bucket
-        }]
+        views: [
+            ...views,
+            {
+                ...statementData,
+                data: {
+                    ...statementData.data,
+                    selectStatement,
+                },
+                bucketName: statementData.bucketName || bucket,
+            },
+        ],
     };
 };
 
@@ -246,26 +255,23 @@ const addDataToBucket = (entitiesData, bucket, statementData) => {
             ...buckets,
             [bucketName]: {
                 ...buckets[bucketName],
-                [key]: [
-                    ...(buckets[bucketName][key] || []),
-                    data
-                ]
-            }
-        }
-    }
-}
+                [key]: [...(buckets[bucketName][key] || []), data],
+            },
+        },
+    };
+};
 
 const findEntityIndex = (entities, bucket, name) => {
-    const entityIndex = entities.findIndex(entity => (
-        isEqualCaseInsensitive(entity.bucketName, bucket) &&
-        isEqualCaseInsensitive(entity.collectionName, name)
-    ));
+    const entityIndex = entities.findIndex(
+        (entity) =>
+            isEqualCaseInsensitive(entity.bucketName, bucket) && isEqualCaseInsensitive(entity.collectionName, name)
+    );
 
     if (entityIndex !== -1) {
         return entityIndex;
     }
 
-    return entities.findIndex(entity => entity.collectionName === name);
+    return entities.findIndex((entity) => entity.collectionName === name);
 };
 
 const getCaseInsensitiveKey = (object, key) => {
@@ -273,20 +279,41 @@ const getCaseInsensitiveKey = (object, key) => {
         return key;
     }
 
-    return Object.keys(object).find(objectKey => isEqualCaseInsensitive(objectKey, key));
+    return Object.keys(object).find((objectKey) => isEqualCaseInsensitive(objectKey, key));
 };
 
 const omitCaseInsensitive = (object, key) => {
     const objectCopy = { ...object };
-    delete objectCopy[getCaseInsensitiveKey(object,key)];
+    delete objectCopy[getCaseInsensitiveKey(object, key)];
 
     return objectCopy;
 };
 
-const isEqualCaseInsensitive = (str1, str2) => (str1 || '').toLowerCase() ===(str2 || '').toLowerCase();
+const isEqualCaseInsensitive = (str1, str2) => (str1 || '').toLowerCase() === (str2 || '').toLowerCase();
 
 const remove = (items, index) => [...items.slice(0, index), ...items.slice(index + 1)];
 
+const getTableMergedWithReferencedTable = (entities, statementData) => {
+    if (!statementData.tableLikeName) {
+        return statementData;
+    }
+
+    const referencedTable = entities.find((entity) => entity.collectionName === statementData.tableLikeName);
+
+    if (!referencedTable) {
+        return statementData;
+    }
+
+    return {
+        ...referencedTable,
+        collectionName: statementData.collectionName,
+        bucketName: statementData.bucketName,
+        entityLevelData: {
+            ...referencedTable.entityLevelData,
+            ...statementData.entityLevelData,
+        },
+    };
+};
 
 module.exports = {
     convertCommandsToReDocs,
@@ -300,4 +327,4 @@ module.exports = {
     RENAME_FIELD_COMMAND,
     CREATE_VIEW_COMMAND,
     ADD_BUCKET_DATA_COMMAND,
-}
+};

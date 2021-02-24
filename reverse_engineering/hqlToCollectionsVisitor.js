@@ -30,6 +30,7 @@ const ALLOWED_COMMANDS = [
     // HiveParser.RULE_createType,
     // HiveParser.RULE_alterTable,
     HiveParser.RULE_createViewStatement,
+    HiveParser.RULE_createMaterializedViewStatement,
     HiveParser.RULE_alterStatement,
     // HiveParser.RULE_use,
     // HiveParser.RULE_createFunction,
@@ -79,15 +80,17 @@ class Visitor extends HiveParserVisitor {
         const externalTable = Boolean(ctx.KW_EXTERNAL());
         const storedAsTable = this.visitWhenExists(ctx, 'tableFileFormat', {});
         const { database, table } = tableName;
-        const columnsContext = ctx.columnNameTypeOrConstraintList();
-        const { properties, foreignKeys } = columnsContext
-            ? this.visit(columnsContext)
-            : { properties: {}, foreignKeys: [] };
+        const { properties, foreignKeys } = this.visitWhenExists(ctx, 'columnNameTypeOrConstraintList', {
+            properties: {},
+            foreignKeys: [],
+        });
         const tableForeignKeys = foreignKeys.map((constraint) => ({
             ...constraint,
             childDbName: database,
             childCollection: table,
         }));
+
+        // const asSelect = this.visitWhenExists(ctx, 'selectStatementWithCTE', {}); //TODO: handle asSelect statement
 
         return [
             {
@@ -99,6 +102,7 @@ class Visitor extends HiveParserVisitor {
                     type: 'object',
                     properties: { ...properties, ...convertKeysToProperties(compositePartitionKey) },
                 }),
+                tableLikeName: (tableLikeName || {}).table,
                 entityLevelData: _.pickBy(
                     {
                         temporaryTable,
@@ -124,6 +128,42 @@ class Visitor extends HiveParserVisitor {
                 type: ADD_RELATIONSHIP_COMMAND,
             })),
         ];
+    }
+
+    visitAtomSelectStatement(ctx) {
+        return this.visitWhenExists(ctx, 'fromClause', {});
+    }
+
+    visitSelectStatement(ctx) {
+        return this.visit(ctx.atomSelectStatement());
+    }
+
+    visitFromClause(ctx) {
+        return this.visit(ctx.fromSource());
+    }
+
+    visitFromSource(ctx) {
+        return this.visitWhenExists(ctx, 'joinSource') || this.visitWhenExists(ctx, 'uniqueJoinSource');
+    }
+
+    visitUniqueJoinSource(ctx) {
+        return this.visit(ctx.uniqueJoinTableSource());
+    }
+
+    visitUniqueJoinTableSource(ctx) {
+        return this.visit(ctx.tableName());
+    }
+
+    visitJoinSource(ctx) {
+        return this.visit(ctx.atomjoinSource());
+    }
+
+    visitAtomjoinSource(ctx) {
+        return this.visitWhenExists(ctx, 'tableSource') || this.visitWhenExists(ctx, 'joinSource');
+    }
+
+    visitTableSource(ctx) {
+        return this.visit(ctx.tableName());
     }
 
     visitTablePartition(ctx) {
@@ -156,8 +196,12 @@ class Visitor extends HiveParserVisitor {
     visitColumnNameOrder(ctx) {
         return {
             name: ctx.identifier().getText(),
-            type: getOrderType((ctx.orderSpecification() || {}).getText()),
+            type: getOrderType(this.visitWhenExists(ctx, 'orderSpecification')),
         };
+    }
+
+    visitOrderSpecification(ctx) {
+        return ctx.getText();
     }
 
     visitTableSkewed(ctx) {
@@ -239,26 +283,46 @@ class Visitor extends HiveParserVisitor {
     }
 
     visitCreateViewStatement(ctx) {
-        //todo: rework!!!
         const { database, table: name } = this.visit(ctx.tableName());
-        const commentContext = ctx.tableComment();
-        const comment = commentContext ? this.visit(commentContext) : '';
-        const select = this.visit(ctx.selectStatementWithCTE());
-        const aliasContext = ctx.columnNameCommentList();
-        const aliases = aliasContext && this.visit(aliasContext);
+        const description = this.visitWhenExists(ctx, 'tableComment');
+        const select = {
+            start: ctx.selectStatementWithCTE().start.start,
+            stop: ctx.selectStatementWithCTE().stop.stop,
+        };
+        const { table } = this.visitWhenExists(ctx, 'selectStatementWithCTE', {});
 
         return {
             type: CREATE_VIEW_COMMAND,
             name,
             bucketName: database,
-            ddl: {
-                script: `CREATE VIEW ${name} AS ${select};`,
-                type: 'teradata',
-            },
+            collectionName: table,
+            jsonSchema: { properties: {} },
+            select,
             data: {
-                //tableOptions: options,
-                // compositePartitionKey: keyData.partitionKey,
-                // compositeClusteringKey: keyData.clusteringKey
+                description,
+            },
+        };
+    }
+
+    visitCreateMaterializedViewStatement(ctx) {
+        const { database, table: name } = this.visit(ctx.tableName());
+        const description = this.visitWhenExists(ctx, 'tableComment');
+        const select = {
+            start: ctx.selectStatementWithCTE().start.start,
+            stop: ctx.selectStatementWithCTE().stop.stop,
+        };
+        const { table } = this.visitWhenExists(ctx, 'selectStatementWithCTE', {});
+
+        return {
+            type: CREATE_VIEW_COMMAND,
+            name,
+            bucketName: database,
+            collectionName: table,
+            jsonSchema: { properties: {} },
+            select,
+            data: {
+                description,
+                materialized: true,
             },
         };
     }
@@ -310,15 +374,7 @@ class Visitor extends HiveParserVisitor {
     }
 
     visitSelectStatementWithCTE(ctx) {
-        return ctx.selectStatement().getText();
-    }
-
-    visitColumnNameCommentList(ctx) {
-        return this.visit(ctx.columnNameComment());
-    }
-
-    visitColumnNameComment(ctx) {
-        return this.visit(ctx.identifier());
+        return this.visit(ctx.selectStatement());
     }
 
     visitColumnNameTypeOrConstraintList(ctx) {
@@ -718,7 +774,7 @@ class Visitor extends HiveParserVisitor {
     }
 
     visitWhenExists(ctx, funcName, defaultValue = '') {
-        return ctx[funcName]() ? this.visit(ctx[funcName]()) : defaultValue;
+        return Boolean(ctx[funcName]) && ctx[funcName]() ? this.visit(ctx[funcName]()) : defaultValue;
     }
 }
 
