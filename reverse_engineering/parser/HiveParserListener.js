@@ -3557,6 +3557,24 @@ HiveParserListener.prototype.exitCreateResourcePlanStatement = function(ctx) {
 };
 
 
+// Enter a parse tree produced by HiveParser#createResourcePlanStatementLikeExisting.
+HiveParserListener.prototype.enterCreateResourcePlanStatementLikeExisting = function(ctx) {
+};
+
+// Exit a parse tree produced by HiveParser#createResourcePlanStatementLikeExisting.
+HiveParserListener.prototype.exitCreateResourcePlanStatementLikeExisting = function(ctx) {
+};
+
+
+// Enter a parse tree produced by HiveParser#createNewResourcePlanStatement.
+HiveParserListener.prototype.enterCreateNewResourcePlanStatement = function(ctx) {
+};
+
+// Exit a parse tree produced by HiveParser#createNewResourcePlanStatement.
+HiveParserListener.prototype.exitCreateNewResourcePlanStatement = function(ctx) {
+};
+
+
 // Enter a parse tree produced by HiveParser#withReplace.
 HiveParserListener.prototype.enterWithReplace = function(ctx) {
 };

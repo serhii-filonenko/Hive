@@ -2376,6 +2376,18 @@ HiveParserVisitor.prototype.visitCreateResourcePlanStatement = function(ctx) {
 };
 
 
+// Visit a parse tree produced by HiveParser#createResourcePlanStatementLikeExisting.
+HiveParserVisitor.prototype.visitCreateResourcePlanStatementLikeExisting = function(ctx) {
+  return this.visitChildren(ctx);
+};
+
+
+// Visit a parse tree produced by HiveParser#createNewResourcePlanStatement.
+HiveParserVisitor.prototype.visitCreateNewResourcePlanStatement = function(ctx) {
+  return this.visitChildren(ctx);
+};
+
+
 // Visit a parse tree produced by HiveParser#withReplace.
 HiveParserVisitor.prototype.visitWithReplace = function(ctx) {
   return this.visitChildren(ctx);

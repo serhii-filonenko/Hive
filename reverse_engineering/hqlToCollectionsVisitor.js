@@ -7,7 +7,6 @@ const {
     CREATE_BUCKET_COMMAND,
     REMOVE_BUCKET_COMMAND,
     USE_BUCKET_COMMAND,
-    CREATE_DEFINITION_COMMAND,
     ADD_FIELDS_TO_COLLECTION_COMMAND,
     RENAME_FIELD_COMMAND,
     CREATE_VIEW_COMMAND,
@@ -17,9 +16,12 @@ const {
     UPDATE_BUCKET_COMMAND,
     UPDATE_ENTITY_LEVEL_DATA_COMMAND,
     UPDATE_VIEW_LEVEL_DATA_COMMAND,
-    ADD_FIELDS_TO_DEFINITION_COMMAND,
     ADD_RELATIONSHIP_COMMAND,
     UPDATE_ENTITY_COLUMN,
+    CREATE_RESOURCE_PLAN,
+    CREATE_TRIGGER,
+    CREATE_POOL,
+    CREATE_MAPPING,
 } = require('./commandsService');
 
 const schemaHelper = require('./thriftService/schemaHelper');
@@ -37,7 +39,7 @@ const ALLOWED_COMMANDS = [
     // HiveParser.RULE_createFunction,
     // HiveParser.RULE_createAggregate,
     // HiveParser.RULE_alterKeyspace,
-    // HiveParser.RULE_alterMaterializedView,
+    HiveParser.RULE_resourcePlanDdlStatements,
     HiveParser.RULE_createIndexStatement,
     HiveParser.RULE_dropIndexStatement,
 ];
@@ -371,7 +373,7 @@ class Visitor extends HiveParserVisitor {
                     type: type === 'primary' ? 'primaryKey' : type,
                     fields,
                     value: true,
-                }
+                },
             };
         }
 
@@ -807,9 +809,9 @@ class Visitor extends HiveParserVisitor {
             type: CREATE_BUCKET_COMMAND,
             name,
             data: {
-                description
-            }
-        }
+                description,
+            },
+        };
     }
 
     visitDatabaseComment(ctx) {
@@ -819,38 +821,41 @@ class Visitor extends HiveParserVisitor {
     visitSwitchDatabaseStatement(ctx) {
         return {
             type: USE_BUCKET_COMMAND,
-            bucketName: this.visit(ctx.identifier())
-        }
+            bucketName: this.visit(ctx.identifier()),
+        };
     }
 
     dropDatabaseStatement(ctx) {
         return {
             type: REMOVE_BUCKET_COMMAND,
-            bucketName: this.visit(ctx.identifier())
-        }
+            bucketName: this.visit(ctx.identifier()),
+        };
     }
 
     visitCreateIndexStatement(ctx) {
-        const {name, database, table, columns, SecIndxHandler} = this.visit(ctx.createIndexMainStatement())
+        const { name, database, table, columns, SecIndxHandler } = this.visit(ctx.createIndexMainStatement());
         const SecIndxWithDeferredRebuild = Boolean(ctx.KW_WITH() && ctx.KW_DEFERRED() && ctx.KW_REBUILD());
         const SecIndxProperties = this.visitWhenExists(ctx, 'tableProperties');
         const SecIndxTable = ctx.tableName() ? removeQuotes(ctx.tableName().getText()) : '';
         const SecIndxComments = this.visitWhenExists(ctx, 'tableComment');
 
         return {
-			type: ADD_COLLECTION_LEVEL_INDEX_COMMAND,
-			bucketName: database,
-			collectionName: table,
-			name,
-			columns,
-            data: _.pickBy({
-                SecIndxWithDeferredRebuild,
-                SecIndxHandler,
-                SecIndxProperties,
-                SecIndxTable,
-                SecIndxComments,
-            }, prop => !_.isEmpty(prop))
-		};
+            type: ADD_COLLECTION_LEVEL_INDEX_COMMAND,
+            bucketName: database,
+            collectionName: table,
+            name,
+            columns,
+            data: _.pickBy(
+                {
+                    SecIndxWithDeferredRebuild,
+                    SecIndxHandler,
+                    SecIndxProperties,
+                    SecIndxTable,
+                    SecIndxComments,
+                },
+                (prop) => !_.isEmpty(prop)
+            ),
+        };
     }
 
     visitCreateIndexMainStatement(ctx) {
@@ -859,7 +864,7 @@ class Visitor extends HiveParserVisitor {
             ...this.visit(ctx.tableName()),
             columns: this.visit(ctx.columnParenthesesList()),
             SecIndxHandler: getTextFromStringLiteral(ctx),
-        }
+        };
     }
 
     visitColumnParenthesesList(ctx) {
@@ -871,12 +876,116 @@ class Visitor extends HiveParserVisitor {
     }
 
     visitDropIndexStatement(ctx) {
-        const { database, table } = this.visit(ctx.tableName())
+        const { database, table } = this.visit(ctx.tableName());
         return {
             type: REMOVE_COLLECTION_LEVEL_INDEX_COMMAND,
             indexName: this.visit(ctx.identifier()),
             collectionName: table,
             bucketName: database,
+        };
+    }
+
+    visitResourcePlanDdlStatements(ctx) {
+        return [
+            'createResourcePlanStatement',
+            'createTriggerStatement',
+            'createPoolStatement',
+            'createMappingStatement',
+        ].map((statement) => this.visitWhenExists(ctx, statement));
+    }
+
+    visitCreateResourcePlanStatement(ctx) {
+        const resourcePlan = this.visitWhenExists(ctx, 'createNewResourcePlanStatement');
+
+        if (resourcePlan) {
+            return resourcePlan;
+        }
+
+        return this.visitWhenExists(ctx, 'createResourcePlanStatementLikeExisting', {});
+    }
+
+    visitCreateNewResourcePlanStatement(ctx) {
+        return {
+            type: CREATE_RESOURCE_PLAN,
+            name: this.visit(ctx.identifier()),
+            parallelism: (this.visitWhenExists(ctx, 'rpAssignList', {}) || {}).parallelism,
+        };
+    }
+
+    visitRpAssignList(ctx) {
+        return this.visit(ctx.rpAssign()).find(({ parallelism }) => !_.isEmpty(parallelism));
+    }
+
+    visitRpAssign(ctx) {
+        return {
+            parallelism: ctx.Number().getText(),
+        };
+    }
+
+    visitCreateResourcePlanStatementLikeExisting(ctx) {
+        return {
+            type: CREATE_RESOURCE_PLAN,
+            name: this.visit(ctx.identifier())[0],
+            like: this.visit(ctx.identifier())[1],
+        };
+    }
+
+    visitCreateTriggerStatement(ctx) {
+        return {
+            type: CREATE_TRIGGER,
+            resourceName: this.visit(ctx.identifier()[0]),
+            trigger: {
+                name: this.visit(ctx.identifier()[1]),
+                condition: ctx.triggerExpression().getText(),
+                action: this.visit(ctx.triggerActionExpression()),
+            }
+        }
+    }
+
+    visitTriggerActionExpression(ctx) {
+        if(ctx.KW_KILL()) {
+            return 'KILL';
+        }
+
+        return `MOVE TO ${ctx.poolPath().getText()}`
+    }
+
+    visitCreatePoolStatement(ctx) {
+        return {
+            type: CREATE_POOL,
+            resourceName: this.visit(ctx.identifier()),
+            pool: {
+                name: ctx.poolPath().getText(),
+                ...this.visit(ctx.poolAssignList())
+            }
+        }
+    }
+
+    visitPoolAssignList(ctx) {
+        return Object.assign({}, ...this.visit(ctx.poolAssign()));
+    }
+
+    visitPoolAssign(ctx) {
+        if(ctx.KW_ALLOC_FRACTION()) {
+            return { allocFraction: ctx.Number().getText() }
+        } else if (ctx.KW_QUERY_PARALLELISM()) {
+            return { parallelism: ctx.Number().getText() }
+        } else if (ctx.KW_SCHEDULING_POLICY()) {
+            return { schedulingPolicy: getTextFromStringLiteral(ctx) }
+        } else {
+            return {};
+        }
+    }
+
+    visitCreateMappingStatement(ctx) {
+        return {
+            type: CREATE_MAPPING,
+            resourceName: this.visit(ctx.identifier()),
+            poolName: ctx.KW_TO() ? ctx.poolPath().getText() : '',
+            mapping: {
+                name: getTextFromStringLiteral(ctx),
+                mappingType: getMappingType(ctx)
+            }
         }
     }
 }
@@ -992,6 +1101,16 @@ const mergeConstraints = (constraints) => {
 
         return mergedConstraint;
     }, {});
+};
+
+const getMappingType = (ctx) => {
+    if (ctx.KW_USER()) {
+        return 'user';
+    } else if (ctx.KW_GROUP()) {
+        return 'group';
+    } else if (ctx.KW_APPLICATION()) {
+        return 'application';
+    }
 };
 
 module.exports = Visitor;

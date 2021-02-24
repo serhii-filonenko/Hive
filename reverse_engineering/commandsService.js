@@ -6,8 +6,8 @@ const {
     isEqualCaseInsensitive,
     remove,
     merge,
-    getCurrentBucket, 
-} = require("./helpers/commandsHelper");
+    getCurrentBucket,
+} = require('./helpers/commandsHelper');
 
 const _ = require('lodash');
 
@@ -16,7 +16,6 @@ const REMOVE_COLLECTION_COMMAND = 'removeCollection';
 const CREATE_BUCKET_COMMAND = 'createBucket';
 const REMOVE_BUCKET_COMMAND = 'removeBucket';
 const USE_BUCKET_COMMAND = 'useBucket';
-const CREATE_DEFINITION_COMMAND = 'createDefinition';
 const ADD_FIELDS_TO_COLLECTION_COMMAND = 'addFieldsToCollection';
 const ADD_COLLECTION_LEVEL_INDEX_COMMAND = 'addCollectionLevelIndex';
 const RENAME_FIELD_COMMAND = 'renameField';
@@ -25,6 +24,10 @@ const ADD_BUCKET_DATA_COMMAND = 'addBucketData';
 const REMOVE_COLLECTION_LEVEL_INDEX_COMMAND = 'removeCollectionLevelIndex';
 const ADD_RELATIONSHIP_COMMAND = 'addRelationship';
 const UPDATE_ENTITY_COLUMN = 'updateColumn';
+const CREATE_RESOURCE_PLAN = 'createResourcePlan';
+const CREATE_TRIGGER = 'createTrigger';
+const CREATE_POOL = 'createPool';
+const CREATE_MAPPING = 'createMapping';
 
 const DEFAULT_BUCKET = 'New database';
 
@@ -58,10 +61,6 @@ const convertCommandsToEntities = (commands, originalScript) => {
                 return useBucket(entitiesData, statementData);
             }
 
-            if (command === CREATE_DEFINITION_COMMAND) {
-                return createDefinition(entitiesData, statementData);
-            }
-
             if (command === ADD_FIELDS_TO_COLLECTION_COMMAND) {
                 return addFieldsToCollection(entitiesData, bucket, statementData);
             }
@@ -82,16 +81,32 @@ const convertCommandsToEntities = (commands, originalScript) => {
                 return addIndexToCollection(entitiesData, bucket, statementData);
             }
 
-            if(command === REMOVE_COLLECTION_LEVEL_INDEX_COMMAND) {
+            if (command === REMOVE_COLLECTION_LEVEL_INDEX_COMMAND) {
                 return removeIndexFromCollection(entitiesData, bucket, statementData);
             }
 
-            if(command === ADD_RELATIONSHIP_COMMAND) {
+            if (command === ADD_RELATIONSHIP_COMMAND) {
                 return addRelationship(entitiesData, bucket, statementData);
             }
 
-            if(command === UPDATE_ENTITY_COLUMN) {
+            if (command === UPDATE_ENTITY_COLUMN) {
                 return updateColumn(entitiesData, bucket, statementData);
+            }
+
+            if (command === CREATE_RESOURCE_PLAN) {
+                return createResourcePlan(entitiesData, statementData);
+            }
+
+            if (command === CREATE_TRIGGER) {
+                return addToResourcePlan(entitiesData, statementData, 'trigger');
+            }
+
+            if (command === CREATE_POOL) {
+                return addToResourcePlan(entitiesData, statementData, 'pool');
+            }
+
+            if (command === CREATE_MAPPING) {
+                return addMapping(entitiesData, statementData);
             }
 
             return entitiesData;
@@ -101,8 +116,8 @@ const convertCommandsToEntities = (commands, originalScript) => {
             views: [],
             currentBucket: DEFAULT_BUCKET,
             buckets: {},
-            definitions: {},
             relationships: [],
+            modelProperties: {},
         }
     );
 };
@@ -111,7 +126,7 @@ const convertCommandsToReDocs = (commands, originalScript) => {
     const reData = convertCommandsToEntities(commands, originalScript);
 
     const result = reData.entities.map((entity) => {
-        const relatedViews = reData.views.filter(view => view.collectionName === entity.collectionName);
+        const relatedViews = reData.views.filter((view) => view.collectionName === entity.collectionName);
         return {
             objectNames: {
                 collectionName: entity.collectionName,
@@ -119,7 +134,6 @@ const convertCommandsToReDocs = (commands, originalScript) => {
             doc: {
                 dbName: entity.bucketName,
                 collectionName: entity.collectionName,
-                modelDefinitions: { definitions: reData.definitions },
                 bucketInfo: reData.buckets[entity.bucketName] || {},
                 entityLevel: entity.entityLevelData,
                 views: relatedViews,
@@ -128,7 +142,7 @@ const convertCommandsToReDocs = (commands, originalScript) => {
         };
     });
 
-    return { result, relationships: reData.relationships }
+    return { result, info: reData.modelProperties, relationships: reData.relationships };
 };
 
 const createCollection = (entitiesData, bucket, statementData) => {
@@ -185,21 +199,6 @@ const useBucket = (entitiesData, statementData) => {
     return {
         ...entitiesData,
         currentBucket: statementData.bucketName,
-    };
-};
-
-const createDefinition = (entitiesData, statementData) => {
-    const { definitions } = entitiesData;
-
-    return {
-        ...entitiesData,
-        definitions: {
-            ...definitions,
-            [statementData.name]: {
-                type: 'udt',
-                properties: statementData.properties,
-            },
-        },
     };
 };
 
@@ -329,12 +328,12 @@ const addIndexToCollection = (entitiesData, bucket, statementData) => {
     const entity = entities[entityIndex];
     const entityLevelData = entity.entityLevelData || {};
     const indexes = [
-        ...entityLevelData.SecIndxs || [],
+        ...(entityLevelData.SecIndxs || []),
         {
             name: statementData.name,
             SecIndxKey: statementData.columns,
             ...statementData.data,
-        }
+        },
     ];
 
     return {
@@ -343,13 +342,13 @@ const addIndexToCollection = (entitiesData, bucket, statementData) => {
             ...entity,
             entityLevelData: {
                 ...entityLevelData,
-                SecIndxs: indexes
-            }
-        })
+                SecIndxs: indexes,
+            },
+        }),
     };
 };
 
-const removeIndexFromCollection = (entitiesData, bucket, statementData) => { 
+const removeIndexFromCollection = (entitiesData, bucket, statementData) => {
     const { entities } = entitiesData;
     const entityIndex = findEntityIndex(entities, bucket, statementData.collectionName);
     if (entityIndex === -1) {
@@ -370,9 +369,9 @@ const removeIndexFromCollection = (entitiesData, bucket, statementData) => {
             },
         }),
     };
-}
+};
 
-const updateColumn = (entitiesData, bucket, statementData) => { 
+const updateColumn = (entitiesData, bucket, statementData) => {
     const { entities } = entitiesData;
     const entityIndex = findEntityIndex(entities, bucket, statementData.collectionName);
     if (entityIndex === -1) {
@@ -388,10 +387,10 @@ const updateColumn = (entitiesData, bucket, statementData) => {
             schema: {
                 ...entity.schema,
                 properties: updateProperties(entity.schema.properties, statementData.data),
-            }
+            },
         }),
     };
-}
+};
 
 const addRelationship = (entitiesData, bucket, statementData) => {
     const { relationships } = entitiesData;
@@ -409,21 +408,125 @@ const addRelationship = (entitiesData, bucket, statementData) => {
             name: statementData.relationshipName,
             childDbName: statementData.childDbName || bucket,
             dbName: statementData.dbName || bucket,
-        })
-    }
-}
+        }),
+    };
+};
 
 const updateProperties = (properties, statementData) => {
-    return _.fromPairs(_.keys(properties).map(columnName => {
-        if(!statementData.fields.includes(columnName)) {
-            return [columnName, properties[columnName]];
+    return _.fromPairs(
+        _.keys(properties).map((columnName) => {
+            if (!statementData.fields.includes(columnName)) {
+                return [columnName, properties[columnName]];
+            }
+
+            return [
+                columnName,
+                {
+                    ...properties[columnName],
+                    [statementData.type]: statementData.value,
+                },
+            ];
+        })
+    );
+};
+
+const createResourcePlan = (entitiesData, statementData) => {
+    const { modelProperties } = entitiesData;
+
+    if (statementData.like) {
+        const originalPlan = (modelProperties.resourcePlans || []).find(({ name }) => name === statementData.like);
+
+        if (!originalPlan) {
+            return entitiesData;
         }
 
-        return [columnName, {
-            ...properties[columnName],
-            [statementData.type]: statementData.value,
-        }]
-    }));
+        return {
+            ...entitiesData,
+            modelProperties: {
+                ...modelProperties,
+                resourcePlans: [
+                    ...(modelProperties.resourcePlans || []),
+                    {
+                        ...originalPlan,
+                        name: statementData.name,
+                    },
+                ],
+            },
+        };
+    }
+
+    return {
+        ...entitiesData,
+        modelProperties: {
+            ...modelProperties,
+            resourcePlans: [
+                ...(modelProperties.resourcePlans || []),
+                {
+                    name: statementData.name,
+                    parallelism: statementData.parallelism,
+                },
+            ],
+        },
+    };
+};
+
+const addToResourcePlan = (entitiesData, statementData, identifier) => {
+    const { modelProperties } = entitiesData;
+
+    const resourcePlans = modelProperties.resourcePlans || [];
+    const resourcePlanIndex = getResourcePlanIndex(resourcePlans, statementData.resourceName);
+    const updatedResourcePlan = {
+        ...resourcePlans[resourcePlanIndex],
+        [identifier + 's']: _.get(resourcePlans, `${resourcePlanIndex}.${identifier + 's'}`, []).concat(
+            statementData[identifier]
+        ),
+    };
+
+    return {
+        ...entitiesData,
+        modelProperties: {
+            ...modelProperties,
+            resourcePlans: set(resourcePlans, resourcePlanIndex, updatedResourcePlan),
+        },
+    };
+};
+
+const addMapping = (entitiesData, statementData) => {
+    const { modelProperties } = entitiesData;
+
+    const resourcePlans = modelProperties.resourcePlans || [];
+    const resourceIndex = getResourcePlanIndex(resourcePlans, statementData.resourceName);
+    if (resourceIndex < 0) {
+        return entitiesData;
+    }
+
+    const planPools = resourcePlans[resourceIndex].pools || [];
+    const poolIndex = _.findIndex(planPools, ({ name }) => name === statementData.poolName);
+    if (poolIndex < 0) {
+        return entitiesData;
+    }
+
+    const updatedPool = addMappingRoPoolByIndex(planPools, poolIndex, statementData.mapping);
+    const updatedResourcePlans = set(resourcePlans, resourceIndex, {
+        ...resourcePlans[resourceIndex],
+        pools: set(planPools, poolIndex, updatedPool),
+    });
+
+    return {
+        ...entitiesData,
+        modelProperties: {
+            ...modelProperties,
+            resourcePlans: updatedResourcePlans,
+        },
+    };
+};
+
+const getResourcePlanIndex = (resourcePlans, resourceName) => {
+    return _.findIndex(resourcePlans, (plan) => plan.name === resourceName);
+};
+
+const addMappingRoPoolByIndex = (pools, poolIndex, mapping) => {
+    return { ...pools[poolIndex], mappings: _.get(pools[poolIndex], 'mappings', []).concat(mapping) };
 };
 
 module.exports = {
@@ -433,7 +536,6 @@ module.exports = {
     CREATE_BUCKET_COMMAND,
     REMOVE_BUCKET_COMMAND,
     USE_BUCKET_COMMAND,
-    CREATE_DEFINITION_COMMAND,
     ADD_FIELDS_TO_COLLECTION_COMMAND,
     RENAME_FIELD_COMMAND,
     CREATE_VIEW_COMMAND,
@@ -442,4 +544,8 @@ module.exports = {
     REMOVE_COLLECTION_LEVEL_INDEX_COMMAND,
     ADD_RELATIONSHIP_COMMAND,
     UPDATE_ENTITY_COLUMN,
+    CREATE_RESOURCE_PLAN,
+    CREATE_TRIGGER,
+    CREATE_POOL,
+    CREATE_MAPPING,
 };

@@ -55,12 +55,16 @@ rpUnassignList
   ;
 
 createResourcePlanStatement
-    : KW_CREATE KW_RESOURCE KW_PLAN (
-          (identifier KW_LIKE identifier)
-        | (identifier (KW_WITH rpAssignList)?)
-      )
+    : KW_CREATE KW_RESOURCE KW_PLAN ( createResourcePlanStatementLikeExisting | createNewResourcePlanStatement )
     ;
 
+createResourcePlanStatementLikeExisting
+    : identifier KW_LIKE identifier
+    ;
+
+createNewResourcePlanStatement
+    : identifier (KW_WITH rpAssignList)?
+    ;
 
 withReplace
     : KW_WITH KW_REPLACE
