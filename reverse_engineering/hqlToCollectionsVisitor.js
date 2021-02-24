@@ -24,20 +24,19 @@ const schemaHelper = require('./thriftService/schemaHelper');
 
 const ALLOWED_COMMANDS = [
     HiveParser.RULE_createTableStatement,
-    // HiveParser.RULE_createKeyspace,
     // HiveParser.RULE_dropTable,
-    // HiveParser.RULE_dropKeyspace,
-    // HiveParser.RULE_createType,
     // HiveParser.RULE_alterTable,
+    HiveParser.RULE_createDatabaseStatement,
+    HiveParser.RULE_switchDatabaseStatement,
+    HiveParser.RULE_dropDatabaseStatement,
     HiveParser.RULE_createViewStatement,
     HiveParser.RULE_createMaterializedViewStatement,
     HiveParser.RULE_alterStatement,
-    // HiveParser.RULE_use,
     // HiveParser.RULE_createFunction,
     // HiveParser.RULE_createAggregate,
     // HiveParser.RULE_alterKeyspace,
     // HiveParser.RULE_alterMaterializedView,
-    // HiveParser.RULE_createIndex,
+    HiveParser.RULE_createIndexStatement,
     // HiveParser.RULE_alterType
 ];
 
@@ -775,6 +774,77 @@ class Visitor extends HiveParserVisitor {
 
     visitWhenExists(ctx, funcName, defaultValue = '') {
         return Boolean(ctx[funcName]) && ctx[funcName]() ? this.visit(ctx[funcName]()) : defaultValue;
+    }
+
+    visitCreateDatabaseStatement(ctx) {
+        const name = this.visit(ctx.identifier());
+        const description = this.visitWhenExists(ctx, 'databaseComment');
+
+        return {
+            type: CREATE_BUCKET_COMMAND,
+            name,
+            data: {
+                description
+            }
+        }
+    }
+
+    visitDatabaseComment(ctx) {
+        return removeSingleDoubleQuotes(ctx.StringLiteral().getText());
+    }
+
+    visitSwitchDatabaseStatement(ctx) {
+        return {
+            type: USE_BUCKET_COMMAND,
+            bucketName: this.visit(ctx.identifier())
+        }
+    }
+
+    dropDatabaseStatement(ctx) {
+        return {
+            type: REMOVE_BUCKET_COMMAND,
+            bucketName: this.visit(ctx.identifier())
+        }
+    }
+
+    visitCreateIndexStatement(ctx) {
+        const {name, database, table, columns, SecIndxHandler} = this.visit(ctx.createIndexMainStatement())
+        const SecIndxWithDeferredRebuild = Boolean(ctx.KW_WITH() && ctx.KW_DEFERRED() && ctx.KW_REBUILD());
+        const SecIndxProperties = this.visitWhenExists(ctx, 'tableProperties');
+        const SecIndxTable = ctx.tableName() ? removeQuotes(ctx.tableName().getText()) : '';
+        const SecIndxComments = this.visitWhenExists(ctx, 'tableComment');
+
+        return {
+			type: ADD_COLLECTION_LEVEL_INDEX_COMMAND,
+			bucketName: database,
+			collectionName: table,
+			name,
+			columns,
+            data: _.pickBy({
+                SecIndxWithDeferredRebuild,
+                SecIndxHandler,
+                SecIndxProperties,
+                SecIndxTable,
+                SecIndxComments,
+            }, prop => !_.isEmpty(prop))
+		};
+    }
+
+    visitCreateIndexMainStatement(ctx) {
+        return {
+            name: this.visit(ctx.identifier()),
+            ...this.visit(ctx.tableName()),
+            columns: this.visit(ctx.columnParenthesesList()),
+            SecIndxHandler: getTextFromStringLiteral(ctx),
+        }
+    }
+
+    visitColumnParenthesesList(ctx) {
+        return this.visit(ctx.columnNameList());
+    }
+
+    visitTableProperties(ctx) {
+        return ctx.getText();
     }
 }
 

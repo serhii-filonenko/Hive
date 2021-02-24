@@ -1,3 +1,14 @@
+const {
+    set,
+    findEntityIndex,
+    getCaseInsensitiveKey,
+    omitCaseInsensitive,
+    isEqualCaseInsensitive,
+    remove,
+    merge,
+    getCurrentBucket, 
+} = require("./helpers/commandsHelper");
+
 const CREATE_COLLECTION_COMMAND = 'createCollection';
 const REMOVE_COLLECTION_COMMAND = 'removeCollection';
 const CREATE_BUCKET_COMMAND = 'createBucket';
@@ -5,6 +16,7 @@ const REMOVE_BUCKET_COMMAND = 'removeBucket';
 const USE_BUCKET_COMMAND = 'useBucket';
 const CREATE_DEFINITION_COMMAND = 'createDefinition';
 const ADD_FIELDS_TO_COLLECTION_COMMAND = 'addFieldsToCollection';
+const ADD_COLLECTION_LEVEL_INDEX_COMMAND = 'addCollectionLevelIndex';
 const RENAME_FIELD_COMMAND = 'renameField';
 const CREATE_VIEW_COMMAND = 'createView';
 const ADD_BUCKET_DATA_COMMAND = 'addBucketData';
@@ -59,6 +71,10 @@ const convertCommandsToEntities = (commands, originalScript) => {
 
             if (command === ADD_BUCKET_DATA_COMMAND) {
                 return addDataToBucket(entitiesData, bucket, statementData);
+            }
+
+            if (command === ADD_COLLECTION_LEVEL_INDEX_COMMAND) {
+                return addIndexToCollection(entitiesData, bucket, statementData);
             }
 
             return entitiesData;
@@ -261,38 +277,6 @@ const addDataToBucket = (entitiesData, bucket, statementData) => {
     };
 };
 
-const findEntityIndex = (entities, bucket, name) => {
-    const entityIndex = entities.findIndex(
-        (entity) =>
-            isEqualCaseInsensitive(entity.bucketName, bucket) && isEqualCaseInsensitive(entity.collectionName, name)
-    );
-
-    if (entityIndex !== -1) {
-        return entityIndex;
-    }
-
-    return entities.findIndex((entity) => entity.collectionName === name);
-};
-
-const getCaseInsensitiveKey = (object, key) => {
-    if (object[key]) {
-        return key;
-    }
-
-    return Object.keys(object).find((objectKey) => isEqualCaseInsensitive(objectKey, key));
-};
-
-const omitCaseInsensitive = (object, key) => {
-    const objectCopy = { ...object };
-    delete objectCopy[getCaseInsensitiveKey(object, key)];
-
-    return objectCopy;
-};
-
-const isEqualCaseInsensitive = (str1, str2) => (str1 || '').toLowerCase() === (str2 || '').toLowerCase();
-
-const remove = (items, index) => [...items.slice(0, index), ...items.slice(index + 1)];
-
 const getTableMergedWithReferencedTable = (entities, statementData) => {
     if (!statementData.tableLikeName) {
         return statementData;
@@ -315,6 +299,36 @@ const getTableMergedWithReferencedTable = (entities, statementData) => {
     };
 };
 
+const addIndexToCollection = (entitiesData, bucket, statementData) => {
+    const { entities } = entitiesData;
+    const entityIndex = findEntityIndex(entities, bucket, statementData.collectionName);
+    if (entityIndex === -1) {
+        return entitiesData;
+    }
+
+    const entity = entities[entityIndex];
+    const entityLevelData = entity.entityLevelData || {};
+    const indexes = [
+        ...entityLevelData.SecIndxs || [],
+        {
+            name: statementData.name,
+            SecIndxKey: statementData.columns,
+            ...statementData.data,
+        }
+    ];
+
+    return {
+        ...entitiesData,
+        entities: set(entities, entityIndex, {
+            ...entity,
+            entityLevelData: {
+                ...entityLevelData,
+                SecIndxs: indexes
+            }
+        })
+    };
+};
+
 module.exports = {
     convertCommandsToReDocs,
     CREATE_COLLECTION_COMMAND,
@@ -327,4 +341,5 @@ module.exports = {
     RENAME_FIELD_COMMAND,
     CREATE_VIEW_COMMAND,
     ADD_BUCKET_DATA_COMMAND,
+    ADD_COLLECTION_LEVEL_INDEX_COMMAND,
 };

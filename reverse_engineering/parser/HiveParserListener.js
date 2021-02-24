@@ -749,6 +749,15 @@ HiveParserListener.prototype.exitCreateIndexStatement = function(ctx) {
 };
 
 
+// Enter a parse tree produced by HiveParser#createIndexMainStatement.
+HiveParserListener.prototype.enterCreateIndexMainStatement = function(ctx) {
+};
+
+// Exit a parse tree produced by HiveParser#createIndexMainStatement.
+HiveParserListener.prototype.exitCreateIndexMainStatement = function(ctx) {
+};
+
+
 // Enter a parse tree produced by HiveParser#dropIndexStatement.
 HiveParserListener.prototype.enterDropIndexStatement = function(ctx) {
 };

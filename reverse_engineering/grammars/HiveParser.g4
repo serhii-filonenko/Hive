@@ -506,7 +506,7 @@ alterStatementSuffixBucketNum
     ;
 
 createIndexStatement
-    : KW_CREATE KW_INDEX identifier KW_ON KW_TABLE tableName columnParenthesesList KW_AS StringLiteral
+    : createIndexMainStatement
     (KW_WITH KW_DEFERRED KW_REBUILD)?
     (KW_IDXPROPERTIES tableProperties)?
     (KW_IN KW_TABLE tableName)?
@@ -515,6 +515,10 @@ createIndexStatement
     (KW_LOCATION poolPath)?
     tablePropertiesPrefixed?
     tableComment?;
+
+createIndexMainStatement
+    : KW_CREATE KW_INDEX identifier KW_ON KW_TABLE tableName columnParenthesesList KW_AS StringLiteral
+    ;
 
 dropIndexStatement
     : KW_DROP KW_INDEX identifier KW_ON tableName;

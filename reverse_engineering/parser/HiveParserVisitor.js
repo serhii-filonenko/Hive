@@ -504,6 +504,12 @@ HiveParserVisitor.prototype.visitCreateIndexStatement = function(ctx) {
 };
 
 
+// Visit a parse tree produced by HiveParser#createIndexMainStatement.
+HiveParserVisitor.prototype.visitCreateIndexMainStatement = function(ctx) {
+  return this.visitChildren(ctx);
+};
+
+
 // Visit a parse tree produced by HiveParser#dropIndexStatement.
 HiveParserVisitor.prototype.visitDropIndexStatement = function(ctx) {
   return this.visitChildren(ctx);
