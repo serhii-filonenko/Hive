@@ -19,6 +19,7 @@ const {
     UPDATE_VIEW_LEVEL_DATA_COMMAND,
     ADD_FIELDS_TO_DEFINITION_COMMAND,
     ADD_RELATIONSHIP_COMMAND,
+    UPDATE_ENTITY_COLUMN,
 } = require('./commandsService');
 
 const schemaHelper = require('./thriftService/schemaHelper');
@@ -335,6 +336,7 @@ class Visitor extends HiveParserVisitor {
                 childDbName: database,
                 childCollection: table,
                 bucketName: database,
+                collectionName: table,
                 ...this.visit(ctx.alterTableStatementSuffix()),
             };
         }
@@ -359,6 +361,19 @@ class Visitor extends HiveParserVisitor {
                 ...this.visit(foreignKey),
             };
         }
+
+        const alterConstraintWithName = ctx.alterConstraintWithName();
+        if (alterConstraintWithName) {
+            const { fields, type } = this.visit(alterConstraintWithName);
+            return {
+                type: UPDATE_ENTITY_COLUMN,
+                data: {
+                    type: type === 'primary' ? 'primaryKey' : type,
+                    fields,
+                }
+            };
+        }
+
         return {};
     }
 
@@ -373,6 +388,10 @@ class Visitor extends HiveParserVisitor {
             childField,
             parentField,
         };
+    }
+
+    visitAlterConstraintWithName(ctx) {
+        return this.visit(ctx.tableLevelConstraint());
     }
 
     visitSelectStatementWithCTE(ctx) {

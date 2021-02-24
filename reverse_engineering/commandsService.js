@@ -22,6 +22,7 @@ const CREATE_VIEW_COMMAND = 'createView';
 const ADD_BUCKET_DATA_COMMAND = 'addBucketData';
 const REMOVE_COLLECTION_LEVEL_INDEX_COMMAND = 'removeCollectionLevelIndex';
 const ADD_RELATIONSHIP_COMMAND = 'addRelationship';
+const UPDATE_ENTITY_COLUMN = 'updateColumn';
 
 const DEFAULT_BUCKET = 'New database';
 
@@ -85,6 +86,10 @@ const convertCommandsToEntities = (commands, originalScript) => {
 
             if(command === ADD_RELATIONSHIP_COMMAND) {
                 return addRelationship(entitiesData, bucket, statementData);
+            }
+
+            if(command === UPDATE_ENTITY_COLUMN) {
+                return updateColumn(entitiesData, bucket, statementData);
             }
 
             return entitiesData;
@@ -365,6 +370,27 @@ const removeIndexFromCollection = (entitiesData, bucket, statementData) => {
     };
 }
 
+const updateColumn = (entitiesData, bucket, statementData) => { 
+    const { entities } = entitiesData;
+    const entityIndex = findEntityIndex(entities, bucket, statementData.collectionName);
+    if (entityIndex === -1) {
+        return entitiesData;
+    }
+
+    const entity = entities[entityIndex];
+
+    return {
+        ...entitiesData,
+        entities: set(entities, entityIndex, {
+            ...entity,
+            schema: {
+                ...entity.schema,
+                properties: updateProperties(entity.schema.properties, statementData.data),
+            }
+        }),
+    };
+}
+
 const addRelationship = (entitiesData, bucket, statementData) => {
     const { relationships } = entitiesData;
 
@@ -385,6 +411,20 @@ const addRelationship = (entitiesData, bucket, statementData) => {
     }
 }
 
+const updateProperties = (properties, statementData) => {
+    const updatedProperties = statementData.fields.reduce((updatedProps, fieldName) => {
+        return {
+            ...updatedProps,
+            [fieldName]: {
+                ...properties[fieldName],
+                [statementData.type]: true,
+            },
+        };
+    }, {});
+
+    return { ...properties, ...updatedProperties };
+};
+
 module.exports = {
     convertCommandsToReDocs,
     CREATE_COLLECTION_COMMAND,
@@ -400,4 +440,5 @@ module.exports = {
     ADD_COLLECTION_LEVEL_INDEX_COMMAND,
     REMOVE_COLLECTION_LEVEL_INDEX_COMMAND,
     ADD_RELATIONSHIP_COMMAND,
+    UPDATE_ENTITY_COLUMN,
 };
