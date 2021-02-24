@@ -20,7 +20,8 @@ const ADD_COLLECTION_LEVEL_INDEX_COMMAND = 'addCollectionLevelIndex';
 const RENAME_FIELD_COMMAND = 'renameField';
 const CREATE_VIEW_COMMAND = 'createView';
 const ADD_BUCKET_DATA_COMMAND = 'addBucketData';
-const REMOVE_COLLECTION_LEVEL_INDEX_COMMAND = 'removeCollectionLevelIndex'
+const REMOVE_COLLECTION_LEVEL_INDEX_COMMAND = 'removeCollectionLevelIndex';
+const ADD_RELATIONSHIP_COMMAND = 'addRelationship';
 
 const DEFAULT_BUCKET = 'New database';
 
@@ -82,6 +83,10 @@ const convertCommandsToEntities = (commands, originalScript) => {
                 return removeIndexFromCollection(entitiesData, bucket, statementData);
             }
 
+            if(command === ADD_RELATIONSHIP_COMMAND) {
+                return addRelationship(entitiesData, bucket, statementData);
+            }
+
             return entitiesData;
         },
         {
@@ -90,6 +95,7 @@ const convertCommandsToEntities = (commands, originalScript) => {
             currentBucket: DEFAULT_BUCKET,
             buckets: {},
             definitions: {},
+            relationships: [],
         }
     );
 };
@@ -97,7 +103,7 @@ const convertCommandsToEntities = (commands, originalScript) => {
 const convertCommandsToReDocs = (commands, originalScript) => {
     const reData = convertCommandsToEntities(commands, originalScript);
 
-    return reData.entities.map((entity) => {
+    const result = reData.entities.map((entity) => {
         const relatedViews = reData.views.filter(view => view.collectionName === entity.collectionName);
         return {
             objectNames: {
@@ -114,6 +120,8 @@ const convertCommandsToReDocs = (commands, originalScript) => {
             jsonSchema: entity.schema,
         };
     });
+
+    return { result, relationships: reData.relationships }
 };
 
 const createCollection = (entitiesData, bucket, statementData) => {
@@ -357,6 +365,26 @@ const removeIndexFromCollection = (entitiesData, bucket, statementData) => {
     };
 }
 
+const addRelationship = (entitiesData, bucket, statementData) => {
+    const { relationships } = entitiesData;
+
+    return {
+        ...entitiesData,
+        relationships: relationships.concat({
+            childCollection: statementData.childCollection,
+            parentCollection: statementData.parentCollection,
+            childField: statementData.childField,
+            parentField: statementData.parentField,
+            relationshipType: 'Foreign Key',
+            childCardinality: '1',
+            parentCardinality: '1',
+            name: statementData.relationshipName,
+            childDbName: statementData.childDbName || bucket,
+            dbName: statementData.dbName || bucket,
+        })
+    }
+}
+
 module.exports = {
     convertCommandsToReDocs,
     CREATE_COLLECTION_COMMAND,
@@ -371,4 +399,5 @@ module.exports = {
     ADD_BUCKET_DATA_COMMAND,
     ADD_COLLECTION_LEVEL_INDEX_COMMAND,
     REMOVE_COLLECTION_LEVEL_INDEX_COMMAND,
+    ADD_RELATIONSHIP_COMMAND,
 };

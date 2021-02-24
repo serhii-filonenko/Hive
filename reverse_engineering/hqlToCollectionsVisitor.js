@@ -334,6 +334,7 @@ class Visitor extends HiveParserVisitor {
             return {
                 childDbName: database,
                 childCollection: table,
+                bucketName: database,
                 ...this.visit(ctx.alterTableStatementSuffix()),
             };
         }
@@ -346,6 +347,7 @@ class Visitor extends HiveParserVisitor {
         if (constraint) {
             return this.visit(constraint);
         }
+
         return {};
     }
 
