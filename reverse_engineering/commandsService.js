@@ -20,6 +20,7 @@ const ADD_COLLECTION_LEVEL_INDEX_COMMAND = 'addCollectionLevelIndex';
 const RENAME_FIELD_COMMAND = 'renameField';
 const CREATE_VIEW_COMMAND = 'createView';
 const ADD_BUCKET_DATA_COMMAND = 'addBucketData';
+const REMOVE_COLLECTION_LEVEL_INDEX_COMMAND = 'removeCollectionLevelIndex'
 
 const DEFAULT_BUCKET = 'New database';
 
@@ -75,6 +76,10 @@ const convertCommandsToEntities = (commands, originalScript) => {
 
             if (command === ADD_COLLECTION_LEVEL_INDEX_COMMAND) {
                 return addIndexToCollection(entitiesData, bucket, statementData);
+            }
+
+            if(command === REMOVE_COLLECTION_LEVEL_INDEX_COMMAND) {
+                return removeIndexFromCollection(entitiesData, bucket, statementData);
             }
 
             return entitiesData;
@@ -329,6 +334,29 @@ const addIndexToCollection = (entitiesData, bucket, statementData) => {
     };
 };
 
+const removeIndexFromCollection = (entitiesData, bucket, statementData) => { 
+    const { entities } = entitiesData;
+    const entityIndex = findEntityIndex(entities, bucket, statementData.collectionName);
+    if (entityIndex === -1) {
+        return entitiesData;
+    }
+
+    const entity = entities[entityIndex];
+    const entityLevelData = entity.entityLevelData || {};
+    const indexes = (entityLevelData.SecIndxs || []).filter((index) => index.name !== statementData.indexName);
+
+    return {
+        ...entitiesData,
+        entities: set(entities, entityIndex, {
+            ...entity,
+            entityLevelData: {
+                ...entityLevelData,
+                SecIndxs: indexes,
+            },
+        }),
+    };
+}
+
 module.exports = {
     convertCommandsToReDocs,
     CREATE_COLLECTION_COMMAND,
@@ -342,4 +370,5 @@ module.exports = {
     CREATE_VIEW_COMMAND,
     ADD_BUCKET_DATA_COMMAND,
     ADD_COLLECTION_LEVEL_INDEX_COMMAND,
+    REMOVE_COLLECTION_LEVEL_INDEX_COMMAND,
 };

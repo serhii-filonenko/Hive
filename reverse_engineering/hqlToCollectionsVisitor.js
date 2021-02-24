@@ -13,6 +13,7 @@ const {
     CREATE_VIEW_COMMAND,
     ADD_BUCKET_DATA_COMMAND,
     ADD_COLLECTION_LEVEL_INDEX_COMMAND,
+    REMOVE_COLLECTION_LEVEL_INDEX_COMMAND,
     UPDATE_BUCKET_COMMAND,
     UPDATE_ENTITY_LEVEL_DATA_COMMAND,
     UPDATE_VIEW_LEVEL_DATA_COMMAND,
@@ -37,7 +38,7 @@ const ALLOWED_COMMANDS = [
     // HiveParser.RULE_alterKeyspace,
     // HiveParser.RULE_alterMaterializedView,
     HiveParser.RULE_createIndexStatement,
-    // HiveParser.RULE_alterType
+    HiveParser.RULE_dropIndexStatement,
 ];
 
 class Visitor extends HiveParserVisitor {
@@ -845,6 +846,16 @@ class Visitor extends HiveParserVisitor {
 
     visitTableProperties(ctx) {
         return ctx.getText();
+    }
+
+    visitDropIndexStatement(ctx) {
+        const { database, table } = this.visit(ctx.tableName())
+        return {
+            type: REMOVE_COLLECTION_LEVEL_INDEX_COMMAND,
+            indexName: this.visit(ctx.identifier()),
+            collectionName: table,
+            bucketName: database,
+        }
     }
 }
 
