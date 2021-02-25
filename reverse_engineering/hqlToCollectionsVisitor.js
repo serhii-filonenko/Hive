@@ -8,12 +8,10 @@ const {
     REMOVE_BUCKET_COMMAND,
     USE_BUCKET_COMMAND,
     ADD_FIELDS_TO_COLLECTION_COMMAND,
-    RENAME_FIELD_COMMAND,
+    UPDATE_FIELD_COMMAND,
     CREATE_VIEW_COMMAND,
-    ADD_BUCKET_DATA_COMMAND,
     ADD_COLLECTION_LEVEL_INDEX_COMMAND,
     REMOVE_COLLECTION_LEVEL_INDEX_COMMAND,
-    UPDATE_BUCKET_COMMAND,
     UPDATE_ENTITY_LEVEL_DATA_COMMAND,
     UPDATE_VIEW_LEVEL_DATA_COMMAND,
     RENAME_VIEW_COMMAND,
@@ -28,14 +26,14 @@ const {
     ADD_TO_RESOURCE_PLAN,
     DROP_RESOURCE_PLAN_ITEM,
     DROP_MAPPING,
+    RENAME_COLLECTION_COMMAND,
 } = require('./commandsService');
 
 const schemaHelper = require('./thriftService/schemaHelper');
 
 const ALLOWED_COMMANDS = [
     HiveParser.RULE_createTableStatement,
-    // HiveParser.RULE_dropTable,
-    // HiveParser.RULE_alterTable,
+    HiveParser.RULE_dropTableStatement,
     HiveParser.RULE_createDatabaseStatement,
     HiveParser.RULE_switchDatabaseStatement,
     HiveParser.RULE_dropDatabaseStatement,
@@ -368,7 +366,163 @@ class Visitor extends HiveParserVisitor {
             return this.visit(constraint);
         }
 
+        return [
+            'alterStatementSuffixRename',
+            'alterStatementSuffixProperties',
+            'alterStatementSuffixSkewedby',
+            'alterTblPartitionStatementSuffix',
+        ]
+            .map((statement) => this.visitWhenExists(ctx, statement))
+            .filter(Boolean)[0];
+    }
+
+    visitAlterStatementSuffixRename(ctx) {
+        const { database, table } = this.visit(ctx.tableName());
+
+        return {
+            type: RENAME_COLLECTION_COMMAND,
+            newCollectionName: table,
+        };
+    }
+
+    visitAlterStatementSuffixProperties(ctx) {
         return {};
+    }
+
+    visitAlterStatementSuffixSkewedby(ctx) {
+        return {
+            type: UPDATE_ENTITY_LEVEL_DATA_COMMAND,
+            data: {
+                ...this.visitWhenExists(ctx, 'tableSkewed', {}),
+                ...(Boolean(ctx.KW_NOT() && ctx.KW_SKEWED()) ? { skewedby: [], skewedOn: '' } : {}),
+                ...(Boolean(ctx.storedAsDirs()) ? { skewStoredAsDir: false } : {}),
+            },
+        };
+    }
+
+    visitAlterTblPartitionStatementSuffix(ctx) {
+        return [
+            'alterStatementSuffixFileFormat',
+            'alterStatementSuffixLocation',
+            'alterStatementSuffixBucketNum',
+            'alterStatementSuffixClusterbySortby',
+            'alterStatementSuffixRenameCol',
+            'alterStatementSuffixAddCol',
+        ]
+            .map((statement) => this.visitWhenExists(ctx, statement))
+            .filter(Boolean)[0];
+    }
+
+    visitAlterStatementSuffixFileFormat(ctx) {
+        return {
+            type: UPDATE_ENTITY_LEVEL_DATA_COMMAND,
+            data: {
+                ...this.visit(ctx.fileFormat()),
+            },
+        };
+    }
+
+    visitFileFormat(ctx) {
+        if (ctx.KW_INPUTFORMAT()) {
+            return {
+                storedAsTable: 'input/output format',
+                inputFormatClassname: removeSingleDoubleQuotes(ctx.StringLiteral()[0].getText()),
+                outputFormatClassname: removeSingleDoubleQuotes(ctx.StringLiteral()[1].getText()),
+                serDeLibrary: removeSingleDoubleQuotes(ctx.StringLiteral()[2].getText()),
+            };
+        }
+
+        return {
+            storedAsTable: getStoredAsTable(ctx.tableFileFormatStoredAsFormat().getText()),
+        };
+    }
+
+    visitAlterStatementSuffixLocation(ctx) {
+        return {
+            type: UPDATE_ENTITY_LEVEL_DATA_COMMAND,
+            data: {
+                location: getTextFromStringLiteral(ctx),
+            },
+        };
+    }
+
+    visitAlterStatementSuffixBucketNum(ctx) {
+        return {
+            type: UPDATE_ENTITY_LEVEL_DATA_COMMAND,
+            data: {
+                numBuckets: ctx.Number().getText(),
+            },
+        };
+    }
+
+    visitAlterStatementSuffixClusterbySortby(ctx) {
+        return {
+            type: UPDATE_ENTITY_LEVEL_DATA_COMMAND,
+            data: {
+                ...(Boolean(ctx.KW_CLUSTERED()) ? { compositeClusteringKey: [] } : {}),
+                ...(Boolean(ctx.KW_SORTED()) ? { sortedByKey: [] } : {}),
+                ...this.visitWhenExists(ctx, 'tableBuckets', {}),
+            },
+        };
+    }
+
+    visitAlterStatementSuffixRenameCol(ctx) {
+        const columnConstraint = this.visitWhenExists(ctx, 'alterColumnConstraint', {});
+
+        return {
+            type: UPDATE_FIELD_COMMAND,
+            name: this.visit(ctx.identifier()[0]),
+            nameTo: this.visit(ctx.identifier()[1]),
+            data: {
+                ...this.visit(ctx.colType()),
+                ...(Boolean(ctx.KW_COMMENT()) ? { description: getTextFromStringLiteral(ctx) } : {}),
+                ...columnConstraint,
+            },
+        };
+    }
+
+    visitAlterColumnConstraint(ctx) {
+        if (ctx.alterForeignKeyConstraint()) {
+            return this.visit(ctx.alterForeignKeyConstraint());
+        }
+
+        return this.visit(ctx.alterColConstraint());
+    }
+
+    visitAlterForeignKeyConstraint(ctx) {
+        return {};
+    }
+
+    visitAlterColConstraint(ctx) {
+        return this.visit(ctx.columnConstraintType());
+    }
+
+    visitAlterStatementSuffixAddCol(ctx) {
+        return {
+            type: ADD_FIELDS_TO_COLLECTION_COMMAND,
+            data: this.visit(ctx.columnNameTypeList()),
+        };
+    }
+
+    visitColumnNameTypeList(ctx) {
+        const columns = this.visit(ctx.columnNameType());
+
+        return columns.reduce((data, column) => {
+            const { name, ...columnData } = column;
+
+            return {
+                ...data,
+                [name]: columnData,
+            };
+        }, {});
+    }
+
+    visitColumnNameType(ctx) {
+        return {
+            name: this.visit(ctx.identifier()),
+            ...this.visit(ctx.colType()),
+            ...this(ctx.KW_COMMENT() ? { description: getTextFromStringLiteral(ctx) } : {}),
+        };
     }
 
     visitAlterViewStatementSuffix(ctx) {
@@ -749,11 +903,11 @@ class Visitor extends HiveParserVisitor {
 
     visitColumnConstraintType(ctx) {
         return {
-            required: Boolean(ctx.KW_NOT() && ctx.KW_NULL()),
-            unique: Boolean((ctx.tableConstraintType() || {}).KW_UNIQUE),
-            primaryKey: Boolean((ctx.tableConstraintType() || {}).KW_PRIMARY),
-            default: ctx.KW_DEFAULT() ? this.visit(ctx.defaultVal()) : '',
-            check: this.visitWhenExists(ctx, 'checkConstraint', ''),
+            ...(Boolean(ctx.KW_NOT() && ctx.KW_NULL()) ? { required: true } : {}),
+            ...(Boolean((ctx.tableConstraintType() || {}).KW_UNIQUE) ? { unique: true } : {}),
+            ...(Boolean((ctx.tableConstraintType() || {}).KW_PRIMARY) ? { primaryKey: true } : {}),
+            ...(Boolean(ctx.KW_DEFAULT()) ? { default: this.visit(ctx.defaultVal()) } : {}),
+            ...(Boolean(ctx.checkConstraint()) ? { check: this.visitWhenExists(ctx, 'checkConstraint', '') } : {}),
         };
     }
 
@@ -1184,6 +1338,16 @@ class Visitor extends HiveParserVisitor {
             type: DROP_MAPPING,
             resourceName: this.visit(ctx.identifier()),
             name: getTextFromStringLiteral(ctx),
+        };
+    }
+
+    visitDropTableStatement(ctx) {
+        const { database, table } = this.visit(ctx.tableName());
+
+        return {
+            type: REMOVE_COLLECTION_COMMAND,
+            bucketName: database,
+            collectionName: table,
         };
     }
 }

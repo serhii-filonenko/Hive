@@ -1462,7 +1462,7 @@ var serializedATN = ["\u0003\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964",
     "\u0002\u0672\u0673\u0007}\u0002\u0002\u0673\u0674\u0007\u0173\u0002",
     "\u0002\u0674\u0675\u0007~\u0002\u0002\u0675\u0677\u0007\u0173\u0002",
     "\u0002\u0676\u0672\u0003\u0002\u0002\u0002\u0676\u0677\u0003\u0002\u0002",
-    "\u0002\u0677\u067a\u0003\u0002\u0002\u0002\u0678\u067a\u0005\u0300\u0181",
+    "\u0002\u0677\u067a\u0003\u0002\u0002\u0002\u0678\u067a\u0005\u014e\u00a8",
     "\u0002\u0679\u066c\u0003\u0002\u0002\u0002\u0679\u0678\u0003\u0002\u0002",
     "\u0002\u067a\u00b3\u0003\u0002\u0002\u0002\u067b\u067c\u0007{\u0002",
     "\u0002\u067c\u067d\u0007\u0173\u0002\u0002\u067d\u067e\u0007\u0096\u0002",
@@ -14148,8 +14148,8 @@ FileFormatContext.prototype.KW_OUTPUTDRIVER = function() {
     return this.getToken(HiveParser.KW_OUTPUTDRIVER, 0);
 };
 
-FileFormatContext.prototype.identifier = function() {
-    return this.getTypedRuleContext(IdentifierContext,0);
+FileFormatContext.prototype.tableFileFormatStoredAsFormat = function() {
+    return this.getTypedRuleContext(TableFileFormatStoredAsFormatContext,0);
 };
 
 FileFormatContext.prototype.enterRule = function(listener) {
@@ -14185,9 +14185,8 @@ HiveParser.prototype.fileFormat = function() {
     try {
         this.state = 1655;
         this._errHandler.sync(this);
-        var la_ = this._interp.adaptivePredict(this._input,113,this._ctx);
-        switch(la_) {
-        case 1:
+        switch(this._input.LA(1)) {
+        case HiveParser.KW_INPUTFORMAT:
             this.enterOuterAlt(localctx, 1);
             this.state = 1642;
             this.match(HiveParser.KW_INPUTFORMAT);
@@ -14216,13 +14215,19 @@ HiveParser.prototype.fileFormat = function() {
             }
 
             break;
-
-        case 2:
+        case HiveParser.KW_SEQUENCEFILE:
+        case HiveParser.KW_TEXTFILE:
+        case HiveParser.KW_RCFILE:
+        case HiveParser.KW_ORC:
+        case HiveParser.KW_PARQUET:
+        case HiveParser.KW_AVRO:
+        case HiveParser.KW_JSONFILE:
             this.enterOuterAlt(localctx, 2);
             this.state = 1654;
-            this.identifier();
+            this.tableFileFormatStoredAsFormat();
             break;
-
+        default:
+            throw new antlr4.error.NoViableAltException(this);
         }
     } catch (re) {
     	if(re instanceof antlr4.error.RecognitionException) {

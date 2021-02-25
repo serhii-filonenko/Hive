@@ -13,15 +13,15 @@ const _ = require('lodash');
 
 const CREATE_COLLECTION_COMMAND = 'createCollection';
 const REMOVE_COLLECTION_COMMAND = 'removeCollection';
+const RENAME_COLLECTION_COMMAND = 'renameCollection';
 const CREATE_BUCKET_COMMAND = 'createBucket';
 const REMOVE_BUCKET_COMMAND = 'removeBucket';
 const USE_BUCKET_COMMAND = 'useBucket';
 const ADD_FIELDS_TO_COLLECTION_COMMAND = 'addFieldsToCollection';
 const ADD_COLLECTION_LEVEL_INDEX_COMMAND = 'addCollectionLevelIndex';
-const RENAME_FIELD_COMMAND = 'renameField';
+const UPDATE_FIELD_COMMAND = 'updateField';
 const CREATE_VIEW_COMMAND = 'createView';
 const REMOVE_VIEW_COMMAND = 'removeView';
-const ADD_BUCKET_DATA_COMMAND = 'addBucketData';
 const REMOVE_COLLECTION_LEVEL_INDEX_COMMAND = 'removeCollectionLevelIndex';
 const ADD_RELATIONSHIP_COMMAND = 'addRelationship';
 const UPDATE_ENTITY_COLUMN = 'updateColumn';
@@ -35,6 +35,7 @@ const DROP_RESOURCE_PLAN = 'dropResourcePlan';
 const UPDATE_ITEM_IN_RESOURCE_PLAN = 'updateItemInResourcePlan';
 const DROP_RESOURCE_PLAN_ITEM = 'dropResourcePlanItem';
 const DROP_MAPPING = 'removeMapping';
+const UPDATE_ENTITY_LEVEL_DATA_COMMAND = 'updateCollectionProperties';
 
 const DEFAULT_BUCKET = 'New database';
 
@@ -49,8 +50,8 @@ const convertCommandsToEntities = (commands, originalScript) => {
 
             const bucket = statementData.bucketName || entitiesData.currentBucket;
 
-            if (_.keys(COMMANDS).includes(command)) {
-                return COMMANDS[command](entitiesData, bucket, statementData, originalScript);
+            if (_.keys(COMMANDS_ACTION_MAP).includes(command)) {
+                return COMMANDS_ACTION_MAP[command](entitiesData, bucket, statementData, originalScript);
             }
 
             return entitiesData;
@@ -173,7 +174,7 @@ const addFieldsToCollection = (entitiesData, bucket, statementData) => {
     };
 };
 
-const renameField = (entitiesData, bucket, statementData) => {
+const updateField = (entitiesData, bucket, statementData) => {
     const { entities } = entitiesData;
 
     const index = findEntityIndex(entities, bucket, statementData.collectionName);
@@ -182,7 +183,15 @@ const renameField = (entitiesData, bucket, statementData) => {
     }
 
     const entity = entities[index];
-    const field = entity[statementData.nameFrom];
+    const field = _.get(entity, 'schema.properties' , {})[statementData.name];
+    if(!field) {
+        return entitiesData; 
+    }
+
+    const updatedField = {
+        ...field,
+        ...statementData.data
+    }
 
     return {
         ...entitiesData,
@@ -193,8 +202,8 @@ const renameField = (entitiesData, bucket, statementData) => {
                 schema: {
                     ...entity.schema,
                     properties: {
-                        ...omitCaseInsensitive(entity.schema.properties, statementData.nameFrom),
-                        [statementData.nameTo]: field,
+                        ...omitCaseInsensitive(entity.schema.properties, statementData.name),
+                        [statementData.nameTo]: updatedField,
                     },
                 },
             },
@@ -220,23 +229,6 @@ const createView = (entitiesData, bucket, statementData, originalScript) => {
                 bucketName: statementData.bucketName || bucket,
             },
         ],
-    };
-};
-
-const addDataToBucket = (entitiesData, bucket, statementData) => {
-    const { buckets } = entitiesData;
-    const bucketName = getCaseInsensitiveKey(buckets, bucket);
-    const { key, data } = statementData;
-
-    return {
-        ...entitiesData,
-        buckets: {
-            ...buckets,
-            [bucketName]: {
-                ...buckets[bucketName],
-                [key]: [...(buckets[bucketName][key] || []), data],
-            },
-        },
     };
 };
 
@@ -525,6 +517,24 @@ const renameView = (entitiesData, bucket, statementData) => {
     };
 };
 
+const renameCollection = (entitiesData, bucket, statementData) => {
+    const { entities } = entitiesData;
+    const index = findEntityIndex(entities, bucket, statementData.collectionName);
+    if (index === -1) {
+        return entitiesData;
+    }
+
+    const entity = entities[index];
+
+    return {
+        ...entitiesData,
+        entities: set(entities, index, {
+            ...entity,
+            name: statementData.newCollectionName,
+        }),
+    };
+};
+
 const updateResourcePlan = (entitiesData, bucket, statementData) => {
     const { modelProperties } = entitiesData;
 
@@ -650,6 +660,24 @@ const removeMapping = (entitiesData, bucket, statementData) => {
     };
 };
 
+const updateEntityLevelData = (entitiesData, bucket, statementData) => {
+    const { entities } = entitiesData;
+    const index = findEntityIndex(entities, bucket, statementData.collectionName);
+    if (index === -1) {
+        return entitiesData;
+    }
+
+    const entity = entities[index];
+
+    return {
+        ...entitiesData,
+        entities: set(entities, index, {
+            ...entity,
+            entityLevelData: merge(entity.entityLevelData, statementData.data)
+        })
+    };
+}
+
 const getResourcePlanIndex = (resourcePlans, resourceName) => {
     return _.findIndex(resourcePlans, (plan) => plan.name === resourceName);
 };
@@ -670,7 +698,7 @@ const getResourcePlanAndItemIndexes = (resourcePlans, statementData, identifier)
     return { resourcePlanIndex, itemIndex };
 };
 
-const COMMANDS = {
+const COMMANDS_ACTION_MAP = {
     [CREATE_COLLECTION_COMMAND]: createCollection,
     [REMOVE_COLLECTION_COMMAND]: removeCollection,
     [CREATE_BUCKET_COMMAND]: createBucket,
@@ -678,10 +706,9 @@ const COMMANDS = {
     [USE_BUCKET_COMMAND]: useBucket,
     [ADD_FIELDS_TO_COLLECTION_COMMAND]: addFieldsToCollection,
     [ADD_COLLECTION_LEVEL_INDEX_COMMAND]: addIndexToCollection,
-    [RENAME_FIELD_COMMAND]: renameField,
+    [UPDATE_FIELD_COMMAND]: updateField,
     [CREATE_VIEW_COMMAND]: createView,
     [REMOVE_VIEW_COMMAND]: removeView,
-    [ADD_BUCKET_DATA_COMMAND]: addDataToBucket,
     [REMOVE_COLLECTION_LEVEL_INDEX_COMMAND]: removeIndexFromCollection,
     [ADD_RELATIONSHIP_COMMAND]: addRelationship,
     [UPDATE_ENTITY_COLUMN]: updateColumn,
@@ -695,6 +722,8 @@ const COMMANDS = {
     [UPDATE_ITEM_IN_RESOURCE_PLAN]: updateResourcePlanItem,
     [DROP_RESOURCE_PLAN_ITEM]: removeItemFromResourcePlan,
     [DROP_MAPPING]: removeMapping,
+    [RENAME_COLLECTION_COMMAND]: renameCollection,
+    [UPDATE_ENTITY_LEVEL_DATA_COMMAND]: updateEntityLevelData,
 };
 
 module.exports = {
@@ -705,9 +734,8 @@ module.exports = {
     REMOVE_BUCKET_COMMAND,
     USE_BUCKET_COMMAND,
     ADD_FIELDS_TO_COLLECTION_COMMAND,
-    RENAME_FIELD_COMMAND,
+    UPDATE_FIELD_COMMAND,
     CREATE_VIEW_COMMAND,
-    ADD_BUCKET_DATA_COMMAND,
     ADD_COLLECTION_LEVEL_INDEX_COMMAND,
     REMOVE_COLLECTION_LEVEL_INDEX_COMMAND,
     ADD_RELATIONSHIP_COMMAND,
@@ -722,4 +750,6 @@ module.exports = {
     UPDATE_ITEM_IN_RESOURCE_PLAN,
     DROP_RESOURCE_PLAN_ITEM,
     DROP_MAPPING,
+    RENAME_COLLECTION_COMMAND,
+    UPDATE_ENTITY_LEVEL_DATA_COMMAND,
 };

@@ -541,7 +541,7 @@ alterStatementSuffixSetOwner
 
 fileFormat
     : KW_INPUTFORMAT StringLiteral KW_OUTPUTFORMAT StringLiteral KW_SERDE StringLiteral (KW_INPUTDRIVER StringLiteral KW_OUTPUTDRIVER StringLiteral)?
-    | identifier
+    | tableFileFormatStoredAsFormat
     ;
 
 inputFileFormat
