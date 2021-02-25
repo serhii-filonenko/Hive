@@ -11,6 +11,12 @@ const findEntityIndex = (entities, bucket, name) => {
     return entities.findIndex(entity => entity.collectionName === name);
 };
 
+const findViewIndex = (entities, bucket, name) => {
+    return entities.findIndex(entity => (
+        entity.bucketName === bucket && entity.name === name
+    ));
+};
+
 const getCaseInsensitiveKey = (object, key) => {
     if (object[key]) {
         return key;
@@ -60,4 +66,5 @@ module.exports = {
     set,
     merge,
     getCurrentBucket,
+    findViewIndex,
 }

@@ -16,12 +16,14 @@ const {
     UPDATE_BUCKET_COMMAND,
     UPDATE_ENTITY_LEVEL_DATA_COMMAND,
     UPDATE_VIEW_LEVEL_DATA_COMMAND,
+    RENAME_VIEW_COMMAND,
     ADD_RELATIONSHIP_COMMAND,
     UPDATE_ENTITY_COLUMN,
     CREATE_RESOURCE_PLAN,
     CREATE_TRIGGER,
     CREATE_POOL,
     CREATE_MAPPING,
+    REMOVE_VIEW_COMMAND,
 } = require('./commandsService');
 
 const schemaHelper = require('./thriftService/schemaHelper');
@@ -36,8 +38,8 @@ const ALLOWED_COMMANDS = [
     HiveParser.RULE_createViewStatement,
     HiveParser.RULE_createMaterializedViewStatement,
     HiveParser.RULE_alterStatement,
-    // HiveParser.RULE_createFunction,
-    // HiveParser.RULE_createAggregate,
+    HiveParser.RULE_dropMaterializedViewStatement,
+    HiveParser.RULE_dropViewStatement,
     HiveParser.RULE_dropIndexStatement,
     HiveParser.RULE_resourcePlanDdlStatements,
     HiveParser.RULE_createIndexStatement,
@@ -343,6 +345,16 @@ class Visitor extends HiveParserVisitor {
             };
         }
 
+        if (ctx.KW_VIEW()) {
+            const { database, table } = this.visit(ctx.tableName());
+
+            return {
+                bucketName: database,
+                viewName: table,
+                ...this.visit(ctx.alterViewStatementSuffix()),
+            };
+        }
+
         return;
     }
 
@@ -353,6 +365,31 @@ class Visitor extends HiveParserVisitor {
         }
 
         return {};
+    }
+
+    visitAlterViewStatementSuffix(ctx) {
+        if (ctx.selectStatementWithCTE()) {
+            const select = {
+                start: ctx.selectStatementWithCTE().start.start,
+                stop: ctx.selectStatementWithCTE().stop.stop,
+            };
+
+            return {
+                type: UPDATE_VIEW_LEVEL_DATA_COMMAND,
+                select,
+            };
+        }
+
+        if (ctx.alterStatementSuffixRename()) {
+            return {
+                type: RENAME_VIEW_COMMAND,
+                newViewName: this.visit(ctx.alterStatementSuffixRename()),
+            };
+        }
+    }
+
+    visitAlterStatementSuffixRename(ctx) {
+        return this.visit(ctx.tableName()).table;
     }
 
     visitAlterStatementSuffixAddConstraint(ctx) {
@@ -744,6 +781,21 @@ class Visitor extends HiveParserVisitor {
         };
     }
 
+    visitViewName(ctx) {
+        let names = this.visit(ctx.identifier());
+        if (names.length === 1) {
+            return {
+                database: '',
+                view: names[0],
+            };
+        }
+
+        return {
+            database: names[0],
+            view: names[1],
+        };
+    }
+
     visitIdentifier(ctx) {
         return removeQuotes(ctx.getText());
     }
@@ -938,16 +990,16 @@ class Visitor extends HiveParserVisitor {
                 name: this.visit(ctx.identifier()[1]),
                 condition: ctx.triggerExpression().getText(),
                 action: this.visit(ctx.triggerActionExpression()),
-            }
-        }
+            },
+        };
     }
 
     visitTriggerActionExpression(ctx) {
-        if(ctx.KW_KILL()) {
+        if (ctx.KW_KILL()) {
             return 'KILL';
         }
 
-        return `MOVE TO ${ctx.poolPath().getText()}`
+        return `MOVE TO ${ctx.poolPath().getText()}`;
     }
 
     visitCreatePoolStatement(ctx) {
@@ -956,9 +1008,9 @@ class Visitor extends HiveParserVisitor {
             resourceName: this.visit(ctx.identifier()),
             pool: {
                 name: ctx.poolPath().getText(),
-                ...this.visit(ctx.poolAssignList())
-            }
-        }
+                ...this.visit(ctx.poolAssignList()),
+            },
+        };
     }
 
     visitPoolAssignList(ctx) {
@@ -966,12 +1018,12 @@ class Visitor extends HiveParserVisitor {
     }
 
     visitPoolAssign(ctx) {
-        if(ctx.KW_ALLOC_FRACTION()) {
-            return { allocFraction: ctx.Number().getText() }
+        if (ctx.KW_ALLOC_FRACTION()) {
+            return { allocFraction: ctx.Number().getText() };
         } else if (ctx.KW_QUERY_PARALLELISM()) {
-            return { parallelism: ctx.Number().getText() }
+            return { parallelism: ctx.Number().getText() };
         } else if (ctx.KW_SCHEDULING_POLICY()) {
-            return { schedulingPolicy: getTextFromStringLiteral(ctx) }
+            return { schedulingPolicy: getTextFromStringLiteral(ctx) };
         } else {
             return {};
         }
@@ -984,9 +1036,9 @@ class Visitor extends HiveParserVisitor {
             poolName: ctx.KW_TO() ? ctx.poolPath().getText() : '',
             mapping: {
                 name: getTextFromStringLiteral(ctx),
-                mappingType: getMappingType(ctx)
-            }
-        }
+                mappingType: getMappingType(ctx),
+            },
+        };
     }
 
     visitDropIndexStatement(ctx) {
@@ -997,7 +1049,27 @@ class Visitor extends HiveParserVisitor {
             indexName: this.visit(ctx.identifier()),
             bucketName: database,
             collectionName: table,
-        }
+        };
+    }
+
+    visitDropViewStatement(ctx) {
+        const { database, view } = this.visit(ctx.viewName());
+
+        return {
+            type: REMOVE_VIEW_COMMAND,
+            bucketName: database,
+            viewName: view,
+        };
+    }
+
+    visitDropMaterializedViewStatement(ctx) {
+        const { database, view } = this.visit(ctx.viewName());
+
+        return {
+            type: REMOVE_VIEW_COMMAND,
+            bucketName: database,
+            viewName: view,
+        };
     }
 }
 

@@ -5,6 +5,7 @@ const {
     omitCaseInsensitive,
     isEqualCaseInsensitive,
     remove,
+    findViewIndex,
     merge,
     getCurrentBucket,
 } = require('./helpers/commandsHelper');
@@ -20,6 +21,7 @@ const ADD_FIELDS_TO_COLLECTION_COMMAND = 'addFieldsToCollection';
 const ADD_COLLECTION_LEVEL_INDEX_COMMAND = 'addCollectionLevelIndex';
 const RENAME_FIELD_COMMAND = 'renameField';
 const CREATE_VIEW_COMMAND = 'createView';
+const REMOVE_VIEW_COMMAND = 'removeView';
 const ADD_BUCKET_DATA_COMMAND = 'addBucketData';
 const REMOVE_COLLECTION_LEVEL_INDEX_COMMAND = 'removeCollectionLevelIndex';
 const ADD_RELATIONSHIP_COMMAND = 'addRelationship';
@@ -28,6 +30,8 @@ const CREATE_RESOURCE_PLAN = 'createResourcePlan';
 const CREATE_TRIGGER = 'createTrigger';
 const CREATE_POOL = 'createPool';
 const CREATE_MAPPING = 'createMapping';
+const UPDATE_VIEW_LEVEL_DATA_COMMAND = 'updateViewLevelData';
+const RENAME_VIEW_COMMAND = 'renameView';
 
 const DEFAULT_BUCKET = 'New database';
 
@@ -71,6 +75,18 @@ const convertCommandsToEntities = (commands, originalScript) => {
 
             if (command === CREATE_VIEW_COMMAND) {
                 return createView(entitiesData, bucket, statementData, originalScript);
+            }
+
+            if (command === REMOVE_VIEW_COMMAND) {
+                return removeView(entitiesData, bucket, statementData);
+            }
+
+            if (command === UPDATE_VIEW_LEVEL_DATA_COMMAND) {
+                return updateViewLevelData(entitiesData, bucket, statementData, originalScript);
+            }
+
+            if(command === RENAME_VIEW_COMMAND) {
+                return renameView(entitiesData, bucket, statementData);
             }
 
             if (command === ADD_BUCKET_DATA_COMMAND) {
@@ -521,6 +537,61 @@ const addMapping = (entitiesData, statementData) => {
     };
 };
 
+const removeView = (entitiesData, bucket, statementData) => {
+    const { views } = entitiesData;
+    const index = findViewIndex(views, bucket, statementData.viewName);
+    if (index === -1) {
+        return entitiesData;
+    }
+
+    return { ...entitiesData, views: remove(views, index) };
+};
+
+const updateViewLevelData = (entitiesData, bucket, statementData, originalScript) => {
+    const { views } = entitiesData;
+    const index = findViewIndex(views, bucket, statementData.viewName);
+    if (index === -1) {
+        return entitiesData;
+    }
+
+    const view = views[index];
+
+    const newData = statementData.data || {};
+
+    if (statementData.select) {
+        newData.selectStatement = `AS ${originalScript.substring(
+            statementData.select.start,
+            statementData.select.stop
+        )}`;
+    }
+
+    return {
+        ...entitiesData,
+        views: set(views, index, {
+            ...view,
+            data: merge(view.data, newData),
+        }),
+    };
+};
+
+const renameView = (entitiesData, bucket, statementData) => {
+    const { views } = entitiesData;
+    const index = findViewIndex(views, bucket, statementData.viewName);
+    if (index === -1) {
+        return entitiesData;
+    }
+
+    const view = views[index];
+
+    return {
+        ...entitiesData,
+        views: set(views, index, {
+            ...view,
+            name: statementData.newViewName,
+        }),
+    };
+};
+
 const getResourcePlanIndex = (resourcePlans, resourceName) => {
     return _.findIndex(resourcePlans, (plan) => plan.name === resourceName);
 };
@@ -548,4 +619,7 @@ module.exports = {
     CREATE_TRIGGER,
     CREATE_POOL,
     CREATE_MAPPING,
+    REMOVE_VIEW_COMMAND,
+    RENAME_VIEW_COMMAND,
+    UPDATE_VIEW_LEVEL_DATA_COMMAND,
 };
