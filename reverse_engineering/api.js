@@ -17,6 +17,7 @@ const HiveLexer = require('./parser/HiveLexer.js');
 const HiveParser = require('./parser/HiveParser.js');
 const hqlToCollectionsVisitor = require('./hqlToCollectionsVisitor.js');
 const commandsService = require('./commandsService');
+const ExprErrorListener = require('./antlrErrorListener');
 
 module.exports = {
 	connect: function(connectionInfo, logger, cb, app){
@@ -24,7 +25,7 @@ module.exports = {
 			connectionInfo.path = '/' + connectionInfo.path;
 		}
 
-		const kerberos = () => app.require('kerberos');
+		const kerberos = () => createKerberos(app, connectionInfo, logger);
 
 		connectionInfo.isHTTPS = Boolean(
 			connectionInfo.mode === 'http' && (isSsl(connectionInfo.ssl) || connectionInfo.ssl === 'https')
@@ -418,6 +419,9 @@ module.exports = {
 
 			const tokens = new antlr4.CommonTokenStream(lexer);
 			const parser = new HiveParser.HiveParser(tokens);
+			parser.removeErrorListeners();
+			parser.addErrorListener(new ExprErrorListener());
+
 			const tree = parser.statements();
 
 			const hqlToCollectionsGenerator = new hqlToCollectionsVisitor();

@@ -97,8 +97,6 @@ class Visitor extends HiveParserVisitor {
             childCollection: table,
         }));
 
-        // const asSelect = this.visitWhenExists(ctx, 'selectStatementWithCTE', {}); //TODO: handle asSelect statement
-
         return [
             {
                 type: CREATE_COLLECTION_COMMAND,

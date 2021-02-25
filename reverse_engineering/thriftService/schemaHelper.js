@@ -281,4 +281,6 @@ module.exports = {
 	getJsonSchema,
 	getChoice,
 	getArraySubtypeByType,
+	getMapSubtype,
+	getMapKeyType,
 };
