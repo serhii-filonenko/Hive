@@ -11,6 +11,7 @@ const TCLIService = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService')
 const TCLIServiceTypes = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService_types');
 const logHelper = require('./logHelper');
 const mapJsonSchema = require('./thriftService/mapJsonSchema');
+const createKerberos = require('./thriftService/hackolade/createKerberos/createKerberos');
 
 const antlr4 = require('antlr4');
 const HiveLexer = require('./parser/HiveLexer.js');
