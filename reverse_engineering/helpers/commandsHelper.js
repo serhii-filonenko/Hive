@@ -12,9 +12,9 @@ const findEntityIndex = (entities, bucket, name) => {
 };
 
 const findViewIndex = (entities, bucket, name) => {
-    return entities.findIndex(entity => (
-        entity.bucketName === bucket && entity.name === name
-    ));
+    return entities.findIndex(
+        (entity) => isEqualCaseInsensitive(entity.bucketName, bucket) && isEqualCaseInsensitive(entity.name, name)
+    );
 };
 
 const getCaseInsensitiveKey = (object, key) => {
