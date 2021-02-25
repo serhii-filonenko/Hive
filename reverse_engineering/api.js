@@ -11,7 +11,13 @@ const TCLIService = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService')
 const TCLIServiceTypes = require('./TCLIService/Thrift_0.9.3_Hive_2.1.1/TCLIService_types');
 const logHelper = require('./logHelper');
 const mapJsonSchema = require('./thriftService/mapJsonSchema');
-const createKerberos = require('./thriftService/hackolade/createKerberos/createKerberos');
+
+const antlr4 = require('antlr4');
+const HiveLexer = require('./parser/HiveLexer.js');
+const HiveParser = require('./parser/HiveParser.js');
+const hqlToCollectionsVisitor = require('./hqlToCollectionsVisitor.js');
+const commandsService = require('./commandsService');
+const ExprErrorListener = require('./antlrErrorListener');
 
 module.exports = {
 	connect: function(connectionInfo, logger, cb, app){
@@ -403,7 +409,36 @@ module.exports = {
 			logger.log('error', err, 'Remove nulls from JSON Schema');
 			callback(err);
 		}
-	}
+	},
+
+	reFromFile: async (data, logger, callback) => {
+		try {
+			const input = await handleFileData(data.filePath);
+			const chars = new antlr4.InputStream(input);
+			const lexer = new HiveLexer.HiveLexer(chars);
+
+			const tokens = new antlr4.CommonTokenStream(lexer);
+			const parser = new HiveParser.HiveParser(tokens);
+			parser.removeErrorListeners();
+			parser.addErrorListener(new ExprErrorListener());
+
+			const tree = parser.statements();
+
+			const hqlToCollectionsGenerator = new hqlToCollectionsVisitor();
+
+			const commands = tree.accept(hqlToCollectionsGenerator);
+			const { result, info, relationships } = commandsService.convertCommandsToReDocs(
+                _.flatten(commands).filter(Boolean),
+                input
+            );
+			callback(null, result, info, relationships, 'multipleSchema');
+		} catch(err) {
+			const { error, title, name } = err;
+			const handledError = handleErrorObject(error || err, title || name);
+			logger.log('error', handledError, title);
+			callback(handledError);
+		}
+	},
 };
 
 const clearOutRequired = (parentJsonSchema, key) => {
@@ -815,3 +850,22 @@ const parseResourcePlan = planData => {
 };
 
 const setId = obj => ({ ...obj, GUID: uuid.v4() });
+
+const handleFileData = filePath => {
+	return new Promise((resolve, reject) => {
+
+		fs.readFile(filePath, 'utf-8', (err, content) => {
+			if(err) {
+				reject(err);
+			} else {
+				resolve(content);
+			}
+		});
+	});
+};
+
+const handleErrorObject = (error, title) => {
+	const errorProperties = Object.getOwnPropertyNames(error).reduce((accumulator, key) => ({ ...accumulator, [key]: error[key] }), {});
+
+	return { title , ...errorProperties };
+};
