@@ -2424,6 +2424,12 @@ HiveParserVisitor.prototype.visitAlterResourcePlanStatement = function(ctx) {
 };
 
 
+// Visit a parse tree produced by HiveParser#alterResourcePlanRenameSuffix.
+HiveParserVisitor.prototype.visitAlterResourcePlanRenameSuffix = function(ctx) {
+  return this.visitChildren(ctx);
+};
+
+
 // Visit a parse tree produced by HiveParser#globalWmStatement.
 HiveParserVisitor.prototype.visitGlobalWmStatement = function(ctx) {
   return this.visitChildren(ctx);
@@ -2510,6 +2516,12 @@ HiveParserVisitor.prototype.visitCreateTriggerStatement = function(ctx) {
 
 // Visit a parse tree produced by HiveParser#alterTriggerStatement.
 HiveParserVisitor.prototype.visitAlterTriggerStatement = function(ctx) {
+  return this.visitChildren(ctx);
+};
+
+
+// Visit a parse tree produced by HiveParser#triggerConditionExpression.
+HiveParserVisitor.prototype.visitTriggerConditionExpression = function(ctx) {
   return this.visitChildren(ctx);
 };
 

@@ -3629,6 +3629,15 @@ HiveParserListener.prototype.exitAlterResourcePlanStatement = function(ctx) {
 };
 
 
+// Enter a parse tree produced by HiveParser#alterResourcePlanRenameSuffix.
+HiveParserListener.prototype.enterAlterResourcePlanRenameSuffix = function(ctx) {
+};
+
+// Exit a parse tree produced by HiveParser#alterResourcePlanRenameSuffix.
+HiveParserListener.prototype.exitAlterResourcePlanRenameSuffix = function(ctx) {
+};
+
+
 // Enter a parse tree produced by HiveParser#globalWmStatement.
 HiveParserListener.prototype.enterGlobalWmStatement = function(ctx) {
 };
@@ -3761,6 +3770,15 @@ HiveParserListener.prototype.enterAlterTriggerStatement = function(ctx) {
 
 // Exit a parse tree produced by HiveParser#alterTriggerStatement.
 HiveParserListener.prototype.exitAlterTriggerStatement = function(ctx) {
+};
+
+
+// Enter a parse tree produced by HiveParser#triggerConditionExpression.
+HiveParserListener.prototype.enterTriggerConditionExpression = function(ctx) {
+};
+
+// Exit a parse tree produced by HiveParser#triggerConditionExpression.
+HiveParserListener.prototype.exitTriggerConditionExpression = function(ctx) {
 };
 
 

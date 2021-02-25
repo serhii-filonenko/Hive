@@ -97,9 +97,13 @@ alterResourcePlanStatement
         | (KW_DISABLE)
         | (KW_SET rpAssignList)
         | (KW_UNSET rpUnassignList)
-        | (KW_RENAME KW_TO identifier)
+        | alterResourcePlanRenameSuffix
         | ((activate enable? | enable activate?))
       )
+    ;
+
+alterResourcePlanRenameSuffix
+    : KW_RENAME KW_TO identifier
     ;
 
 /** It might make sense to make this more generic, if something else could be enabled/disabled.
@@ -166,17 +170,21 @@ triggerActionExpressionStandalone
 
 createTriggerStatement
     : KW_CREATE KW_TRIGGER identifier DOT identifier
-      KW_WHEN triggerExpression KW_DO triggerActionExpression
+      triggerConditionExpression
     ;
 
 alterTriggerStatement
     : KW_ALTER KW_TRIGGER identifier DOT identifier (
-        (KW_WHEN triggerExpression KW_DO triggerActionExpression)
+        triggerConditionExpression
       | (KW_ADD KW_TO KW_POOL poolPath)
       | (KW_DROP KW_FROM KW_POOL poolPath)
       | (KW_ADD KW_TO KW_UNMANAGED)
       | (KW_DROP KW_FROM KW_UNMANAGED)
     )
+    ;
+
+triggerConditionExpression
+    : KW_WHEN triggerExpression KW_DO triggerActionExpression
     ;
 
 

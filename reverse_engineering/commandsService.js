@@ -27,11 +27,15 @@ const REMOVE_COLLECTION_LEVEL_INDEX_COMMAND = 'removeCollectionLevelIndex';
 const ADD_RELATIONSHIP_COMMAND = 'addRelationship';
 const UPDATE_ENTITY_COLUMN = 'updateColumn';
 const CREATE_RESOURCE_PLAN = 'createResourcePlan';
-const CREATE_TRIGGER = 'createTrigger';
-const CREATE_POOL = 'createPool';
+const ADD_TO_RESOURCE_PLAN = 'addToResourcePlan';
 const CREATE_MAPPING = 'createMapping';
 const UPDATE_VIEW_LEVEL_DATA_COMMAND = 'updateViewLevelData';
 const RENAME_VIEW_COMMAND = 'renameView';
+const UPDATE_RESOURCE_PLAN = 'updateResourcePlan';
+const DROP_RESOURCE_PLAN = 'dropResourcePlan';
+const UPDATE_ITEM_IN_RESOURCE_PLAN = 'updateItemInResourcePlan';
+const DROP_RESOURCE_PLAN_ITEM = 'dropResourcePlanItem';
+const DROP_MAPPING = 'removeMapping';
 
 const DEFAULT_BUCKET = 'New database';
 
@@ -85,7 +89,7 @@ const convertCommandsToEntities = (commands, originalScript) => {
                 return updateViewLevelData(entitiesData, bucket, statementData, originalScript);
             }
 
-            if(command === RENAME_VIEW_COMMAND) {
+            if (command === RENAME_VIEW_COMMAND) {
                 return renameView(entitiesData, bucket, statementData);
             }
 
@@ -113,16 +117,32 @@ const convertCommandsToEntities = (commands, originalScript) => {
                 return createResourcePlan(entitiesData, statementData);
             }
 
-            if (command === CREATE_TRIGGER) {
-                return addToResourcePlan(entitiesData, statementData, 'trigger');
-            }
-
-            if (command === CREATE_POOL) {
-                return addToResourcePlan(entitiesData, statementData, 'pool');
+            if (command === ADD_TO_RESOURCE_PLAN) {
+                return addToResourcePlan(entitiesData, statementData, statementData.identifier);
             }
 
             if (command === CREATE_MAPPING) {
                 return addMapping(entitiesData, statementData);
+            }
+
+            if (command === UPDATE_RESOURCE_PLAN) {
+                return updateResourcePlan(entitiesData, statementData);
+            }
+
+            if (command === DROP_RESOURCE_PLAN) {
+                return dropResourcePlan(entitiesData, statementData);
+            }
+
+            if (command === UPDATE_ITEM_IN_RESOURCE_PLAN) {
+                return updateResourcePlanItem(entitiesData, statementData, statementData.identifier);
+            }
+
+            if (command === DROP_RESOURCE_PLAN_ITEM) {
+                return removeItemFromResourcePlan(entitiesData, statementData, statementData.identifier);
+            }
+
+            if (command === DROP_MAPPING) {
+                return removeMapping(entitiesData, statementData);
             }
 
             return entitiesData;
@@ -491,6 +511,10 @@ const addToResourcePlan = (entitiesData, statementData, identifier) => {
 
     const resourcePlans = modelProperties.resourcePlans || [];
     const resourcePlanIndex = getResourcePlanIndex(resourcePlans, statementData.resourceName);
+    if (resourcePlanIndex === -1) {
+        return entitiesData;
+    }
+
     const updatedResourcePlan = {
         ...resourcePlans[resourcePlanIndex],
         [identifier + 's']: _.get(resourcePlans, `${resourcePlanIndex}.${identifier + 's'}`, []).concat(
@@ -522,7 +546,7 @@ const addMapping = (entitiesData, statementData) => {
         return entitiesData;
     }
 
-    const updatedPool = addMappingRoPoolByIndex(planPools, poolIndex, statementData.mapping);
+    const updatedPool = addMappingToPoolByIndex(planPools, poolIndex, statementData.mapping);
     const updatedResourcePlans = set(resourcePlans, resourceIndex, {
         ...resourcePlans[resourceIndex],
         pools: set(planPools, poolIndex, updatedPool),
@@ -592,12 +616,147 @@ const renameView = (entitiesData, bucket, statementData) => {
     };
 };
 
+const updateResourcePlan = (entitiesData, statementData) => {
+    const { modelProperties } = entitiesData;
+
+    const resourcePlans = modelProperties.resourcePlans || [];
+    const resourcePlanIndex = getResourcePlanIndex(resourcePlans, statementData.resourceName);
+    if (resourcePlanIndex === -1) {
+        return entitiesData;
+    }
+
+    const newData = { ...statementData.data, name: statementData.renameTo || statementData.resourceName };
+    const updatedResourcePlan = merge(resourcePlans[resourcePlanIndex], newData);
+
+    return {
+        ...entitiesData,
+        modelProperties: {
+            ...modelProperties,
+            resourcePlans: set(resourcePlans, resourcePlanIndex, updatedResourcePlan),
+        },
+    };
+};
+
+const dropResourcePlan = (entitiesData, statementData) => {
+    const { modelProperties } = entitiesData;
+
+    const resourcePlans = modelProperties.resourcePlans || [];
+    const resourcePlanIndex = getResourcePlanIndex(resourcePlans, statementData.resourceName);
+    if (resourcePlanIndex === -1) {
+        return entitiesData;
+    }
+
+    return {
+        ...entitiesData,
+        modelProperties: {
+            ...modelProperties,
+            resourcePlans: remove(resourcePlans, resourcePlanIndex),
+        },
+    };
+};
+
+const updateResourcePlanItem = (entitiesData, statementData, identifier) => {
+    const { modelProperties } = entitiesData;
+
+    const resourcePlans = modelProperties.resourcePlans || [];
+    const { resourcePlanIndex, itemIndex } = getResourcePlanAndItemIndexes(resourcePlans, statementData, identifier);
+    if (resourcePlanIndex === -1 || itemIndex === -1) {
+        return entitiesData;
+    }
+
+    const updatedItems = set(
+        resourcePlans[resourcePlanIndex][identifier + 's'],
+        itemIndex,
+        merge(resourcePlans[resourcePlanIndex][identifier + 's'][itemIndex], statementData.data)
+    );
+    const updatedResourcePlan = {
+        ...resourcePlans[resourcePlanIndex],
+        [identifier + 's']: updatedItems,
+    };
+
+    return {
+        ...entitiesData,
+        modelProperties: {
+            ...modelProperties,
+            resourcePlans: set(resourcePlans, resourcePlanIndex, updatedResourcePlan),
+        },
+    };
+};
+
+const removeItemFromResourcePlan = (entitiesData, statementData, identifier) => {
+    const { modelProperties } = entitiesData;
+
+    const resourcePlans = modelProperties.resourcePlans || [];
+    const { resourcePlanIndex, itemIndex } = getResourcePlanAndItemIndexes(resourcePlans, statementData, identifier);
+    if (resourcePlanIndex === -1 || itemIndex === -1) {
+        return entitiesData;
+    }
+
+    const updatedItems = remove(resourcePlans[resourcePlanIndex][identifier + 's'], itemIndex);
+    const updatedResourcePlan = {
+        ...resourcePlans[resourcePlanIndex],
+        [identifier + 's']: updatedItems,
+    };
+
+    return {
+        ...entitiesData,
+        modelProperties: {
+            ...modelProperties,
+            resourcePlans: set(resourcePlans, resourcePlanIndex, updatedResourcePlan),
+        },
+    };
+};
+
+const removeMapping = (entitiesData, statementData) => {
+    const { modelProperties } = entitiesData;
+
+    const resourcePlans = modelProperties.resourcePlans || [];
+    const resourceIndex = getResourcePlanIndex(resourcePlans, statementData.resourceName);
+    if (resourceIndex < 0) {
+        return entitiesData;
+    }
+
+    const planPools = resourcePlans[resourceIndex].pools || [];
+    const poolIndex = _.findIndex(planPools, ({ mappings }) =>
+        (mappings || []).find(({ name }) => name === statementData.name)
+    );
+    if (poolIndex < 0) {
+        return entitiesData;
+    }
+
+    const updatedPool = removeMappingFromPool(planPools, poolIndex, statementData.name);
+    const updatedResourcePlans = set(resourcePlans, resourceIndex, {
+        ...resourcePlans[resourceIndex],
+        pools: set(planPools, poolIndex, updatedPool),
+    });
+
+    return {
+        ...entitiesData,
+        modelProperties: {
+            ...modelProperties,
+            resourcePlans: updatedResourcePlans,
+        },
+    };
+};
+
 const getResourcePlanIndex = (resourcePlans, resourceName) => {
     return _.findIndex(resourcePlans, (plan) => plan.name === resourceName);
 };
 
-const addMappingRoPoolByIndex = (pools, poolIndex, mapping) => {
+const addMappingToPoolByIndex = (pools, poolIndex, mapping) => {
     return { ...pools[poolIndex], mappings: _.get(pools[poolIndex], 'mappings', []).concat(mapping) };
+};
+
+const removeMappingFromPool = (pools, poolIndex, mappingName) => {
+    return { ...pools[poolIndex], mappings: pools[poolIndex].mappings.filter(({ name }) => name !== mappingName) };
+};
+
+const getResourcePlanAndItemIndexes = (resourcePlans, statementData, identifier) => {
+    const resourcePlanIndex = getResourcePlanIndex(resourcePlans, statementData.resourceName);
+    const items = _.get(resourcePlans, `${resourcePlanIndex}.${identifier + 's'}`, []);
+    const itemIndex = _.findIndex(items, ({ name }) => name === statementData[identifier]);
+
+    return { resourcePlanIndex, itemIndex };
 };
 
 module.exports = {
@@ -616,10 +775,13 @@ module.exports = {
     ADD_RELATIONSHIP_COMMAND,
     UPDATE_ENTITY_COLUMN,
     CREATE_RESOURCE_PLAN,
-    CREATE_TRIGGER,
-    CREATE_POOL,
+    ADD_TO_RESOURCE_PLAN,
     CREATE_MAPPING,
     REMOVE_VIEW_COMMAND,
     RENAME_VIEW_COMMAND,
     UPDATE_VIEW_LEVEL_DATA_COMMAND,
+    UPDATE_RESOURCE_PLAN,
+    UPDATE_ITEM_IN_RESOURCE_PLAN,
+    DROP_RESOURCE_PLAN_ITEM,
+    DROP_MAPPING,
 };

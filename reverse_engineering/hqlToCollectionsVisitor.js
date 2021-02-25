@@ -20,10 +20,14 @@ const {
     ADD_RELATIONSHIP_COMMAND,
     UPDATE_ENTITY_COLUMN,
     CREATE_RESOURCE_PLAN,
-    CREATE_TRIGGER,
-    CREATE_POOL,
     CREATE_MAPPING,
     REMOVE_VIEW_COMMAND,
+    UPDATE_RESOURCE_PLAN,
+    DROP_RESOURCE_PLAN,
+    UPDATE_ITEM_IN_RESOURCE_PLAN,
+    ADD_TO_RESOURCE_PLAN,
+    DROP_RESOURCE_PLAN_ITEM,
+    DROP_MAPPING,
 } = require('./commandsService');
 
 const schemaHelper = require('./thriftService/schemaHelper');
@@ -943,6 +947,13 @@ class Visitor extends HiveParserVisitor {
             'createTriggerStatement',
             'createPoolStatement',
             'createMappingStatement',
+            'alterResourcePlanStatement',
+            'dropResourcePlanStatement',
+            'alterTriggerStatement',
+            'dropTriggerStatement',
+            'alterPoolStatement',
+            'dropPoolStatement',
+            'dropMappingStatement'
         ].map((statement) => this.visitWhenExists(ctx, statement));
     }
 
@@ -969,9 +980,13 @@ class Visitor extends HiveParserVisitor {
     }
 
     visitRpAssign(ctx) {
-        return {
-            parallelism: ctx.Number().getText(),
-        };
+        if (ctx.Number()) {
+            return {
+                parallelism: ctx.Number().getText(),
+            };
+        }
+
+        return {};
     }
 
     visitCreateResourcePlanStatementLikeExisting(ctx) {
@@ -984,12 +999,12 @@ class Visitor extends HiveParserVisitor {
 
     visitCreateTriggerStatement(ctx) {
         return {
-            type: CREATE_TRIGGER,
+            type: ADD_TO_RESOURCE_PLAN,
+            identifier: 'trigger',
             resourceName: this.visit(ctx.identifier()[0]),
             trigger: {
                 name: this.visit(ctx.identifier()[1]),
-                condition: ctx.triggerExpression().getText(),
-                action: this.visit(ctx.triggerActionExpression()),
+                ...this.visit(ctx.triggerConditionExpression()),
             },
         };
     }
@@ -999,15 +1014,16 @@ class Visitor extends HiveParserVisitor {
             return 'KILL';
         }
 
-        return `MOVE TO ${ctx.poolPath().getText()}`;
+        return `MOVE TO ${this.visit(ctx.poolPath())}`;
     }
 
     visitCreatePoolStatement(ctx) {
         return {
-            type: CREATE_POOL,
+            type: ADD_TO_RESOURCE_PLAN,
+            identifier: 'pool',
             resourceName: this.visit(ctx.identifier()),
             pool: {
-                name: ctx.poolPath().getText(),
+                name: this.visit(ctx.poolPath()),
                 ...this.visit(ctx.poolAssignList()),
             },
         };
@@ -1033,7 +1049,7 @@ class Visitor extends HiveParserVisitor {
         return {
             type: CREATE_MAPPING,
             resourceName: this.visit(ctx.identifier()),
-            poolName: ctx.KW_TO() ? ctx.poolPath().getText() : '',
+            poolName: ctx.KW_TO() ? this.visit(ctx.poolPath()) : '',
             mapping: {
                 name: getTextFromStringLiteral(ctx),
                 mappingType: getMappingType(ctx),
@@ -1070,6 +1086,105 @@ class Visitor extends HiveParserVisitor {
             bucketName: database,
             viewName: view,
         };
+    }
+
+    visitAlterResourcePlanStatement(ctx) {
+        return {
+            type: UPDATE_RESOURCE_PLAN,
+            resourceName: this.visit(ctx.identifier()),
+            renameTo: this.visitWhenExists(ctx, 'alterResourcePlanRenameSuffix'),
+            data: {
+                ...this.visitWhenExists(ctx, 'rpAssignList', {}),
+                ...this.visitWhenExists(ctx, 'rpUnassignList', {}),
+            },
+        };
+    }
+
+    visitRpUnassignList(ctx) {
+        if (this.visit(ctx.rpUnassign()).includes(true)) {
+            return {
+                parallelism: '',
+            };
+        }
+
+        return {};
+    }
+
+    visitRpUnassign(ctx) {
+        return Boolean(ctx.KW_QUERY_PARALLELISM());
+    }
+
+    visitAlterResourcePlanRenameSuffix(ctx) {
+        return this.visit(ctx.identifier());
+    }
+
+    visitDropResourcePlanStatement(ctx) {
+        return {
+            type: DROP_RESOURCE_PLAN,
+            resourceName: this.visit(ctx.identifier()),
+        };
+    }
+
+    visitAlterTriggerStatement(ctx) {
+        return {
+            type: UPDATE_ITEM_IN_RESOURCE_PLAN,
+            identifier: 'trigger',
+            resourceName: this.visit(ctx.identifier()[0]),
+            trigger: this.visit(ctx.identifier()[1]),
+            data: {
+                ...this.visitWhenExists(ctx, 'triggerConditionExpression', {}),
+            },
+        };
+    }
+
+    visitTriggerConditionExpression(ctx) {
+        return {
+            condition: ctx.triggerExpression().getText(),
+            action: this.visit(ctx.triggerActionExpression()),
+        };
+    }
+
+    visitDropTriggerStatement(ctx) {
+        return {
+            type: DROP_RESOURCE_PLAN_ITEM,
+            identifier: 'trigger',
+            resourceName: this.visit(ctx.identifier()[0]),
+            trigger: this.visit(ctx.identifier()[1]),
+        };
+    }
+
+    visitAlterPoolStatement(ctx) {
+        return {
+            type: UPDATE_ITEM_IN_RESOURCE_PLAN,
+            identifier: 'pool',
+            resourceName: this.visit(ctx.identifier()[0]),
+            pool: this.visit(ctx.poolPath()),
+            data: {
+                ...(ctx.KW_UNSET() && ctx.KW_SCHEDULING_POLICY() ? { schedulingPolicy: 'default' } : {}),
+                ...this.visitWhenExists(ctx, 'poolAssignList', {}),
+            },
+        };
+    }
+
+    visitDropPoolStatement(ctx) {
+        return {
+            type: DROP_RESOURCE_PLAN_ITEM,
+            identifier: 'pool',
+            resourceName: this.visit(ctx.identifier()),
+            pool: this.visit(ctx.poolPath()),
+        }
+    }
+
+    visitPoolPath(ctx) {
+        return this.visit(ctx.identifier()).join('');
+    }
+
+    visitDropMappingStatement(ctx) {
+        return {
+            type: DROP_MAPPING,
+            resourceName: this.visit(ctx.identifier()),
+            name: getTextFromStringLiteral(ctx),
+        }
     }
 }
 
