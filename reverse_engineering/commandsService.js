@@ -7,7 +7,6 @@ const {
     remove,
     findViewIndex,
     merge,
-    getCurrentBucket,
 } = require('./helpers/commandsHelper');
 
 const _ = require('lodash');
@@ -49,100 +48,9 @@ const convertCommandsToEntities = (commands, originalScript) => {
             }
 
             const bucket = statementData.bucketName || entitiesData.currentBucket;
-            if (command === CREATE_COLLECTION_COMMAND) {
-                return createCollection(entitiesData, bucket, statementData);
-            }
 
-            if (command === REMOVE_COLLECTION_COMMAND) {
-                return removeCollection(entitiesData, bucket, statementData);
-            }
-
-            if (command === CREATE_BUCKET_COMMAND) {
-                return createBucket(entitiesData, statementData);
-            }
-
-            if (command === REMOVE_BUCKET_COMMAND) {
-                return removeBucket(entitiesData, statementData);
-            }
-
-            if (command === USE_BUCKET_COMMAND) {
-                return useBucket(entitiesData, statementData);
-            }
-
-            if (command === ADD_FIELDS_TO_COLLECTION_COMMAND) {
-                return addFieldsToCollection(entitiesData, bucket, statementData);
-            }
-
-            if (command === RENAME_FIELD_COMMAND) {
-                return renameField(entitiesData, bucket, statementData);
-            }
-
-            if (command === CREATE_VIEW_COMMAND) {
-                return createView(entitiesData, bucket, statementData, originalScript);
-            }
-
-            if (command === REMOVE_VIEW_COMMAND) {
-                return removeView(entitiesData, bucket, statementData);
-            }
-
-            if (command === UPDATE_VIEW_LEVEL_DATA_COMMAND) {
-                return updateViewLevelData(entitiesData, bucket, statementData, originalScript);
-            }
-
-            if (command === RENAME_VIEW_COMMAND) {
-                return renameView(entitiesData, bucket, statementData);
-            }
-
-            if (command === ADD_BUCKET_DATA_COMMAND) {
-                return addDataToBucket(entitiesData, bucket, statementData);
-            }
-
-            if (command === ADD_COLLECTION_LEVEL_INDEX_COMMAND) {
-                return addIndexToCollection(entitiesData, bucket, statementData);
-            }
-
-            if (command === REMOVE_COLLECTION_LEVEL_INDEX_COMMAND) {
-                return removeIndexFromCollection(entitiesData, bucket, statementData);
-            }
-
-            if (command === ADD_RELATIONSHIP_COMMAND) {
-                return addRelationship(entitiesData, bucket, statementData);
-            }
-
-            if (command === UPDATE_ENTITY_COLUMN) {
-                return updateColumn(entitiesData, bucket, statementData);
-            }
-
-            if (command === CREATE_RESOURCE_PLAN) {
-                return createResourcePlan(entitiesData, statementData);
-            }
-
-            if (command === ADD_TO_RESOURCE_PLAN) {
-                return addToResourcePlan(entitiesData, statementData, statementData.identifier);
-            }
-
-            if (command === CREATE_MAPPING) {
-                return addMapping(entitiesData, statementData);
-            }
-
-            if (command === UPDATE_RESOURCE_PLAN) {
-                return updateResourcePlan(entitiesData, statementData);
-            }
-
-            if (command === DROP_RESOURCE_PLAN) {
-                return dropResourcePlan(entitiesData, statementData);
-            }
-
-            if (command === UPDATE_ITEM_IN_RESOURCE_PLAN) {
-                return updateResourcePlanItem(entitiesData, statementData, statementData.identifier);
-            }
-
-            if (command === DROP_RESOURCE_PLAN_ITEM) {
-                return removeItemFromResourcePlan(entitiesData, statementData, statementData.identifier);
-            }
-
-            if (command === DROP_MAPPING) {
-                return removeMapping(entitiesData, statementData);
+            if (_.keys(COMMANDS).includes(command)) {
+                return COMMANDS[command](entitiesData, bucket, statementData, originalScript);
             }
 
             return entitiesData;
@@ -210,7 +118,7 @@ const removeCollection = (entitiesData, bucket, statementData) => {
     return { ...entitiesData, entities: remove(entities, index) };
 };
 
-const createBucket = (entitiesData, statementData) => {
+const createBucket = (entitiesData, bucket, statementData) => {
     const { buckets } = entitiesData;
     const bucketName = statementData.name;
     return {
@@ -220,7 +128,7 @@ const createBucket = (entitiesData, statementData) => {
     };
 };
 
-const removeBucket = (entitiesData, statementData) => {
+const removeBucket = (entitiesData, bucket, statementData) => {
     const { buckets, entities } = entitiesData;
     const bucketName = statementData.name;
 
@@ -231,7 +139,7 @@ const removeBucket = (entitiesData, statementData) => {
     };
 };
 
-const useBucket = (entitiesData, statementData) => {
+const useBucket = (entitiesData, bucket, statementData) => {
     return {
         ...entitiesData,
         currentBucket: statementData.bucketName,
@@ -466,7 +374,7 @@ const updateProperties = (properties, statementData) => {
     );
 };
 
-const createResourcePlan = (entitiesData, statementData) => {
+const createResourcePlan = (entitiesData, bucket, statementData) => {
     const { modelProperties } = entitiesData;
 
     if (statementData.like) {
@@ -506,8 +414,9 @@ const createResourcePlan = (entitiesData, statementData) => {
     };
 };
 
-const addToResourcePlan = (entitiesData, statementData, identifier) => {
+const addToResourcePlan = (entitiesData, bucket, statementData) => {
     const { modelProperties } = entitiesData;
+    const identifier = statementData.identifier;
 
     const resourcePlans = modelProperties.resourcePlans || [];
     const resourcePlanIndex = getResourcePlanIndex(resourcePlans, statementData.resourceName);
@@ -531,7 +440,7 @@ const addToResourcePlan = (entitiesData, statementData, identifier) => {
     };
 };
 
-const addMapping = (entitiesData, statementData) => {
+const addMapping = (entitiesData, bucket, statementData) => {
     const { modelProperties } = entitiesData;
 
     const resourcePlans = modelProperties.resourcePlans || [];
@@ -616,7 +525,7 @@ const renameView = (entitiesData, bucket, statementData) => {
     };
 };
 
-const updateResourcePlan = (entitiesData, statementData) => {
+const updateResourcePlan = (entitiesData, bucket, statementData) => {
     const { modelProperties } = entitiesData;
 
     const resourcePlans = modelProperties.resourcePlans || [];
@@ -637,7 +546,7 @@ const updateResourcePlan = (entitiesData, statementData) => {
     };
 };
 
-const dropResourcePlan = (entitiesData, statementData) => {
+const dropResourcePlan = (entitiesData, bucket, statementData) => {
     const { modelProperties } = entitiesData;
 
     const resourcePlans = modelProperties.resourcePlans || [];
@@ -655,8 +564,9 @@ const dropResourcePlan = (entitiesData, statementData) => {
     };
 };
 
-const updateResourcePlanItem = (entitiesData, statementData, identifier) => {
+const updateResourcePlanItem = (entitiesData, bucket, statementData) => {
     const { modelProperties } = entitiesData;
+    const identifier = statementData.identifier;
 
     const resourcePlans = modelProperties.resourcePlans || [];
     const { resourcePlanIndex, itemIndex } = getResourcePlanAndItemIndexes(resourcePlans, statementData, identifier);
@@ -683,8 +593,9 @@ const updateResourcePlanItem = (entitiesData, statementData, identifier) => {
     };
 };
 
-const removeItemFromResourcePlan = (entitiesData, statementData, identifier) => {
+const removeItemFromResourcePlan = (entitiesData, bucket, statementData) => {
     const { modelProperties } = entitiesData;
+    const identifier = statementData.identifier;
 
     const resourcePlans = modelProperties.resourcePlans || [];
     const { resourcePlanIndex, itemIndex } = getResourcePlanAndItemIndexes(resourcePlans, statementData, identifier);
@@ -707,7 +618,7 @@ const removeItemFromResourcePlan = (entitiesData, statementData, identifier) => 
     };
 };
 
-const removeMapping = (entitiesData, statementData) => {
+const removeMapping = (entitiesData, bucket, statementData) => {
     const { modelProperties } = entitiesData;
 
     const resourcePlans = modelProperties.resourcePlans || [];
@@ -757,6 +668,33 @@ const getResourcePlanAndItemIndexes = (resourcePlans, statementData, identifier)
     const itemIndex = _.findIndex(items, ({ name }) => name === statementData[identifier]);
 
     return { resourcePlanIndex, itemIndex };
+};
+
+const COMMANDS = {
+    [CREATE_COLLECTION_COMMAND]: createCollection,
+    [REMOVE_COLLECTION_COMMAND]: removeCollection,
+    [CREATE_BUCKET_COMMAND]: createBucket,
+    [REMOVE_BUCKET_COMMAND]: removeBucket,
+    [USE_BUCKET_COMMAND]: useBucket,
+    [ADD_FIELDS_TO_COLLECTION_COMMAND]: addFieldsToCollection,
+    [ADD_COLLECTION_LEVEL_INDEX_COMMAND]: addIndexToCollection,
+    [RENAME_FIELD_COMMAND]: renameField,
+    [CREATE_VIEW_COMMAND]: createView,
+    [REMOVE_VIEW_COMMAND]: removeView,
+    [ADD_BUCKET_DATA_COMMAND]: addDataToBucket,
+    [REMOVE_COLLECTION_LEVEL_INDEX_COMMAND]: removeIndexFromCollection,
+    [ADD_RELATIONSHIP_COMMAND]: addRelationship,
+    [UPDATE_ENTITY_COLUMN]: updateColumn,
+    [CREATE_RESOURCE_PLAN]: createResourcePlan,
+    [ADD_TO_RESOURCE_PLAN]: addToResourcePlan,
+    [CREATE_MAPPING]: addMapping,
+    [UPDATE_VIEW_LEVEL_DATA_COMMAND]: updateViewLevelData,
+    [RENAME_VIEW_COMMAND]: renameView,
+    [UPDATE_RESOURCE_PLAN]: updateResourcePlan,
+    [DROP_RESOURCE_PLAN]: dropResourcePlan,
+    [UPDATE_ITEM_IN_RESOURCE_PLAN]: updateResourcePlanItem,
+    [DROP_RESOURCE_PLAN_ITEM]: removeItemFromResourcePlan,
+    [DROP_MAPPING]: removeMapping,
 };
 
 module.exports = {

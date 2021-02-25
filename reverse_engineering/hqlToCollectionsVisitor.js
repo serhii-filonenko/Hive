@@ -953,7 +953,7 @@ class Visitor extends HiveParserVisitor {
             'dropTriggerStatement',
             'alterPoolStatement',
             'dropPoolStatement',
-            'dropMappingStatement'
+            'dropMappingStatement',
         ].map((statement) => this.visitWhenExists(ctx, statement));
     }
 
@@ -1172,7 +1172,7 @@ class Visitor extends HiveParserVisitor {
             identifier: 'pool',
             resourceName: this.visit(ctx.identifier()),
             pool: this.visit(ctx.poolPath()),
-        }
+        };
     }
 
     visitPoolPath(ctx) {
@@ -1184,7 +1184,7 @@ class Visitor extends HiveParserVisitor {
             type: DROP_MAPPING,
             resourceName: this.visit(ctx.identifier()),
             name: getTextFromStringLiteral(ctx),
-        }
+        };
     }
 }
 
