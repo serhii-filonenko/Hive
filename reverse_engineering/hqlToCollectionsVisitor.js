@@ -38,7 +38,7 @@ const ALLOWED_COMMANDS = [
     HiveParser.RULE_alterStatement,
     // HiveParser.RULE_createFunction,
     // HiveParser.RULE_createAggregate,
-    // HiveParser.RULE_alterKeyspace,
+    HiveParser.RULE_dropIndexStatement,
     HiveParser.RULE_resourcePlanDdlStatements,
     HiveParser.RULE_createIndexStatement,
     HiveParser.RULE_dropIndexStatement,
@@ -986,6 +986,17 @@ class Visitor extends HiveParserVisitor {
                 name: getTextFromStringLiteral(ctx),
                 mappingType: getMappingType(ctx)
             }
+        }
+    }
+
+    visitDropIndexStatement(ctx) {
+        const { database, table } = this.visit(ctx.tableName());
+
+        return {
+            type: REMOVE_COLLECTION_LEVEL_INDEX_COMMAND,
+            indexName: this.visit(ctx.identifier()),
+            bucketName: database,
+            collectionName: table,
         }
     }
 }

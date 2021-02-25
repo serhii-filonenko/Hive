@@ -405,7 +405,7 @@ const addRelationship = (entitiesData, bucket, statementData) => {
             relationshipType: 'Foreign Key',
             childCardinality: '1',
             parentCardinality: '1',
-            name: statementData.relationshipName,
+            relationshipName: statementData.relationshipName,
             childDbName: statementData.childDbName || bucket,
             dbName: statementData.dbName || bucket,
         }),
