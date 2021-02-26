@@ -217,7 +217,7 @@ const getForeignKeys = (
 		}, [])
 		.join('\n');
 
-	return `\nUSE ${dbName};${foreignKeysStatements}`;
+	return foreignKeysStatements ? `\nUSE ${dbName};${foreignKeysStatements}` : '';
 };
 
 const setAppDependencies = ({ lodash }) => _ = lodash;
