@@ -325,12 +325,10 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 };
 
 const getColumnStatement = ({ name, type, comment, constraints, isActivated, isParentActivated }) => {
-	const commentStatement = comment 
-		? ` COMMENT '${comment}'`
-		: '';
+	const commentStatement = comment ? `COMMENT '${comment}'` : '';
 	const constraintsStaitment = constraints ? getColumnConstraintsStaitment(constraints) : '';
 	const isColumnActivated = isParentActivated ? isActivated : true;
-	return commentDeactivatedStatements(`${name} ${type}${commentStatement}${constraintsStaitment}`, isColumnActivated);
+	return commentDeactivatedStatements(`${name} ${type} ${constraintsStaitment} ${commentStatement}`, isColumnActivated);
 };
 
 const getColumnsStatement = (columns, isParentActivated) => {

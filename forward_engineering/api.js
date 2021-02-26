@@ -5,7 +5,7 @@ const { getDatabaseStatement } = require('./helpers/databaseHelper');
 const { getTableStatement } = require('./helpers/tableHelper');
 const { getIndexes } = require('./helpers/indexHelper');
 const { getViewScript } = require('./helpers/viewHelper');
-const { prepareName } = require('./helpers/generalHelper');
+const { prepareName, replaceSpaceWithUnderscore, getName, getTab } = require('./helpers/generalHelper');
 const foreignKeyHelper = require('./helpers/foreignKeyHelper');
 let _;
 const sqlFormatter = require('sql-formatter');
@@ -199,7 +199,10 @@ const getForeignKeys = (
 	if (!areForeignPrimaryKeyConstraintsAvailable) {
 		return null;
 	}
-	return data.entities
+
+	const dbName = replaceSpaceWithUnderscore(getName(getTab(0, data.containerData)));
+	
+	const foreignKeysStatements = data.entities
 		.reduce((result, entityId) => {
 			const foreignKeyStatement = foreignKeyHelper.getForeignKeyStatementsByHashItem(
 				foreignKeyHashTable[entityId] || {}
@@ -213,6 +216,8 @@ const getForeignKeys = (
 			return result;
 		}, [])
 		.join('\n');
+
+	return `\nUSE ${dbName};${foreignKeysStatements}`;
 };
 
 const setAppDependencies = ({ lodash }) => _ = lodash;
@@ -242,7 +247,7 @@ const getWorkloadManagementStatements = modelData => {
 		})
 
 		const mappingsStatements = mappings.map(mapping => {
-			return `CREATE ${_.toUpper(mapping.mappingType || 'application')} MAPPING ${prepareName(mapping.name)} IN ${prepareName(resourcePlan.name)};`;
+			return `CREATE ${_.toUpper(mapping.mappingType || 'application')} MAPPING '${prepareName(mapping.name)}' IN ${prepareName(resourcePlan.name)};`;
 		});
 
 		const triggersStatements = triggers.map(trigger => {

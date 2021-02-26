@@ -76,7 +76,8 @@ const getForeignKeyHashTable = (relationships, entities, entityData, jsonSchemas
 const getForeignKeyStatementsByHashItem = (hashItem) => {
 	return Object.keys(hashItem || {}).map(groupKey => {
 		const keys = hashItem[groupKey];
-		const constraintName = (keys[0] || {}).name;
+		const keyName = (keys[0] || {}).name || '';
+		const constraintName = keyName.includes(' ') ? `\`${keyName}\`` : keyName;
 		const parentTableName = (keys[0] || {}).parentTableName;
 		const childTableName = (keys[0] || {}).childTableName;
 		const disableNoValidate = keys.some(item => (item || {}).disableNoValidate);
