@@ -279,5 +279,8 @@ const setProperty = (columnName, subSchema, jsonSchema) => {
 
 module.exports = {
 	getJsonSchema,
-	getChoice
+	getChoice,
+	getArraySubtypeByType,
+	getMapSubtype,
+	getMapKeyType,
 };

@@ -1,10 +1,10 @@
 {
 	"name": "Hive",
-	"version": "0.1.42",
-	"versionDate": "2020-12-02",
+	"version": "0.1.46",
+	"versionDate": "2021-02-29",
 	"author": "hackolade",
 	"engines": {
-		"hackolade": "3.4.0",
+		"hackolade": "4.3.9",
 		"hackoladePlugin": "1.2.0"
 	},
 	"contributes": {

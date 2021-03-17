@@ -56,11 +56,11 @@ const ERROR = 4;
 const COMPLETE = 5;
 
 const createPackage = (status, body) => {
-	const bodyLength = new Buffer(4);
+	const bodyLength = Buffer.alloc(4);
 
 	bodyLength.writeUInt32BE(body.length);
 
-	return Buffer.concat([ new Buffer([ status ]), bodyLength, body ]);
+	return Buffer.concat([ Buffer.from([ status ]), bodyLength, body ]);
 };
 
 const getQopName = (qop) => {
@@ -115,7 +115,7 @@ const kerberosAuthentication = (kerberosAuthProcess, connection, logger) => (opt
 		const onConnect = () => {
 			logger.log('kerberos authentication. Successfully connected to server');
 			
-			connection.write(createPackage(START, new Buffer(options.authMech)));
+			connection.write(createPackage(START, Buffer.from(options.authMech)));
 
 			inst.transition('', (err, token) => {
 				logger.log('kerberos authentication. Step 2. Start authentication.');
@@ -123,7 +123,7 @@ const kerberosAuthentication = (kerberosAuthProcess, connection, logger) => (opt
 					return onError(err);
 				}
 
-				connection.write(createPackage(OK, new Buffer(token || '', 'base64')));
+				connection.write(createPackage(OK, Buffer.from(token || '', 'base64')));
 			});
 		};
 
@@ -148,7 +148,7 @@ const kerberosAuthentication = (kerberosAuthProcess, connection, logger) => (opt
 					}
 
 					qualityOfProtection = qop;
-					connection.write(createPackage(OK, new Buffer(response || '', 'base64')));
+					connection.write(createPackage(OK, Buffer.from(response || '', 'base64')));
 				});
 			} else if (result === COMPLETE) {
 				logger.log('kerberos authentication. Step 3. Transition #' + transition + ': completed. Chosen QOP: ' + getQopName(qualityOfProtection));
@@ -201,13 +201,13 @@ const ldapAuthentication = (connection) => (options) => new Promise((resolve, re
 		resolve();
 	};
 	const onConnect = () => {
-		connection.write(createPackage(START, new Buffer(options.authMech)));
+		connection.write(createPackage(START, Buffer.from(options.authMech)));
 		connection.write(createPackage(OK, Buffer.concat([
-			new Buffer(options.username || ""),
+			Buffer.from(options.username || ""),
 			Buffer.from([0]),
-			new Buffer(options.username || ""),
+			Buffer.from(options.username || ""),
 			Buffer.from([0]),
-			new Buffer(options.password || ""),
+			Buffer.from(options.password || ""),
 		])));
 	};
 	const onData = (data) => {

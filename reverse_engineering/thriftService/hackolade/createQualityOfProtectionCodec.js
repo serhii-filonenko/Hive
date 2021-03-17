@@ -43,7 +43,7 @@ const createQopCodec = (connection, client) => {
 		}
 
 		createPackage(body) {
-			const bodyLength = new Buffer(4);
+			const bodyLength = Buffer.alloc(4);
 
 			bodyLength.writeUInt32BE(body.length);
 

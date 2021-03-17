@@ -112,6 +112,17 @@
 					"key": "authMechanism",
 					"value": "GSSAPI"
 				}
+			},
+			{
+				"inputLabel": "Keytab file",
+				"inputKeyword": "keytab",
+				"inputType": "file",
+				"extensions": ["*"],
+				"inputTooltip": "Allowed only in HTTP Transport mode",
+				"dependency": {
+					"key": "authMechanism",
+					"value": "GSSAPI"
+				}
 			}
 		]	
 	}, {
