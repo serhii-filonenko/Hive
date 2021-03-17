@@ -23,6 +23,16 @@
                 "viewLevel": "model",
                 "disablePipelines": true
             },
+			"forwardEngineering": {
+				"jsonSchema": {
+					"keepParentType": {
+						"date": {
+							"type": "string",
+							"format": "date"
+						}
+					}
+				}
+			},
 			"nestedCollections": false,
 			"disablePatternField": false,
 			"enableForwardEngineering": true,
