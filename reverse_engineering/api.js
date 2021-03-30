@@ -246,6 +246,12 @@ module.exports = {
 									};
 									return nextTable(null, { documentPackage: viewPackage, relationships: [] });
 								}).catch(err => {
+									if (typeof err === 'string') {
+										logger.log('error', { message: err, error: err }, `Retrieving view information`);
+									} else {
+										logger.log('error', { message: err.message, stack: err.stack, error: err }, `Retrieving view information`);
+									}
+									
 									nextTable(null, { documentPackage: false, relationships: [] })
 								});
 							}
