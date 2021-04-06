@@ -206,6 +206,11 @@ module.exports = {
 							if (isView) {
 								const viewName = tableName.slice(0, -4)
 								return query(`describe extended ${viewName}`).then(viewData => {
+									try {
+										logger.log('info', JSON.stringify(viewData), `Retrieving view information`);
+									} catch (loggingError) {
+										logger.log('error', { message: `Can't get additional view information` }, `Retrieving view information`);
+									}
 									const { schema, additionalDescription } = viewData.reduce((data, item) => {
 										const { schema, isSchemaParsingFinished, additionalDescription } = data;
 										if (!item.col_name || item.col_name === 'Detailed Table Information') {
