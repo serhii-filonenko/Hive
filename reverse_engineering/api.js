@@ -220,14 +220,14 @@ module.exports = {
 										if (isSchemaParsingFinished) {
 											return { ...data, additionalDescription: `${additionalDescription} ${item.col_name}`};
 										}
-				
+
 										return { ...data, schema: {
 											...schema,
 											[item.col_name]: { comment: item.comment }
 										}};
 									}, { schema: {}, isSchemaParsingFinished: false, additionalDescription: '' });
 
-									const metaInfoRegex = /(.*?)(, viewExpandedText:|, tableType:|, rewriteEnabled:)/;
+									const metaInfoRegex = /([\s\S]+?)(, viewExpandedText:|, tableType:|, rewriteEnabled:)/;
 									
 									const isMaterialized = additionalDescription.includes('tableType:MATERIALIZED_VIEW');
 									const selectStatement = (metaInfoRegex.exec(additionalDescription)[1] || additionalDescription);
