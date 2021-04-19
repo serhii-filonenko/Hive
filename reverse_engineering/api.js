@@ -19,6 +19,7 @@ const HiveParser = require('./parser/HiveParser.js');
 const hqlToCollectionsVisitor = require('./hqlToCollectionsVisitor.js');
 const commandsService = require('./commandsService');
 const ExprErrorListener = require('./antlrErrorListener');
+const { isEmpty } = require('lodash');
 
 module.exports = {
 	connect: function(connectionInfo, logger, cb, app){
@@ -189,6 +190,9 @@ module.exports = {
 				}));
 				modelData = { resourcePlans };
 			} catch (err) {}
+			let views = [];
+			let columnsMap = {};
+
 			async.mapSeries(databases, (dbName, nextDb) => {
 				const exec = cursor.asyncExecute.bind(null, session.sessionHandle);
 				const query = getExecutorWithResult(cursor, exec);
@@ -231,25 +235,18 @@ module.exports = {
 									
 									const isMaterialized = additionalDescription.includes('tableType:MATERIALIZED_VIEW');
 									const selectStatement = (metaInfoRegex.exec(additionalDescription)[1] || additionalDescription);
-
-									const viewPackage = {
-										dbName,
-										entityLevel: {},
-										views: [{
-											name: viewName,
-											data: {
-												materialized: isMaterialized
-											},
-											ddl: {
-												script: `CREATE VIEW ${viewName} AS ${selectStatement};`,
-												type: 'teradata'
-											}
-										}],
-										emptyBucket: false,
-										bucketInfo: {
+									views.push({
+										name: viewName,
+										data: {
+											materialized: isMaterialized
+										},
+										jsonSchema: {properties: schema},
+										ddl: {
+											script: `CREATE VIEW ${viewName} AS ${selectStatement};`,
+											type: 'teradata'
 										}
-									};
-									return nextTable(null, { documentPackage: viewPackage, relationships: [] });
+									});
+									return nextTable(null, { documentPackage: false, relationships: [] });
 								}).catch(err => {
 									if (typeof err === 'string') {
 										logger.log('error', { message: err, error: err }, `Retrieving view information`);
@@ -338,6 +335,13 @@ module.exports = {
 												return Promise.resolve({ jsonSchema, relationships });
 											});
 									}).then(({ jsonSchema, relationships }) => {
+										columnsMap = {
+											...columnsMap,
+											...Object.keys(jsonSchema.properties).reduce((hashMap, key) => ({
+												...hashMap,
+												[key]: tableName,
+											}), {})
+										}
 										return query(`show indexes on ${tableName}`)
 											.then(result => {
 												return getIndexes(result);
@@ -383,7 +387,7 @@ module.exports = {
 						cb(err);
 					}, 1000);
 				} else {
-					cb(err, ...expandFinalPackages(modelData, data));
+					cb(err, ...expandFinalPackages(modelData, addViews(data, setViewsReferences(views, columnsMap))));
 				}
 			});
 		}, app);
@@ -881,3 +885,50 @@ const handleErrorObject = (error, title) => {
 
 	return { title , ...errorProperties };
 };
+
+const addViews = (data, views) => {
+	const packageIndex = _.findLastIndex(data, item => !_.isEmpty(item.documentPackage));
+	if (packageIndex === -1) {
+		return data;
+	}
+
+	const packageWithDocument = data[packageIndex];
+
+	return _.set(data, packageIndex, {
+		...packageWithDocument,
+		documentPackage: _.set(
+			packageWithDocument.documentPackage,
+			packageWithDocument.documentPackage.length - 1,
+			{ ..._.last(packageWithDocument.documentPackage), views }
+		)
+	})
+};
+
+const setViewsReferences = (views, columnsMap) => {
+	return views.map(view => {
+		const keys = Object.keys(view?.jsonSchema?.properties || {});
+		const references = keys.reduce(( references, key) => {
+			const tableName = columnsMap[key];
+			if (!tableName) {
+				return references;
+			}
+			return {
+				...references,
+				[key]: {
+					...view.jsonSchema[key],
+					$ref: `#collection/definitions/${tableName}/${key}`
+				}
+			}
+		}, {});
+		if (_.isEmpty(references)) {
+			return _.omit(view, 'jsonSchema');
+		}
+
+		return {
+			...view,
+			jsonSchema: {
+				properties: references
+			}
+		};
+	});
+}
