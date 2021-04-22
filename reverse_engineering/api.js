@@ -238,7 +238,8 @@ module.exports = {
 									views.push({
 										name: viewName,
 										data: {
-											materialized: isMaterialized
+											materialized: isMaterialized,
+											selectStatement,
 										},
 										jsonSchema: {properties: schema},
 										ddl: {
