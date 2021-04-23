@@ -234,12 +234,12 @@ module.exports = {
 									const metaInfoRegex = /([\s\S]+?)(, viewExpandedText:|, tableType:|, rewriteEnabled:)/;
 									
 									const isMaterialized = additionalDescription.includes('tableType:MATERIALIZED_VIEW');
-									const selectStatement = (metaInfoRegex.exec(additionalDescription)[1] || additionalDescription);
+									const selectStatement = adjustSelectStatement(metaInfoRegex.exec(additionalDescription)[1] || additionalDescription);
 									views.push({
 										name: viewName,
 										data: {
 											materialized: isMaterialized,
-											selectStatement,
+											selectStatement: selectStatement,
 										},
 										jsonSchema: {properties: schema},
 										ddl: {
@@ -904,6 +904,8 @@ const addViews = (data, views) => {
 		)
 	})
 };
+
+const adjustSelectStatement = statement => (statement || '').replace(/\\n/g, '\n');
 
 const setViewsReferences = (views, columnsMap) => {
 	return views.map(view => {
