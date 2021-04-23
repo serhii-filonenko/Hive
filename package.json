@@ -1,7 +1,7 @@
 {
 	"name": "Hive",
-	"version": "0.1.53",
-	"versionDate": "2021-04-22",
+	"version": "0.1.54",
+	"versionDate": "2021-04-23",
 	"author": "hackolade",
 	"engines": {
 		"hackolade": "4.3.9",
