@@ -1,4 +1,4 @@
-const _ = require('lodash');
+const { dependencies } = require("./appDependencies");
 
 const getFieldsArray = (bucketColumns) => {
 	try {
@@ -27,11 +27,12 @@ const getSkewedOn = (skewedValues) => {
 	return skewedValues.replace(/\[/g, '(').replace(/\]/g, ')').trim();
 };
 
-const isExternal = (detailedInfo) => (_.get(detailedInfo, 'Table Type', '').trim() === 'EXTERNAL_TABLE');
+const isExternal = (detailedInfo) => (dependencies.lodash.get(detailedInfo, 'Table Type', '').trim() === 'EXTERNAL_TABLE');
 
 const isTemporary = (extendedDetailedInfo) => /temporary:true/i.test(extendedDetailedInfo || '');
 
 const getStoredAs = (storageInfo) => {
+	const _ = dependencies.lodash;
 	const inputFormat = _.get(storageInfo, 'InputFormat', '').trim();
 	const outputFormat = _.get(storageInfo, 'OutputFormat', '').trim();
 	const serDeLibrary = _.get(storageInfo, 'SerDe Library', '').trim();
@@ -121,7 +122,7 @@ const getTableProperties = (tableParams) => {
 };
 
 const getNumBuckets = (storageInfo) => {
-	const value = _.get(storageInfo, 'Num Buckets', '').trim();
+	const value = dependencies.lodash.get(storageInfo, 'Num Buckets', '').trim();
 
 	if (!value) {
 		return {};
@@ -135,6 +136,7 @@ const getNumBuckets = (storageInfo) => {
 };
 
 const getEntityLevelData = (tableName, tableInfo, extendedTableInfo) => {
+	const _ = dependencies.lodash;
 	const partitionInfo = tableInfo.partitionInfo || {};
 	const detailedInfo = tableInfo.detailedInfo || {};
 	const storageInfo = tableInfo.storageInfo || {};

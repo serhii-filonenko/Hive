@@ -1,6 +1,5 @@
 const { HiveParserVisitor } = require('./parser/HiveParserVisitor');
 const { HiveParser } = require('./parser/HiveParser');
-const _ = require('lodash');
 const {
     CREATE_COLLECTION_COMMAND,
     REMOVE_COLLECTION_COMMAND,
@@ -30,6 +29,7 @@ const {
 } = require('./commandsService');
 
 const schemaHelper = require('./thriftService/schemaHelper');
+const { dependencies } = require('./appDependencies');
 
 const ALLOWED_COMMANDS = [
     HiveParser.RULE_createTableStatement,
@@ -75,6 +75,7 @@ class Visitor extends HiveParserVisitor {
     }
 
     visitCreateTableStatement(ctx) {
+        const _ = dependencies.lodash
         const [tableName, tableLikeName] = this.visit(ctx.tableName());
         const compositePartitionKey = this.visitWhenExists(ctx, 'tablePartition', []);
         const { compositeClusteringKey, numBuckets, sortedByKey } = this.visitWhenExists(ctx, 'tableBuckets', {});
@@ -769,7 +770,7 @@ class Visitor extends HiveParserVisitor {
 
         if (!complexTypes) {
             return {
-                type: _.uniq(types.map((schema) => schema.type)),
+                type: dependencies.lodash.uniq(types.map((schema) => schema.type)),
             };
         }
 
@@ -1041,6 +1042,7 @@ class Visitor extends HiveParserVisitor {
     }
 
     visitCreateIndexStatement(ctx) {
+        const _ = dependencies.lodash;
         const { name, database, table, columns, SecIndxHandler } = this.visit(ctx.createIndexMainStatement());
         const SecIndxWithDeferredRebuild = Boolean(ctx.KW_WITH() && ctx.KW_DEFERRED() && ctx.KW_REBUILD());
         const SecIndxProperties = this.visitWhenExists(ctx, 'tableProperties');
@@ -1128,7 +1130,7 @@ class Visitor extends HiveParserVisitor {
     }
 
     visitRpAssignList(ctx) {
-        return this.visit(ctx.rpAssign()).find(({ parallelism }) => !_.isEmpty(parallelism));
+        return this.visit(ctx.rpAssign()).find(({ parallelism }) => !dependencies.lodash.isEmpty(parallelism));
     }
 
     visitRpAssign(ctx) {

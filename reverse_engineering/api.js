@@ -1,6 +1,7 @@
 'use strict';
 
-const _ = require('lodash');
+let _;
+const { setDependencies, dependencies } = require('./appDependencies');
 const uuid = require('uuid');
 const async = require('async');
 const fs = require('fs');
@@ -19,10 +20,11 @@ const HiveParser = require('./parser/HiveParser.js');
 const hqlToCollectionsVisitor = require('./hqlToCollectionsVisitor.js');
 const commandsService = require('./commandsService');
 const ExprErrorListener = require('./antlrErrorListener');
-const { isEmpty } = require('lodash');
 
 module.exports = {
 	connect: function(connectionInfo, logger, cb, app){
+		setDependencies(app);
+		_ = dependencies.lodash;
 		if (connectionInfo.path && (connectionInfo.path || '').charAt(0) !== '/') {
 			connectionInfo.path = '/' + connectionInfo.path;
 		}
@@ -87,6 +89,8 @@ module.exports = {
 	},
 
 	testConnection: function(connectionInfo, logger, cb, app){
+		setDependencies(app);
+		_ = dependencies.lodash;
 		logInfo('Test connection', connectionInfo, logger);
 		this.connect(connectionInfo, logger, (err) => {
 			if (err) {
@@ -99,6 +103,8 @@ module.exports = {
 
 	getDbCollectionsNames: function(connectionInfo, logger, cb, app) {
 		logInfo('Retrieving databases and tables information', connectionInfo, logger);
+		setDependencies(app);
+		_ = dependencies.lodash;
 		
 		const { includeSystemCollection, dbName } = connectionInfo;
 
@@ -159,6 +165,8 @@ module.exports = {
 	},
 
 	getDbCollectionsData: function(data, logger, cb, app){
+		setDependencies(app);
+		_ = dependencies.lodash;
 		logger.log('info', data, 'Retrieving schema', data.hiddenKeys);
 		const progress = (message) => {
 			logger.log('info', message, 'Retrieving schema', data.hiddenKeys);
@@ -396,8 +404,10 @@ module.exports = {
 
 	adaptJsonSchema(data, logger, callback, app) {
 		try {
+			setDependencies(app);
+			_ = dependencies.lodash;
 			const jsonSchema = JSON.parse(data.jsonSchema)
-			const result = mapJsonSchema(app.require('lodash'))(jsonSchema, {}, (schema, parentJsonSchema, key) => {
+			const result = mapJsonSchema(_)(jsonSchema, {}, (schema, parentJsonSchema, key) => {
 				if (Array.isArray(schema.type)) {
 					clearOutRequired(parentJsonSchema, key);
 					const noNullType = schema.type.filter(type => type !== 'null');
@@ -430,6 +440,8 @@ module.exports = {
 
 	reFromFile: async (data, logger, callback) => {
 		try {
+			setDependencies(app);
+			_ = dependencies.lodash;
 			const input = await handleFileData(data.filePath);
 			const chars = new antlr4.InputStream(input);
 			const lexer = new HiveLexer.HiveLexer(chars);
