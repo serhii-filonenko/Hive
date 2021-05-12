@@ -125,7 +125,7 @@ class Visitor extends HiveParserVisitor {
                         ...storedAsTable,
                         ...tableRowFormat,
                     },
-                    (prop) => !_.isEmpty(prop)
+                    (prop) => _.isBoolean(prop) || !_.isEmpty(prop)
                 ),
             },
             ...tableForeignKeys.map((fkData) => ({
@@ -292,7 +292,7 @@ class Visitor extends HiveParserVisitor {
         const description = this.visitWhenExists(ctx, 'tableComment');
         const select = {
             start: ctx.selectStatementWithCTE().start.start,
-            stop: ctx.selectStatementWithCTE().stop.stop,
+            stop: ctx.selectStatementWithCTE().stop.stop + 1,
         };
         const { table } = this.visitWhenExists(ctx, 'selectStatementWithCTE', {});
 
@@ -1061,7 +1061,7 @@ class Visitor extends HiveParserVisitor {
                     SecIndxTable,
                     SecIndxComments,
                 },
-                (prop) => !_.isEmpty(prop)
+                (prop) => _.isBoolean(prop) || !_.isEmpty(prop)
             ),
         };
     }
