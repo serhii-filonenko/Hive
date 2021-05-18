@@ -438,7 +438,7 @@ module.exports = {
 		}
 	},
 
-	reFromFile: async (data, logger, callback) => {
+	reFromFile: async (data, logger, callback, app) => {
 		try {
 			setDependencies(app);
 			_ = dependencies.lodash;
