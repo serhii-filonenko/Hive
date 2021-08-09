@@ -448,6 +448,13 @@ making sure that you maintain a proper JSON format.
 					"defaultValue": "New Secondary Index"
 				},
 				{
+					"propertyName": "Activated",
+					"propertyKeyword": "isActivated",
+					"propertyTooltip": "Deactivated item will be not included in FE script",
+					"propertyType": "checkbox",
+					"defaultValue": true
+				},
+				{
 					"propertyName": "Key",
 					"propertyKeyword": "SecIndxKey",
 					"propertyType": "fieldList",

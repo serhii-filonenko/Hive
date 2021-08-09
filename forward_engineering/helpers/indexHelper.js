@@ -78,6 +78,7 @@ const getIndexes = (containerData, entityData, jsonSchema, definitions) => {
 				comment: indexData.SecIndxComments,
 				withDeferredRebuild: indexData.SecIndxWithDeferredRebuild,
 				isActivated:
+					indexData.isActivated !== false &&
 					isIndexActivated &&
 					tableData.isActivated &&
 					dbData.isActivated,
