@@ -253,7 +253,8 @@ module.exports = {
 										ddl: {
 											script: `CREATE VIEW ${viewName} AS ${selectStatement};`,
 											type: 'teradata'
-										}
+										},
+										dbName,
 									});
 									return nextTable(null, { documentPackage: false, relationships: [] });
 								}).catch(err => {
@@ -899,22 +900,20 @@ const handleErrorObject = (error, title) => {
 	return { title , ...errorProperties };
 };
 
-const addViews = (data, views) => {
-	const packageIndex = _.findLastIndex(data, item => !_.isEmpty(item.documentPackage));
-	if (packageIndex === -1) {
-		return data;
-	}
+const addViews = (data, views = []) => {
+	return data.map(dataItem => {
+		if (_.isEmpty(dataItem?.documentPackage)) {
+			return dataItem;
+		}
+		const nonEmptyEntityPackageIndex = _.findLastIndex(dataItem.documentPackage, entityItem => !_.isEmpty(entityItem));
+		if (nonEmptyEntityPackageIndex === -1) {
+			return dataItem;
+		}
+		const containerName = dataItem.documentPackage[nonEmptyEntityPackageIndex].dbName;
+		const dbViews = views.filter(view => view.dbName === containerName);
 
-	const packageWithDocument = data[packageIndex];
-
-	return _.set(data, packageIndex, {
-		...packageWithDocument,
-		documentPackage: _.set(
-			packageWithDocument.documentPackage,
-			packageWithDocument.documentPackage.length - 1,
-			{ ..._.last(packageWithDocument.documentPackage), views }
-		)
-	})
+		return _.set(dataItem, ['documentPackage', nonEmptyEntityPackageIndex, 'views'], dbViews);
+	});
 };
 
 const adjustSelectStatement = statement => (statement || '').replace(/\\n/g, '\n');
