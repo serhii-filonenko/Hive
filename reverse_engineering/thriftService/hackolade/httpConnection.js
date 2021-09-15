@@ -272,7 +272,7 @@ const getError = (response, callback) => {
 };
 
 function THTTPException(response, message) {
-  thrift.TApplicationException.call(this);
+  thrift.Thrift.TApplicationException.call(this);
   if (Error.captureStackTrace !== undefined) {
     Error.captureStackTrace(this, this.constructor);
   }
@@ -280,7 +280,7 @@ function THTTPException(response, message) {
   this.name = this.constructor.name;
   this.statusCode = response.statusCode;
   this.response = response;
-  this.type = thrift.TApplicationExceptionType.PROTOCOL_ERROR;
+  this.type = thrift.Thrift.TApplicationExceptionType.PROTOCOL_ERROR;
   this.message = "Received a response with a bad HTTP status code: " + response.statusCode + '. Message: ' + message;
 }
 util.inherits(THTTPException, thrift.Thrift.TApplicationException);
