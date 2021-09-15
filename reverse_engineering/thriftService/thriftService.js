@@ -338,7 +338,18 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 		const request = new TCLIServiceTypes.TGetResultSetMetadataReq(executeStatementResponse);
 	
 		return getConnection().then(client => promisifyCallback((callback) => {
-			client.GetResultSetMetadata(request, callback);
+			client.GetResultSetMetadata(request, (err, result) => {
+				if (err) {
+					return callback(err, result);
+				}
+				if (result && result.schema === null) {
+					return callback({
+						message: result.status.errorMessage,
+						stack: result.status.infoMessages.join('\n'),
+					}, result);
+				}
+				callback(err, result);
+			});
 		}));
 	};
 

@@ -160,6 +160,16 @@ module.exports = {
 							cb(err, result);
 						}, 1000);
 					});
+				}).catch(error => {
+					if (typeof error === 'string') {
+						error = new Error(error);
+					}
+
+					logger.log('error', { message: error.message, stack: error.stack, error: error }, 'Retrieving databases and tables information');
+					cb({
+						message: error.message,
+						stack: error.stack,
+					});
 				});
 		}, app);
 	},
