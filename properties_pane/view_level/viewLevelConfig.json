@@ -163,6 +163,7 @@ making sure that you maintain a proper JSON format.
 				"template": "textarea"
 			},
 			{
+				"propertyName": "Pipeline",
 				"propertyKeyword": "pipeline",
 				"hidden": true
 			}
