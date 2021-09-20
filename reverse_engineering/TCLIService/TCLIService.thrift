@@ -523,6 +523,7 @@ enum TOperationType {
   GET_COLUMNS,
   GET_FUNCTIONS,
   UNKNOWN,
+  PROCEDURAL_SQL
 }
 
 // Client-side reference to a task running
@@ -1027,21 +1028,6 @@ struct TGetCrossReferenceReq {
   7: optional TIdentifier foreignTableName
 }
 
-enum TJobExecutionStatus {
-    IN_PROGRESS,
-    COMPLETE,
-    NOT_AVAILABLE
-}
-
-struct TProgressUpdateResp {
-  1: required list<string> headerNames
-  2: required list<list<string>> rows
-  3: required double progressedPercentage
-  4: required TJobExecutionStatus status
-  5: required string footerSummary
-  6: required i64 startTime
-}
-
 struct TGetCrossReferenceResp {
   1: required TStatus status
   2: optional TOperationHandle operationHandle
@@ -1239,6 +1225,21 @@ struct TRenewDelegationTokenReq {
 struct TRenewDelegationTokenResp {
   // status of the request
   1: required TStatus status
+}
+
+enum TJobExecutionStatus {
+    IN_PROGRESS,
+    COMPLETE,
+    NOT_AVAILABLE
+}
+
+struct TProgressUpdateResp {
+  1: required list<string> headerNames
+  2: required list<list<string>> rows
+  3: required double progressedPercentage
+  4: required TJobExecutionStatus status
+  5: required string footerSummary
+  6: required i64 startTime
 }
 
 struct TGetQueryIdReq {

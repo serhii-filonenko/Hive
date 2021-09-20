@@ -1,5 +1,5 @@
-const _ = require('lodash');
 const Big = require('big.js');
+const { dependencies } = require('../appDependencies');
 const schemaHelper = require('./schemaHelper');
 
 const getInt64 = (buffer, offset) => {
@@ -117,13 +117,13 @@ const getDataConverter = (TCLIServiceTypes) => (typeDescriptor) => {
 };
 
 const getTypeDescriptorByColumnDescriptor = (columnDescriptor) => {
-	return _.get(columnDescriptor, 'typeDesc.types[0].primitiveEntry', null);
+	return dependencies.lodash.get(columnDescriptor, 'typeDesc.types[0].primitiveEntry', null);
 };
 
 const getColumnValuesBySchema = (TCLIServiceTypes) => (columnDescriptor, valuesColumn) => {
 	const typeDescriptor = getTypeDescriptorByColumnDescriptor(columnDescriptor);
 	const valueType = getColumnValueKeyByTypeDescriptor(TCLIServiceTypes)(typeDescriptor);
-	const values = _.get(valuesColumn, `${valueType}.values`, []);
+	const values = dependencies.lodash.get(valuesColumn, `${valueType}.values`, []);
 
 	return values.map(getDataConverter(TCLIServiceTypes)(typeDescriptor));
 };
@@ -137,7 +137,7 @@ const getColumnName = (columnDescriptor) => {
 const getResultParser = (TCLIService, TCLIServiceTypes) => {
 	return (schemaResponse, fetchResultResponses) => {
 		return fetchResultResponses.reduce((result, fetchResultResponse) => {
-			const columnValues = _.get(fetchResultResponse, 'results.columns', []);
+			const columnValues = dependencies.lodash.get(fetchResultResponse, 'results.columns', []);
 			const rows = [...schemaResponse.schema.columns]
 				.sort((c1, c2) => c1.position > c2.position ? 1 : c1.position < c2.position ? -1 : 0)
 				.reduce((rows, columnDescriptor) => {
@@ -161,7 +161,7 @@ const getResultParser = (TCLIService, TCLIServiceTypes) => {
 };
 
 const getQualifier = (typeDescriptor, qualifierName, defaultValue) => {
-	const result = _.get(typeDescriptor, `typeQualifiers.qualifiers.${qualifierName}`, {});
+	const result = dependencies.lodash.get(typeDescriptor, `typeQualifiers.qualifiers.${qualifierName}`, {});
 
 	return result.i32Value || result.stringValue || defaultValue;
 };
@@ -272,6 +272,7 @@ const getJsonSchemaByTypeDescriptor = (TCLIServiceTypes) => (typeDescriptor) => 
 };
 
 const getJsonSchemaCreator = (TCLIService, TCLIServiceTypes, tableInfo) => ({ columns, tableSchema, sample, tableColumnsConstraints, notNullColumns }) => {
+	const _ = dependencies.lodash;
 	const columnDescriptors = _.get(tableSchema, 'schema.columns', []);
 
 	const jsonSchema = columnDescriptors.reduce((jsonSchema, columnDescriptor) => {

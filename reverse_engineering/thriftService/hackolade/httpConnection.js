@@ -59,8 +59,6 @@ var createClient = thrift.create_client;
  * Initializes a Thrift HttpConnection instance (use createHttpConnection() rather than
  *    instantiating directly).
  * @constructor
- * @param {string} host - The host name or IP to connect to.
- * @param {number} port - The TCP port to connect to.
  * @param {ConnectOptions} options - The configuration options to use.
  * @throws {error} Exceptions other than InputBufferUnderrunError are rethrown
  * @event {error} The "error" event is fired when a Node.js error event occurs during
@@ -71,15 +69,16 @@ var createClient = thrift.create_client;
  *     semantics implemented over the Node.js http.request() method.
  * @see {@link createHttpConnection}
  */
-var HttpConnection = exports.HttpConnection = function(host, port, options) {
+var HttpConnection = exports.HttpConnection = function(options) {
   //Initialize the emitter base object
   EventEmitter.call(this);
 
   //Set configuration
   var self = this;
   this.options = options || {};
-  this.host = host;
-  this.port = port;
+  this.host = this.options.host;
+  this.port = this.options.port;
+  this.socketPath = this.options.socketPath;
   this.https = this.options.https || false;
   this.transport = this.options.transport || TBufferedTransport;
   this.protocol = this.options.protocol || TBinaryProtocol;
@@ -87,7 +86,8 @@ var HttpConnection = exports.HttpConnection = function(host, port, options) {
   //Prepare Node.js options
   this.nodeOptions = {
     host: this.host,
-    port: this.port || 80,
+    port: this.port,
+    socketPath: this.socketPath,
     path: this.options.path || '/',
     method: 'POST',
     headers: this.options.headers || {},
@@ -180,7 +180,8 @@ var HttpConnection = exports.HttpConnection = function(host, port, options) {
     });
 
     if (response.headers['set-cookie']) {
-      self.nodeOptions.headers['cookie'] = response.headers['set-cookie'];
+      var cookie = self.nodeOptions.headers['cookie'];
+      self.nodeOptions.headers['cookie'] = Array.isArray(cookie) ? concatCookie(cookie, response.headers['set-cookie']) : response.headers['set-cookie'];
     }
 
     // When running directly under node, chunk will be a buffer,
@@ -223,7 +224,7 @@ HttpConnection.prototype.write = function(data) {
   var opts = self.nodeOptions;
   opts.headers["Content-length"] = data.length;
   if (!opts.headers["Content-Type"])
-    opts.headers["Content-Type"] = "application/x-thrift";  
+    opts.headers["Content-Type"] = "application/x-thrift";
   var req = (self.https) ?
       https.request(opts, self.responseCallback) :
       http.request(opts, self.responseCallback);
@@ -244,10 +245,19 @@ HttpConnection.prototype.write = function(data) {
  * @see {@link ConnectOptions}
  */
 exports.createHttpConnection = function(host, port, options) {
-  return new HttpConnection(host, port, options);
+  options.host = host;
+  options.port = port || 80;
+  return new HttpConnection(options);
+};
+
+exports.createHttpUDSConnection = function(path, options) {
+  options.socketPath = path;
+  return new HttpConnection(options);
 };
 
 exports.createHttpClient = createClient
+
+
 
 const getError = (response, callback) => {
   let data = Buffer.from([]);
@@ -257,23 +267,30 @@ const getError = (response, callback) => {
   response.on('end', () => {
     const message = data.toString();
 
-    callback(new THTTPException(
-      response.statusCode,
-      {
-        headers: response.headers,
-        message,
-      }
-    ));
+    callback(new THTTPException(response, message));
   });
 };
 
-function THTTPException(statusCode, response) {
+function THTTPException(response, message) {
   thrift.Thrift.TApplicationException.call(this);
-  Error.captureStackTrace(this, this.constructor);
+  if (Error.captureStackTrace !== undefined) {
+    Error.captureStackTrace(this, this.constructor);
+  }
+
   this.name = this.constructor.name;
-  this.statusCode = statusCode;
+  this.statusCode = response.statusCode;
   this.response = response;
   this.type = thrift.Thrift.TApplicationExceptionType.PROTOCOL_ERROR;
-  this.message = "Received a response with a bad HTTP status code: " + statusCode + '. Message: ' + response.message;
+  this.message = "Received a response with a bad HTTP status code: " + response.statusCode + '. Message: ' + (message || response.statusMessage);
 }
 util.inherits(THTTPException, thrift.Thrift.TApplicationException);
+
+function concatCookie(oldCookie, newCookie) {
+  return newCookie.reduce((cookies, cookie) => {
+    if (cookies.includes(cookie)) {
+      return cookies;
+    }
+
+    return cookies.concat(cookie);
+  }, oldCookie);
+}

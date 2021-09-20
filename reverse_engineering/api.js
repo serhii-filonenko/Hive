@@ -1,6 +1,7 @@
 'use strict';
 
-const _ = require('lodash');
+let _;
+const { setDependencies, dependencies } = require('./appDependencies');
 const uuid = require('uuid');
 const async = require('async');
 const fs = require('fs');
@@ -13,8 +14,17 @@ const logHelper = require('./logHelper');
 const mapJsonSchema = require('./thriftService/mapJsonSchema');
 const createKerberos = require('./thriftService/hackolade/createKerberos/createKerberos');
 
+const antlr4 = require('antlr4');
+const HiveLexer = require('./parser/HiveLexer.js');
+const HiveParser = require('./parser/HiveParser.js');
+const hqlToCollectionsVisitor = require('./hqlToCollectionsVisitor.js');
+const commandsService = require('./commandsService');
+const ExprErrorListener = require('./antlrErrorListener');
+
 module.exports = {
 	connect: function(connectionInfo, logger, cb, app){
+		setDependencies(app);
+		_ = dependencies.lodash;
 		if (connectionInfo.path && (connectionInfo.path || '').charAt(0) !== '/') {
 			connectionInfo.path = '/' + connectionInfo.path;
 		}
@@ -79,6 +89,8 @@ module.exports = {
 	},
 
 	testConnection: function(connectionInfo, logger, cb, app){
+		setDependencies(app);
+		_ = dependencies.lodash;
 		logInfo('Test connection', connectionInfo, logger);
 		this.connect(connectionInfo, logger, (err) => {
 			if (err) {
@@ -91,6 +103,8 @@ module.exports = {
 
 	getDbCollectionsNames: function(connectionInfo, logger, cb, app) {
 		logInfo('Retrieving databases and tables information', connectionInfo, logger);
+		setDependencies(app);
+		_ = dependencies.lodash;
 		
 		const { includeSystemCollection, dbName } = connectionInfo;
 
@@ -146,11 +160,23 @@ module.exports = {
 							cb(err, result);
 						}, 1000);
 					});
+				}).catch(error => {
+					if (typeof error === 'string') {
+						error = new Error(error);
+					}
+
+					logger.log('error', { message: error.message, stack: error.stack, error: error }, 'Retrieving databases and tables information');
+					cb({
+						message: error.message,
+						stack: error.stack,
+					});
 				});
 		}, app);
 	},
 
 	getDbCollectionsData: function(data, logger, cb, app){
+		setDependencies(app);
+		_ = dependencies.lodash;
 		logger.log('info', data, 'Retrieving schema', data.hiddenKeys);
 		const progress = (message) => {
 			logger.log('info', message, 'Retrieving schema', data.hiddenKeys);
@@ -182,6 +208,9 @@ module.exports = {
 				}));
 				modelData = { resourcePlans };
 			} catch (err) {}
+			let views = [];
+			let columnsMap = {};
+
 			async.mapSeries(databases, (dbName, nextDb) => {
 				const exec = cursor.asyncExecute.bind(null, session.sessionHandle);
 				const query = getExecutorWithResult(cursor, exec);
@@ -199,6 +228,11 @@ module.exports = {
 							if (isView) {
 								const viewName = tableName.slice(0, -4)
 								return query(`describe extended ${viewName}`).then(viewData => {
+									try {
+										logger.log('info', JSON.stringify(viewData), `Retrieving view information`);
+									} catch (loggingError) {
+										logger.log('error', { message: `Can't get additional view information` }, `Retrieving view information`);
+									}
 									const { schema, additionalDescription } = viewData.reduce((data, item) => {
 										const { schema, isSchemaParsingFinished, additionalDescription } = data;
 										if (!item.col_name || item.col_name === 'Detailed Table Information') {
@@ -208,37 +242,38 @@ module.exports = {
 										if (isSchemaParsingFinished) {
 											return { ...data, additionalDescription: `${additionalDescription} ${item.col_name}`};
 										}
-				
+
 										return { ...data, schema: {
 											...schema,
 											[item.col_name]: { comment: item.comment }
 										}};
 									}, { schema: {}, isSchemaParsingFinished: false, additionalDescription: '' });
 
-									const metaInfoRegex = /(.*?)(, viewExpandedText:|, tableType:|, rewriteEnabled:)/;
+									const metaInfoRegex = /([\s\S]+?)(, viewExpandedText:|, tableType:|, rewriteEnabled:)/;
 									
 									const isMaterialized = additionalDescription.includes('tableType:MATERIALIZED_VIEW');
-									const selectStatement = (metaInfoRegex.exec(additionalDescription)[1] || additionalDescription);
-
-									const viewPackage = {
+									const selectStatement = adjustSelectStatement(metaInfoRegex.exec(additionalDescription)[1] || additionalDescription);
+									views.push({
+										name: viewName,
+										data: {
+											materialized: isMaterialized,
+											selectStatement: selectStatement,
+										},
+										jsonSchema: {properties: schema},
+										ddl: {
+											script: `CREATE VIEW ${viewName} AS ${selectStatement};`,
+											type: 'teradata'
+										},
 										dbName,
-										entityLevel: {},
-										views: [{
-											name: viewName,
-											data: {
-												materialized: isMaterialized
-											},
-											ddl: {
-												script: `CREATE VIEW ${viewName} AS ${selectStatement};`,
-												type: 'teradata'
-											}
-										}],
-										emptyBucket: false,
-										bucketInfo: {
-										}
-									};
-									return nextTable(null, { documentPackage: viewPackage, relationships: [] });
+									});
+									return nextTable(null, { documentPackage: false, relationships: [] });
 								}).catch(err => {
+									if (typeof err === 'string') {
+										logger.log('error', { message: err, error: err }, `Retrieving view information`);
+									} else {
+										logger.log('error', { message: err.message, stack: err.stack, error: err }, `Retrieving view information`);
+									}
+									
 									nextTable(null, { documentPackage: false, relationships: [] })
 								});
 							}
@@ -261,7 +296,15 @@ module.exports = {
 									const documentPackage = {
 										dbName,
 										collectionName: tableName,
-										documents: filterNullValues(documents),
+										documents: mapDocument(filterNullValues(documents), (value) => {
+											if (typeof value === 'string') {
+												if (value.length >= 1000) {
+													return value.slice(0, 1000);
+												}
+											}
+
+											return value;
+										}),
 										indexes: [],
 										bucketIndexes: [],
 										views: [],
@@ -320,6 +363,13 @@ module.exports = {
 												return Promise.resolve({ jsonSchema, relationships });
 											});
 									}).then(({ jsonSchema, relationships }) => {
+										columnsMap = {
+											...columnsMap,
+											...Object.keys(jsonSchema.properties).reduce((hashMap, key) => ({
+												...hashMap,
+												[key]: tableName,
+											}), {})
+										}
 										return query(`show indexes on ${tableName}`)
 											.then(result => {
 												return getIndexes(result);
@@ -365,7 +415,7 @@ module.exports = {
 						cb(err);
 					}, 1000);
 				} else {
-					cb(err, ...expandFinalPackages(modelData, data));
+					cb(err, ...expandFinalPackages(modelData, addViews(data, setViewsReferences(views, columnsMap))));
 				}
 			});
 		}, app);
@@ -373,8 +423,10 @@ module.exports = {
 
 	adaptJsonSchema(data, logger, callback, app) {
 		try {
+			setDependencies(app);
+			_ = dependencies.lodash;
 			const jsonSchema = JSON.parse(data.jsonSchema)
-			const result = mapJsonSchema(app.require('lodash'))(jsonSchema, {}, (schema, parentJsonSchema, key) => {
+			const result = mapJsonSchema(_)(jsonSchema, {}, (schema, parentJsonSchema, key) => {
 				if (Array.isArray(schema.type)) {
 					clearOutRequired(parentJsonSchema, key);
 					const noNullType = schema.type.filter(type => type !== 'null');
@@ -403,7 +455,38 @@ module.exports = {
 			logger.log('error', err, 'Remove nulls from JSON Schema');
 			callback(err);
 		}
-	}
+	},
+
+	reFromFile: async (data, logger, callback, app) => {
+		try {
+			setDependencies(app);
+			_ = dependencies.lodash;
+			const input = await handleFileData(data.filePath);
+			const chars = new antlr4.InputStream(input);
+			const lexer = new HiveLexer.HiveLexer(chars);
+
+			const tokens = new antlr4.CommonTokenStream(lexer);
+			const parser = new HiveParser.HiveParser(tokens);
+			parser.removeErrorListeners();
+			parser.addErrorListener(new ExprErrorListener());
+
+			const tree = parser.statements();
+
+			const hqlToCollectionsGenerator = new hqlToCollectionsVisitor();
+
+			const commands = tree.accept(hqlToCollectionsGenerator);
+			const { result, info, relationships } = commandsService.convertCommandsToReDocs(
+                _.flatten(commands).filter(Boolean),
+                input
+            );
+			callback(null, result, info, relationships, 'multipleSchema');
+		} catch(err) {
+			const { error, title, name } = err;
+			const handledError = handleErrorObject(error || err, title || name);
+			logger.log('error', handledError, title);
+			callback(handledError);
+		}
+	},
 };
 
 const clearOutRequired = (parentJsonSchema, key) => {
@@ -427,6 +510,21 @@ const filterNullValues = (doc) => {
 		return '';
 	} else {
 		return doc;
+	}
+};
+
+const mapDocument = (doc, callback) => {
+	if (Array.isArray(doc)) {
+		return doc.map((item) => mapDocument(item, callback));
+	} else if (doc && typeof doc === 'object') {
+		return Object.entries(doc).reduce((result, [ key, value ]) => {
+			return {
+				...result,
+				[key]: mapDocument(value, callback),
+			};
+		}, {});
+	} else {
+		return callback(doc);
 	}
 };
 
@@ -815,3 +913,69 @@ const parseResourcePlan = planData => {
 };
 
 const setId = obj => ({ ...obj, GUID: uuid.v4() });
+
+const handleFileData = filePath => {
+	return new Promise((resolve, reject) => {
+
+		fs.readFile(filePath, 'utf-8', (err, content) => {
+			if(err) {
+				reject(err);
+			} else {
+				resolve(content);
+			}
+		});
+	});
+};
+
+const handleErrorObject = (error, title) => {
+	const errorProperties = Object.getOwnPropertyNames(error).reduce((accumulator, key) => ({ ...accumulator, [key]: error[key] }), {});
+
+	return { title , ...errorProperties };
+};
+
+const addViews = (data, views = []) => {
+	return data.map(dataItem => {
+		if (_.isEmpty(dataItem?.documentPackage)) {
+			return dataItem;
+		}
+		const nonEmptyEntityPackageIndex = _.findLastIndex(dataItem.documentPackage, entityItem => !_.isEmpty(entityItem));
+		if (nonEmptyEntityPackageIndex === -1) {
+			return dataItem;
+		}
+		const containerName = dataItem.documentPackage[nonEmptyEntityPackageIndex].dbName;
+		const dbViews = views.filter(view => view.dbName === containerName);
+
+		return _.set(dataItem, ['documentPackage', nonEmptyEntityPackageIndex, 'views'], dbViews);
+	});
+};
+
+const adjustSelectStatement = statement => (statement || '').replace(/\\n/g, '\n');
+
+const setViewsReferences = (views, columnsMap) => {
+	return views.map(view => {
+		const keys = Object.keys(view?.jsonSchema?.properties || {});
+		const references = keys.reduce(( references, key) => {
+			const tableName = columnsMap[key];
+			if (!tableName) {
+				return references;
+			}
+			return {
+				...references,
+				[key]: {
+					...view.jsonSchema[key],
+					$ref: `#collection/definitions/${tableName}/${key}`
+				}
+			}
+		}, {});
+		if (_.isEmpty(references)) {
+			return _.omit(view, 'jsonSchema');
+		}
+
+		return {
+			...view,
+			jsonSchema: {
+				properties: references
+			}
+		};
+	});
+}

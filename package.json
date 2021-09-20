@@ -1,10 +1,10 @@
 {
 	"name": "Hive",
-	"version": "0.1.44",
-	"versionDate": "2021-01-15",
+	"version": "0.1.61",
+	"versionDate": "2021-09-17",
 	"author": "hackolade",
 	"engines": {
-		"hackolade": "3.4.0",
+		"hackolade": "5.1.7",
 		"hackoladePlugin": "1.2.0"
 	},
 	"contributes": {
@@ -23,6 +23,16 @@
                 "viewLevel": "model",
                 "disablePipelines": true
             },
+			"forwardEngineering": {
+				"jsonSchema": {
+					"keepParentType": {
+						"date": {
+							"type": "string",
+							"format": "date"
+						}
+					}
+				}
+			},
 			"nestedCollections": false,
 			"disablePatternField": false,
 			"enableForwardEngineering": true,

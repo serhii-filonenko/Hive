@@ -119,6 +119,18 @@ making sure that you maintain a proper JSON format.
 		"lowerTab": "Details",
 		"structure": [
 			{
+				"propertyKeyword": "viewOn",
+				"hidden": true
+			},
+			{
+				"propertyName": "View on",
+				"propertyKeyword": "viewOnMulti",
+				"propertyType": "text",
+				"valueType": "array",
+				"multi": true,
+				"disabled": true
+			},
+			{
 				"propertyName": "Materialized",
 				"propertyKeyword": "materialized",
 				"shouldValidate": false,
@@ -151,6 +163,7 @@ making sure that you maintain a proper JSON format.
 				"template": "textarea"
 			},
 			{
+				"propertyName": "Pipeline",
 				"propertyKeyword": "pipeline",
 				"hidden": true
 			}
