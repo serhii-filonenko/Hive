@@ -296,7 +296,15 @@ module.exports = {
 									const documentPackage = {
 										dbName,
 										collectionName: tableName,
-										documents: filterNullValues(documents),
+										documents: mapDocument(filterNullValues(documents), (value) => {
+											if (typeof value === 'string') {
+												if (value.length >= 1000) {
+													return value.slice(0, 1000);
+												}
+											}
+
+											return value;
+										}),
 										indexes: [],
 										bucketIndexes: [],
 										views: [],
@@ -502,6 +510,21 @@ const filterNullValues = (doc) => {
 		return '';
 	} else {
 		return doc;
+	}
+};
+
+const mapDocument = (doc, callback) => {
+	if (Array.isArray(doc)) {
+		return doc.map((item) => mapDocument(item, callback));
+	} else if (doc && typeof doc === 'object') {
+		return Object.entries(doc).reduce((result, [ key, value ]) => {
+			return {
+				...result,
+				[key]: mapDocument(value, callback),
+			};
+		}, {});
+	} else {
+		return callback(doc);
 	}
 };
 

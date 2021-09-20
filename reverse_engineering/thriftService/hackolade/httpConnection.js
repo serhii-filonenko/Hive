@@ -181,7 +181,7 @@ var HttpConnection = exports.HttpConnection = function(options) {
 
     if (response.headers['set-cookie']) {
       var cookie = self.nodeOptions.headers['cookie'];
-      self.nodeOptions.headers['cookie'] = Array.isArray(cookie) ? cookie.concat(response.headers['set-cookie']) : response.headers['set-cookie'];
+      self.nodeOptions.headers['cookie'] = Array.isArray(cookie) ? concatCookie(cookie, response.headers['set-cookie']) : response.headers['set-cookie'];
     }
 
     // When running directly under node, chunk will be a buffer,
@@ -281,6 +281,16 @@ function THTTPException(response, message) {
   this.statusCode = response.statusCode;
   this.response = response;
   this.type = thrift.Thrift.TApplicationExceptionType.PROTOCOL_ERROR;
-  this.message = "Received a response with a bad HTTP status code: " + response.statusCode + '. Message: ' + message;
+  this.message = "Received a response with a bad HTTP status code: " + response.statusCode + '. Message: ' + (message || response.statusMessage);
 }
 util.inherits(THTTPException, thrift.Thrift.TApplicationException);
+
+function concatCookie(oldCookie, newCookie) {
+  return newCookie.reduce((cookies, cookie) => {
+    if (cookies.includes(cookie)) {
+      return cookies;
+    }
+
+    return cookies.concat(cookie);
+  }, oldCookie);
+}
