@@ -126,6 +126,10 @@ const removeRedundantTrailingCommaFromStatement = (statement) => {
 	return statement;
 } 
 
+const encodeStringLiteral = (str = '') => {
+	return str.replace(/(')/gi, '\\$1').replace(/\n/gi, '\\n');
+}
+
 module.exports = {
 	buildStatement,
 	getName,
@@ -137,4 +141,5 @@ module.exports = {
 	commentDeactivatedStatements,
 	commentDeactivatedInlineKeys,
 	removeRedundantTrailingCommaFromStatement,
+	encodeStringLiteral
 };

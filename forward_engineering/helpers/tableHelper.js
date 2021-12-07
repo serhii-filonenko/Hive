@@ -1,6 +1,15 @@
 'use strict'
 
-const { buildStatement, getName, getTab, indentString, replaceSpaceWithUnderscore, commentDeactivatedInlineKeys, removeRedundantTrailingCommaFromStatement } = require('./generalHelper');
+const {
+	buildStatement,
+	getName,
+	getTab,
+	indentString,
+	replaceSpaceWithUnderscore,
+	commentDeactivatedInlineKeys,
+	removeRedundantTrailingCommaFromStatement,
+	encodeStringLiteral,
+} = require('./generalHelper');
 const { getColumnsStatement, getColumnStatement, getColumns } = require('./columnHelper');
 const keyHelper = require('./keyHelper');
 const { dependencies } = require('./appDependencies');
@@ -23,7 +32,7 @@ const getCreateStatement = ({
 		(primaryKeyStatement, primaryKeyStatement)
 		(foreignKeyStatement, foreignKeyStatement)
 		(true, ')')
-		(comment, `COMMENT '${comment}'`)
+		(comment, `COMMENT '${encodeStringLiteral(comment)}'`)
 		(partitionedByKeys, `PARTITIONED BY (${partitionedByKeys})`)
 		(clusteredKeys, `CLUSTERED BY (${clusteredKeys})`)
 		(sortedKeys && clusteredKeys, `SORTED BY (${sortedKeys})`)

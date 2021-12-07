@@ -1,6 +1,6 @@
 'use strict'
 
-const { getTab, buildStatement, getName, replaceSpaceWithUnderscore } = require('./generalHelper');
+const { getTab, buildStatement, getName, replaceSpaceWithUnderscore, encodeStringLiteral } = require('./generalHelper');
 const schemaHelper = require('./jsonSchemaHelper');
 const { getItemByPath } = require('./jsonSchemaHelper');
 const { dependencies } = require('./appDependencies');
@@ -16,7 +16,7 @@ const getIndexStatement = ({
 		(withDeferredRebuild, 'WITH DEFERRED REBUILD')
 		(idxProperties, `IDXPROPERTIES ${idxProperties}`)
 		(inTable, inTable)
-		(comment, `COMMENT '${comment}'`)
+		(comment, `COMMENT '${encodeStringLiteral(comment)}'`)
 		(true, ';')
 		();
 };
