@@ -20,14 +20,14 @@ const setDependencies = ({ lodash }) => _ = lodash;
 const getCreateStatement = ({
 	dbName, tableName, isTemporary, isExternal, columnStatement, primaryKeyStatement, foreignKeyStatement, comment, partitionedByKeys, 
 	clusteredKeys, sortedKeys, numBuckets, skewedStatement, rowFormatStatement, storedAsStatement, location, tableProperties, selectStatement,
-	isActivated
+	isActivated, ifNotExist
 }) => {
 	const temporary = isTemporary ? 'TEMPORARY' : '';
 	const external = isExternal ? 'EXTERNAL' : '';
 	const tempExtStatement = ' ' + [temporary, external].filter(d => d).map(item => item + ' ').join('');
 	const fullTableName = dbName ? `${dbName}.${tableName}` : tableName;
 
-	return buildStatement(`CREATE${tempExtStatement}TABLE IF NOT EXISTS ${fullTableName} (`, isActivated)
+	return buildStatement(`CREATE${tempExtStatement}TABLE ${ifNotExist ? 'IF NOT EXISTS ' : ''}${fullTableName} (`, isActivated)
 		(columnStatement, columnStatement + (primaryKeyStatement ? ',' : ''))
 		(primaryKeyStatement, primaryKeyStatement)
 		(foreignKeyStatement, foreignKeyStatement)
@@ -218,6 +218,7 @@ const getTableStatement = (containerData, entityData, jsonSchema, definitions, f
 		tableProperties: tableData.tableProperties,
 		selectStatement: '',
 		isActivated: isTableActivated,
+		ifNotExist: tableData.ifNotExist,
 	});
 
 	return removeRedundantTrailingCommaFromStatement(tableStatement);

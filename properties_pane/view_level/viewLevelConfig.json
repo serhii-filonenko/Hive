@@ -123,6 +123,16 @@ making sure that you maintain a proper JSON format.
 				"hidden": true
 			},
 			{
+				"propertyName": "If not exists",
+				"propertyKeyword": "ifNotExist",
+				"propertyType": "checkbox"
+			},
+			{
+				"propertyName": "Or replace",
+				"propertyKeyword": "orReplace",
+				"propertyType": "checkbox"
+			},
+			{
 				"propertyName": "View on",
 				"propertyKeyword": "viewOnMulti",
 				"propertyType": "text",

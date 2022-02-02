@@ -78,6 +78,7 @@ class Visitor extends HiveParserVisitor {
         const _ = dependencies.lodash
         const [tableName, tableLikeName] = this.visit(ctx.tableName());
         const compositePartitionKey = this.visitWhenExists(ctx, 'tablePartition', []);
+        const ifNotExist = Boolean(ctx.ifNotExists());
         const { compositeClusteringKey, numBuckets, sortedByKey } = this.visitWhenExists(ctx, 'tableBuckets', {});
         const { skewedby, skewedOn, skewStoredAsDir } = this.visitWhenExists(ctx, 'tableSkewed', {});
         const tableRowFormat = this.visitWhenExists(ctx, 'tableRowFormat', {});
@@ -123,6 +124,7 @@ class Visitor extends HiveParserVisitor {
                         skewStoredAsDir,
                         location,
                         tableProperties,
+                        ifNotExist,
                         ...storedAsTable,
                         ...tableRowFormat,
                     },
@@ -296,6 +298,8 @@ class Visitor extends HiveParserVisitor {
             stop: ctx.selectStatementWithCTE().stop.stop + 1,
         };
         const { table } = this.visitWhenExists(ctx, 'selectStatementWithCTE', {});
+        const ifNotExist = Boolean(ctx.ifNotExists());
+        const orReplace = Boolean(ctx.orReplace());
 
         return {
             type: CREATE_VIEW_COMMAND,
@@ -306,6 +310,8 @@ class Visitor extends HiveParserVisitor {
             select,
             data: {
                 description,
+                ifNotExist,
+                orReplace,
             },
         };
     }
@@ -1013,12 +1019,14 @@ class Visitor extends HiveParserVisitor {
     visitCreateDatabaseStatement(ctx) {
         const name = this.visit(ctx.identifier());
         const description = this.visitWhenExists(ctx, 'databaseComment');
+        const ifNotExist = Boolean(ctx.ifNotExists());
 
         return {
             type: CREATE_BUCKET_COMMAND,
             name,
             data: {
                 description,
+                ifNotExist,
             },
         };
     }

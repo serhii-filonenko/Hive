@@ -124,6 +124,11 @@ making sure that you maintain a proper JSON format.
 				"propertyType": "text"
 			},
 			{
+				"propertyName": "If not exists",
+				"propertyKeyword": "ifNotExist",
+				"propertyType": "checkbox"
+			},
+			{
 				"propertyName": "Comments",
 				"propertyKeyword": "description",
 				"propertyTooltip": "comments",
