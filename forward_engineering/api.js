@@ -176,7 +176,7 @@ const buildScript = (needMinify) => (...statements) => {
 		return script;
 	}
 
-	return sqlFormatter.format(script, { indent: '    ' });
+	return sqlFormatter.format(script, { language: 'spark', indent: '    ', linesBetweenQueries: 2 });
 };
 
 const parseEntities = (entities, serializedItems) => {
