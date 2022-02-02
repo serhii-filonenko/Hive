@@ -2,6 +2,7 @@
 	"extension": "hql",
 	"filterName": "Hive Query Language",
 	"namePrefix": "Hive",
+	"mode": "sql",
 	"hasUpdateScript": false,
 	"level": {
 		"entity": true,
