@@ -11,6 +11,7 @@
 			"WRONG_CONNECTION": "Can not connect to the Hive instance"
 		},
 		"excludeDocKind": ["id"],
-		"connectionList": [ "name", "host", "port" ]
+		"connectionList": [ "name", "host", "port" ],
+		"helpUrl": "https://hackolade.com/help/ConnecttoaHiveinstance.html"
 	}
 ]

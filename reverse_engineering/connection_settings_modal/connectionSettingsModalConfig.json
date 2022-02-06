@@ -48,6 +48,36 @@
 		]
 	}, {
 		"lowerTab": "Authentication",
+		"helpUrl": [
+			{
+				"value": "https://hackolade.com/help/NonePlainSASL.html",
+				"dependency": {
+					"key": "authMechanism",
+					"value": "PLAIN"
+				}
+			},
+			{
+				"value": "https://hackolade.com/help/NoSASL.html",
+				"dependency": {
+					"key": "authMechanism",
+					"value": "NOSASL"
+				}
+			},
+			{
+				"value": "https://hackolade.com/help/LDAP1.html",
+				"dependency": {
+					"key": "authMechanism",
+					"value": "LDAP"
+				}
+			},
+			{
+				"value": "https://hackolade.com/help/Kerberos1.html",
+				"dependency": {
+					"key": "authMechanism",
+					"value": "GSSAPI"
+				}
+			}
+		],
 		"structure": [
 			{
 				"inputLabel": "Authentication type",
