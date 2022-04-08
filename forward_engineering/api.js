@@ -37,7 +37,7 @@ module.exports = {
 
 			if (data.isUpdateScript) {
 				const definitions = [modelDefinitions, internalDefinitions, externalDefinitions];
-				const scripts = getAlterScript(jsonSchema, definitions, data, app, needMinify);
+				const scripts = getAlterScript(jsonSchema, definitions, data, app, needMinify, sqlFormatter);
 				callback(null, scripts);
 				return;
 			}
@@ -108,7 +108,7 @@ module.exports = {
 			if (data.isUpdateScript) {
 				const deltaModelSchema = _.first(Object.values(jsonSchema)) || {};
 				const definitions = [modelDefinitions, internalDefinitions, externalDefinitions];
-				const scripts = getAlterScript(deltaModelSchema, definitions, data, app, needMinify);
+				const scripts = getAlterScript(deltaModelSchema, definitions, data, app, needMinify, sqlFormatter);
 				callback(null, scripts);
 				return;
 			}

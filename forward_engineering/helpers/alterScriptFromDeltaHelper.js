@@ -18,7 +18,6 @@ const {
 } = require('./alterScriptHelpers/alterViewHelper');
 const { DROP_STATEMENTS } = require('./constants');
 const { commentDeactivatedStatements } = require('./generalHelper');
-const sqlFormatter = require('sql-formatter');
 
 const getItems = (entity, nameProperty, modify) =>
 	[]
@@ -116,14 +115,14 @@ const getAlterViewsScripts = (schema, provider) => {
 	];
 };
 
-const getAlterScript = (schema, definitions, data, app, needMinify) => {
+const getAlterScript = (schema, definitions, data, app, needMinify, sqlFormatter) => {
 	const provider = require('./alterScriptHelpers/provider')(app);
 	const containersScripts = getAlterContainersScripts(schema, provider);
 	const collectionsScripts = getAlterCollectionsScripts(schema, definitions, provider);
 	const viewsScripts = getAlterViewsScripts(schema, provider);
 	let scripts = containersScripts.concat(collectionsScripts, viewsScripts).filter(Boolean).map(script => script.trim());
 	scripts = getCommentedDropScript(scripts, data);
-	return builds(scripts, needMinify);
+	return builds(scripts, needMinify, sqlFormatter);
 };
 
 const getCommentedDropScript = (scripts, data) => {
@@ -138,7 +137,7 @@ const getCommentedDropScript = (scripts, data) => {
 	});
 };
 
-const builds = (scripts, needMinify) => {
+const builds = (scripts, needMinify, sqlFormatter) => {
 	const prepareScripts = scripts.filter(Boolean).join('\n\n');
 	if (needMinify) {
 		return prepareScripts;
