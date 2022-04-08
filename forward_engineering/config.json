@@ -13,6 +13,17 @@
 			"id": "minify",
 			"value": false,
 			"name": "Minify"
+		},
+		{
+			"id": "applyDropStatements",
+			"value": false,
+			"forUpdate": true,
+			"name": "Apply Drop Statements",
+			"isDropInStatements": true
 		}
-	]
+	],
+	"compMode": {
+		"entity": true,
+		"container": true
+	}
 }
