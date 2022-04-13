@@ -6,6 +6,8 @@ const { getTableStatement } = require('./helpers/tableHelper');
 const { getIndexes } = require('./helpers/indexHelper');
 const { getViewScript } = require('./helpers/viewHelper');
 const { prepareName, replaceSpaceWithUnderscore, getName, getTab } = require('./helpers/generalHelper');
+const { getAlterScript } = require('./helpers/alterScriptFromDeltaHelper');
+const { DROP_STATEMENTS } = require('./helpers/constants');
 const foreignKeyHelper = require('./helpers/foreignKeyHelper');
 let _;
 const sqlFormatter = require('sql-formatter');
@@ -32,6 +34,13 @@ module.exports = {
 					(option) => option.id === 'minify'
 				) || {}
 			).value;
+
+			if (data.isUpdateScript) {
+				const definitions = [modelDefinitions, internalDefinitions, externalDefinitions];
+				const scripts = getAlterScript(jsonSchema, definitions, data, app, needMinify, sqlFormatter);
+				callback(null, scripts);
+				return;
+			}
 
 			callback(
 				null,
@@ -95,6 +104,15 @@ module.exports = {
 					(option) => option.id === 'minify'
 				) || {}
 			).value;
+
+			if (data.isUpdateScript) {
+				const deltaModelSchema = _.first(Object.values(jsonSchema)) || {};
+				const definitions = [modelDefinitions, internalDefinitions, externalDefinitions];
+				const scripts = getAlterScript(deltaModelSchema, definitions, data, app, needMinify, sqlFormatter);
+				callback(null, scripts);
+				return;
+			}
+
 			const viewsScripts = data.views.map(viewId => {
 				const viewSchema = JSON.parse(data.jsonSchema[viewId] || '{}');
 
@@ -166,6 +184,24 @@ module.exports = {
 			setTimeout(() => {
 				callback({ message: e.message, stack: e.stack });
 			}, 150);
+		}
+	},
+
+	isDropInStatements(data, logger, cb, app) {
+		try {
+			setDependencies(app);
+			
+			const callback = (error, script = '') => {
+				cb(error, DROP_STATEMENTS.some(statement => script.includes(statement)));
+			};
+			
+			if (data.level === 'container') {
+				this.generateContainerScript(data, logger, callback, app);
+			} else if (data.level === 'entity') {
+				this.generateScript(data, logger, callback, app);
+			}
+		}	catch (e) {
+			callback({ message: e.message, stack: e.stack });
 		}
 	},
 };

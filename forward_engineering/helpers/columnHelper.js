@@ -365,5 +365,6 @@ const getColumnConstraintsStaitment = ({ notNull, unique, check, defaultValue })
 module.exports = {
 	getColumns,
 	getColumnsStatement,
-	getColumnStatement
+	getColumnStatement,
+	getTypeByProperty
 };
