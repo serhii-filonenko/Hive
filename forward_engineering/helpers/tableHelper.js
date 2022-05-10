@@ -203,7 +203,8 @@ const getTableStatement = (containerData, entityData, jsonSchema, definitions, f
 		tableName,
 		isTemporary: tableData.temporaryTable,
 		isExternal: tableData.externalTable,
-		columnStatement: getColumnsStatement(removePartitions(columns, keyNames.compositePartitionKey), isTableActivated),
+		columnStatement: getColumnsStatement(removePartitions(columns, keyNames.compositePartitionKey), isTableActivated, jsonSchema.
+		disableNoValidate),
 		primaryKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? getPrimaryKeyStatement(keyNames.primaryKeys, deactivatedColumnNames, isTableActivated) : null,
 		foreignKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? foreignKeyStatement : null,
 		comment: tableData.description,
