@@ -344,8 +344,7 @@ const getColumnStatement = ({ name, type, comment, constraints, isActivated, isP
 	return commentDeactivatedStatements(`${name} ${type}${constraintsStaitment}${commentStatement}`, isColumnActivated);
 };
 
-const getColumnsStatement = (columns, isParentActivated, 
-	disableNoValidate) => {
+const getColumnsStatement = (columns, isParentActivated, disableNoValidate) => {
 	return Object.keys(columns).map((name) => {
 		return getColumnStatement(Object.assign(
 			{},
