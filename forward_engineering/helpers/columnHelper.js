@@ -295,6 +295,13 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 		if (!property.isActivated) {
 			deactivatedColumnNames.add(name);
 		}
+		const isPrimaryKey = property.primaryKey && 
+			!property.unique && 
+			!property.compositePrimaryKey && 
+			!property.compositeUniqueKey && 
+			!property.compositeClusteringKey;
+
+		const isUnique = property.unique && !property.compositeUniqueKey;
 		
 		return Object.assign(
 			{},
@@ -305,9 +312,12 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 				getDescription(definitions, property),
 				areColumnConstraintsAvailable ? {
 					notNull: isRequired,
-					unique: property.unique,
+					unique: isUnique,
 					check: property.check,
-					defaultValue: property.default
+					primaryKey: isPrimaryKey,
+					defaultValue: property.default,
+					rely: property.rely,
+					disableNoValidate: property.disableNoValidate,
 				} : {},
 				property.isActivated
 			)
@@ -337,33 +347,35 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 	return { columns, deactivatedColumnNames };
 };
 
-const getColumnStatement = ({ name, type, comment, constraints, isActivated, isParentActivated, disableNoValidate }) => {
+const getColumnStatement = ({ name, type, comment, constraints, isActivated, isParentActivated }) => {
 	const commentStatement = comment ? ` COMMENT '${encodeStringLiteral(comment)}'` : '';
-	const constraintsStaitment = constraints ? getColumnConstraintsStaitment({ ...constraints, disableNoValidate }) : '';
+	const constraintsStaitment = constraints ? getColumnConstraintsStaitment(constraints) : '';
 	const isColumnActivated = isParentActivated ? isActivated : true;
 	return commentDeactivatedStatements(`${name} ${type}${constraintsStaitment}${commentStatement}`, isColumnActivated);
 };
 
-const getColumnsStatement = (columns, isParentActivated, disableNoValidate) => {
+const getColumnsStatement = (columns, isParentActivated) => {
 	return Object.keys(columns).map((name) => {
 		return getColumnStatement(Object.assign(
 			{},
 			columns[name],
-			{ name, isParentActivated, disableNoValidate }
+			{ name, isParentActivated }
 		))
 	}).join(',\n');
 };
 
-const getColumnConstraintsStaitment = ({ notNull, unique, check, defaultValue, disableNoValidate }) => {
+const getColumnConstraintsStaitment = ({ notNull, unique, check, defaultValue, primaryKey, rely, disableNoValidate }) => {
+	const noValidateStatement = (prefix, rely) => prefix ? ` ${prefix} NOVALIDATE${rely ? ` ${rely}` : ''}`: '';
+	const getColStatement = (statement, noValidateStatement) => statement ? ` ${statement}${noValidateStatement}` : '';
 	const constraints = [
-		(notNull && !unique) ? 'NOT NULL' : '',
-		unique ? 'UNIQUE' : '',
-		defaultValue ? `DEFAULT ${defaultValue}` : '',
-		check ? `CHECK ${check}` : ''
+		(notNull && !unique) ? getColStatement('NOT NULL', noValidateStatement(disableNoValidate, rely)) : '',
+		unique ? getColStatement('UNIQUE', noValidateStatement('DISABLE', rely)) : '',
+		defaultValue ? getColStatement(`DEFAULT ${defaultValue}`, noValidateStatement(disableNoValidate, rely)) : '',
+		check ? getColStatement(`CHECK ${check}`, noValidateStatement(disableNoValidate, rely)) : '',
+		primaryKey ? getColStatement('PRIMARY KEY', noValidateStatement('DISABLE', rely)) : '',
 	].filter(Boolean);
-	const constraintsStaitment = constraints.join(' ');
 
-	return ` ${constraintsStaitment}${disableNoValidate ? ' DISABLE NOVALIDATE' : ''}`;
+	return constraints[0] || '';
 };
 
 const getDescription = (definitions, property) => {

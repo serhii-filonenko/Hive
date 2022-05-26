@@ -115,11 +115,24 @@ const getNameByPath = (idToNameHashTable, path) => {
 	return prepareName(name);
 };
 
-const getPrimaryKeys = (jsonSchema) => {
+const isPrimaryKey = column => {
+	if (column.compositeUniqueKey) {
+		return false;
+	} else if (column.unique) {
+		return false;
+	} else if (column.compositeClusteringKey) {
+		return false;
+	} else if (!column.primaryKey) {
+		return false;
+	}
+	return true;
+};
+
+const getPrimaryKeys = (jsonSchema, areColumnConstraintsAvailable) => {
 	const primaryKeys = [];
 
 	eachProperty(jsonSchema, [], (name, item, path) => {
-		if (item.primaryKey) {
+		if ((!areColumnConstraintsAvailable && isPrimaryKey(item)) || item.compositePrimaryKey) {
 			primaryKeys.push(path);
 		}
 	});

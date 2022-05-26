@@ -89,15 +89,18 @@ class Visitor extends HiveParserVisitor {
         const externalTable = Boolean(ctx.KW_EXTERNAL());
         const storedAsTable = this.visitWhenExists(ctx, 'tableFileFormat', {});
         const { database, table } = tableName;
-        const { properties, foreignKeys } = this.visitWhenExists(ctx, 'columnNameTypeOrConstraintList', {
+        const { properties, foreignKeys, tablePrimaryKeys } = this.visitWhenExists(ctx, 'columnNameTypeOrConstraintList', {
             properties: {},
             foreignKeys: [],
+            tablePrimaryKeys: [],
         });
         const tableForeignKeys = foreignKeys.map((constraint) => ({
             ...constraint,
             childDbName: database,
             childCollection: table,
         }));
+
+        const primaryKey = [{ compositePrimaryKey: tablePrimaryKeys }];
 
         return [
             {
@@ -125,6 +128,7 @@ class Visitor extends HiveParserVisitor {
                         location,
                         tableProperties,
                         ifNotExist,
+                        primaryKey,
                         ...storedAsTable,
                         ...tableRowFormat,
                     },
@@ -177,6 +181,7 @@ class Visitor extends HiveParserVisitor {
     visitTablePartition(ctx) {
         return this.visit(ctx.columnNameTypeConstraint());
     }
+    
 
     visitTableComment(ctx) {
         return getTextFromStringLiteral(ctx);
@@ -603,21 +608,30 @@ class Visitor extends HiveParserVisitor {
 
     visitColumnNameTypeOrConstraintList(ctx) {
         return this.visit(ctx.columnNameTypeOrConstraint()).reduce(
-            ({ properties, foreignKeys }, column) => {
+            ({ properties, foreignKeys, tablePrimaryKeys }, column) => {
                 if (!column) {
-                    return { properties, foreignKeys };
+                    return { properties, foreignKeys, tablePrimaryKeys };
                 }
                 if (column.isForeignKey) {
                     return {
                         foreignKeys: [...foreignKeys, column],
                         properties,
+                        tablePrimaryKeys,
                     };
                 }
 
                 if (column.isConstraint) {
+                    if (column.type === 'primary') {
+                        return {
+                            foreignKeys,
+                            properties,
+                            tablePrimaryKeys: [...(column.fields || [])]
+                        }
+                    }
                     return {
                         foreignKeys,
                         properties,
+                        tablePrimaryKeys,
                     };
                 }
 
@@ -629,9 +643,10 @@ class Visitor extends HiveParserVisitor {
                         [column.name]: column.type,
                     },
                     foreignKeys: [...foreignKeys, ...columnForeignKeys],
+                    tablePrimaryKeys,
                 };
             },
-            { properties: {}, foreignKeys: [] }
+            { properties: {}, foreignKeys: [], tablePrimaryKeys: [] }
         );
     }
 
@@ -909,8 +924,8 @@ class Visitor extends HiveParserVisitor {
     visitColumnConstraintType(ctx) {
         return {
             ...(Boolean(ctx.KW_NOT() && ctx.KW_NULL()) ? { required: true } : {}),
-            ...(Boolean((ctx.tableConstraintType() || {}).KW_UNIQUE) ? { unique: true } : {}),
-            ...(Boolean((ctx.tableConstraintType() || {}).KW_PRIMARY) ? { primaryKey: true } : {}),
+            ...(Boolean((ctx.tableConstraintType() || {}).KW_UNIQUE()) ? { unique: true } : {}),
+            ...(Boolean((ctx.tableConstraintType() || {}).KW_PRIMARY()) ? { primaryKey: true } : {}),
             ...(Boolean(ctx.KW_DEFAULT()) ? { default: this.visit(ctx.defaultVal()) } : {}),
             ...(Boolean(ctx.checkConstraint()) ? { check: this.visitWhenExists(ctx, 'checkConstraint', '') } : {}),
         };

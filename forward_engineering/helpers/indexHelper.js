@@ -57,7 +57,7 @@ const getIndexes = (containerData, entityData, jsonSchema, definitions) => {
 	const dbData = getTab(0, containerData);
 	const dbName = replaceSpaceWithUnderscore(getName(dbData));
 	const tableData = getTab(0, entityData);
-	const indexesData = getTab(1, entityData).SecIndxs || [];
+	const indexesData = getTab(2, entityData).SecIndxs || [];
 	const tableName = replaceSpaceWithUnderscore(getName(tableData));
 
 	return indexesData

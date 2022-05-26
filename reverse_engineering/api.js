@@ -348,9 +348,14 @@ module.exports = {
 										
 										return getPrimaryKeys(dbName, tableName)
 											.then(keys => {
-												keys.forEach(key => {
-													jsonSchema.properties[key.COLUMN_NAME].primaryKey = true;
-												});
+												keys = keys.map(key => key.COLUMN_NAME);
+												if (keys.length > 1) {
+													documentPackage.entityLevel.primaryKey = [{ compositePrimaryKey: keys }];
+												} else {
+													keys.forEach(key => {
+														jsonSchema.properties[key].primaryKey = true;
+													});
+												}
 
 												return jsonSchema;
 											})

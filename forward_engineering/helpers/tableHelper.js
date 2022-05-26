@@ -20,7 +20,7 @@ const setDependencies = ({ lodash }) => _ = lodash;
 const getCreateStatement = ({
 	dbName, tableName, isTemporary, isExternal, columnStatement, primaryKeyStatement, foreignKeyStatement, comment, partitionedByKeys, 
 	clusteredKeys, sortedKeys, numBuckets, skewedStatement, rowFormatStatement, storedAsStatement, location, tableProperties, selectStatement,
-	isActivated, ifNotExist
+	isActivated, ifNotExist, uniqueKeyStatement
 }) => {
 	const temporary = isTemporary ? 'TEMPORARY' : '';
 	const external = isExternal ? 'EXTERNAL' : '';
@@ -28,8 +28,9 @@ const getCreateStatement = ({
 	const fullTableName = dbName ? `${dbName}.${tableName}` : tableName;
 
 	return buildStatement(`CREATE${tempExtStatement}TABLE ${ifNotExist ? 'IF NOT EXISTS ' : ''}${fullTableName} (`, isActivated)
-		(columnStatement, columnStatement + (primaryKeyStatement ? ',' : ''))
-		(primaryKeyStatement, primaryKeyStatement)
+		(columnStatement, columnStatement + ((primaryKeyStatement || uniqueKeyStatement)  ? ',' : ''))
+		(primaryKeyStatement, primaryKeyStatement + (uniqueKeyStatement ? ',' : ''))
+		(uniqueKeyStatement, uniqueKeyStatement)
 		(foreignKeyStatement, foreignKeyStatement)
 		(true, ')')
 		(comment, `COMMENT '${encodeStringLiteral(comment)}'`)
@@ -47,21 +48,23 @@ const getCreateStatement = ({
 		();
 };
 
-const getPrimaryKeyStatement = (keysNames, deactivatedColumnNames, isParentItemActivated) => {
-	const getStatement = keys => `PRIMARY KEY (${keys}) DISABLE NOVALIDATE`;
-	
+const getPrimaryKeyStatement = (jsonSchema, keysNames, deactivatedColumnNames, isParentItemActivated) => {
+	const getStatement = (keys, rely) => `PRIMARY KEY (${keys}) DISABLE NOVALIDATE${rely}`;
+	const options = (jsonSchema.primaryKey || [])[0] || {};
+	const rely = options.rely ? ` ${options.rely}` : '';
+
 	if (!Array.isArray(keysNames) || !keysNames.length) {
 		return '';
 	}
 	if (!isParentItemActivated) {
-		return getStatement(keysNames.join(', '));
+		return getStatement(keysNames.join(', '), rely);
 	}
 
 	const { isAllKeysDeactivated, keysString } = commentDeactivatedInlineKeys(keysNames, deactivatedColumnNames);
 	if (isAllKeysDeactivated) {
-		return '-- ' + getStatement(keysString);
+		return '-- ' + getStatement(keysString, rely);
 	}
-	return getStatement(keysString);
+	return getStatement(keysString, rely);
 };
 
 const getClusteringKeys = (clusteredKeys, deactivatedColumnNames, isParentItemActivated) => {
@@ -112,7 +115,7 @@ const getPartitionKeyStatement = (keys, isParentActivated) => {
 
 const getPartitionsKeys = (columns, partitions) => {
 	return partitions.map(keyName => {
-		return Object.assign({}, columns[keyName] || { type: 'string' }, { name: keyName });
+		return Object.assign({}, columns[keyName] || { type: 'string' }, { name: keyName }, { constraints: {} });
 	}).filter(key => key);
 };
 
@@ -196,15 +199,16 @@ const getTableStatement = (containerData, entityData, jsonSchema, definitions, f
 	const isTableActivated = tableData.isActivated && (typeof container.isActivated === 'boolean' ? container.isActivated : true);
 	const tableName = replaceSpaceWithUnderscore(getName(tableData));
 	const { columns, deactivatedColumnNames } = getColumns(jsonSchema, areColumnConstraintsAvailable, definitions);
-	const keyNames = keyHelper.getKeyNames(tableData, jsonSchema, definitions);
+	const keyNames = keyHelper.getKeyNames(tableData, jsonSchema, definitions, areColumnConstraintsAvailable);
 
 	const tableStatement = getCreateStatement({
 		dbName,
 		tableName,
 		isTemporary: tableData.temporaryTable,
 		isExternal: tableData.externalTable,
-		columnStatement: getColumnsStatement(removePartitions(columns, keyNames.compositePartitionKey), isTableActivated, jsonSchema.disableNoValidate),
-		primaryKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? getPrimaryKeyStatement(keyNames.primaryKeys, deactivatedColumnNames, isTableActivated) : null,
+		columnStatement: getColumnsStatement(removePartitions(columns, keyNames.compositePartitionKey), isTableActivated),
+		primaryKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? getPrimaryKeyStatement(jsonSchema, keyNames.primaryKeys, deactivatedColumnNames, isTableActivated) : null,
+		uniqueKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? keyHelper.getUniqueKeyStatement(jsonSchema, deactivatedColumnNames, isTableActivated) : null,
 		foreignKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? foreignKeyStatement : null,
 		comment: tableData.description,
 		partitionedByKeys: getPartitionKeyStatement(getPartitionsKeys(columns, keyNames.compositePartitionKey, isTableActivated)),
