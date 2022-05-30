@@ -206,8 +206,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}
 								]
 							}
@@ -243,8 +252,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}]
 								}
 							}]
@@ -339,14 +357,24 @@ making sure that you maintain a proper JSON format.
 				"markdown": false
 			},
 			{
-				"propertyName": "No Validate",
-				"propertyKeyword": "disableNoValidate",
+				"propertyName": "Disable / Enable",
+				"propertyKeyword": "enableSpecification",
 				"propertyType": "select",
 				"defaultValue": "",
 				"options": [
 					"",
 					"DISABLE",
 					"ENABLE"
+				]
+			},
+			{
+				"propertyName": "No Validate",
+				"propertyKeyword": "noValidateSpecification",
+				"propertyType": "select",
+				"defaultValue": "",
+				"options": [
+					"",
+					"NOVALIDATE"
 				]
 			},
 			{
@@ -494,8 +522,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}
 								]
 							}
@@ -531,8 +568,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}]
 								}
 							}]
@@ -627,14 +673,24 @@ making sure that you maintain a proper JSON format.
 				"markdown": false
 			},
 			{
-				"propertyName": "No Validate",
-				"propertyKeyword": "disableNoValidate",
+				"propertyName": "Disable / Enable",
+				"propertyKeyword": "enableSpecification",
 				"propertyType": "select",
 				"defaultValue": "",
 				"options": [
 					"",
 					"DISABLE",
 					"ENABLE"
+				]
+			},
+			{
+				"propertyName": "No Validate",
+				"propertyKeyword": "noValidateSpecification",
+				"propertyType": "select",
+				"defaultValue": "",
+				"options": [
+					"",
+					"NOVALIDATE"
 				]
 			},
 			{
@@ -691,14 +747,24 @@ making sure that you maintain a proper JSON format.
 				"markdown": false
 			},
 			{
-				"propertyName": "No Validate",
-				"propertyKeyword": "disableNoValidate",
+				"propertyName": "Disable / Enable",
+				"propertyKeyword": "enableSpecification",
 				"propertyType": "select",
 				"defaultValue": "",
 				"options": [
 					"",
 					"DISABLE",
 					"ENABLE"
+				]
+			},
+			{
+				"propertyName": "No Validate",
+				"propertyKeyword": "noValidateSpecification",
+				"propertyType": "select",
+				"defaultValue": "",
+				"options": [
+					"",
+					"NOVALIDATE"
 				]
 			},
 			{
@@ -798,8 +864,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}
 								]
 							}
@@ -835,8 +910,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}]
 								}
 							}]
@@ -931,14 +1015,24 @@ making sure that you maintain a proper JSON format.
 				"markdown": false
 			},
 			{
-				"propertyName": "No Validate",
-				"propertyKeyword": "disableNoValidate",
+				"propertyName": "Disable / Enable",
+				"propertyKeyword": "enableSpecification",
 				"propertyType": "select",
 				"defaultValue": "",
 				"options": [
 					"",
 					"DISABLE",
 					"ENABLE"
+				]
+			},
+			{
+				"propertyName": "No Validate",
+				"propertyKeyword": "noValidateSpecification",
+				"propertyType": "select",
+				"defaultValue": "",
+				"options": [
+					"",
+					"NOVALIDATE"
 				]
 			},
 			{
@@ -1040,8 +1134,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}
 								]
 							}
@@ -1077,8 +1180,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}]
 								}
 							}]
@@ -1173,14 +1285,24 @@ making sure that you maintain a proper JSON format.
 				"markdown": false
 			},
 			{
-				"propertyName": "No Validate",
-				"propertyKeyword": "disableNoValidate",
+				"propertyName": "Disable / Enable",
+				"propertyKeyword": "enableSpecification",
 				"propertyType": "select",
 				"defaultValue": "",
 				"options": [
 					"",
 					"DISABLE",
 					"ENABLE"
+				]
+			},
+			{
+				"propertyName": "No Validate",
+				"propertyKeyword": "noValidateSpecification",
+				"propertyType": "select",
+				"defaultValue": "",
+				"options": [
+					"",
+					"NOVALIDATE"
 				]
 			},
 			{
@@ -1282,8 +1404,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}
 								]
 							}
@@ -1319,8 +1450,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}]
 								}
 							}]
@@ -1415,14 +1555,24 @@ making sure that you maintain a proper JSON format.
 				"markdown": false
 			},
 			{
-				"propertyName": "No Validate",
-				"propertyKeyword": "disableNoValidate",
+				"propertyName": "Disable / Enable",
+				"propertyKeyword": "enableSpecification",
 				"propertyType": "select",
 				"defaultValue": "",
 				"options": [
 					"",
 					"DISABLE",
 					"ENABLE"
+				]
+			},
+			{
+				"propertyName": "No Validate",
+				"propertyKeyword": "noValidateSpecification",
+				"propertyType": "select",
+				"defaultValue": "",
+				"options": [
+					"",
+					"NOVALIDATE"
 				]
 			},
 			{
@@ -1523,8 +1673,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}
 								]
 							}
@@ -1560,8 +1719,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}]
 								}
 							}]
@@ -1656,14 +1824,24 @@ making sure that you maintain a proper JSON format.
 				"markdown": false
 			},
 			{
-				"propertyName": "No Validate",
-				"propertyKeyword": "disableNoValidate",
+				"propertyName": "Disable / Enable",
+				"propertyKeyword": "enableSpecification",
 				"propertyType": "select",
 				"defaultValue": "",
 				"options": [
 					"",
 					"DISABLE",
 					"ENABLE"
+				]
+			},
+			{
+				"propertyName": "No Validate",
+				"propertyKeyword": "noValidateSpecification",
+				"propertyType": "select",
+				"defaultValue": "",
+				"options": [
+					"",
+					"NOVALIDATE"
 				]
 			},
 			{
@@ -1783,8 +1961,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}
 								]
 							}
@@ -1820,8 +2007,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}]
 								}
 							}]
@@ -1915,14 +2111,24 @@ making sure that you maintain a proper JSON format.
 				"markdown": false
 			},
 			{
-				"propertyName": "No Validate",
-				"propertyKeyword": "disableNoValidate",
+				"propertyName": "Disable / Enable",
+				"propertyKeyword": "enableSpecification",
 				"propertyType": "select",
 				"defaultValue": "",
 				"options": [
 					"",
 					"DISABLE",
 					"ENABLE"
+				]
+			},
+			{
+				"propertyName": "No Validate",
+				"propertyKeyword": "noValidateSpecification",
+				"propertyType": "select",
+				"defaultValue": "",
+				"options": [
+					"",
+					"NOVALIDATE"
 				]
 			},
 			{
@@ -2083,8 +2289,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}
 								]
 							}
@@ -2120,8 +2335,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}]
 								}
 							}]
@@ -2215,14 +2439,24 @@ making sure that you maintain a proper JSON format.
 				"markdown": false
 			},
 			{
-				"propertyName": "No Validate",
-				"propertyKeyword": "disableNoValidate",
+				"propertyName": "Disable / Enable",
+				"propertyKeyword": "enableSpecification",
 				"propertyType": "select",
 				"defaultValue": "",
 				"options": [
 					"",
 					"DISABLE",
 					"ENABLE"
+				]
+			},
+			{
+				"propertyName": "No Validate",
+				"propertyKeyword": "noValidateSpecification",
+				"propertyType": "select",
+				"defaultValue": "",
+				"options": [
+					"",
+					"NOVALIDATE"
 				]
 			},
 			{
@@ -2325,8 +2559,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}
 								]
 							}
@@ -2362,8 +2605,17 @@ making sure that you maintain a proper JSON format.
 										"value": true
 									},
 									{
-										"key": "compositeUniqueKey",
-										"value": false
+										"type": "or",
+										"values": [
+											{
+												"key": "compositeUniqueKey",
+												"value": false
+											},
+											{
+												"key": "compositeUniqueKey",
+												"exist": false
+											}
+										]
 									}]
 								}
 							}]
@@ -2457,14 +2709,24 @@ making sure that you maintain a proper JSON format.
 				"markdown": false
 			},
 			{
-				"propertyName": "No Validate",
-				"propertyKeyword": "disableNoValidate",
+				"propertyName": "Disable / Enable",
+				"propertyKeyword": "enableSpecification",
 				"propertyType": "select",
 				"defaultValue": "",
 				"options": [
 					"",
 					"DISABLE",
 					"ENABLE"
+				]
+			},
+			{
+				"propertyName": "No Validate",
+				"propertyKeyword": "noValidateSpecification",
+				"propertyType": "select",
+				"defaultValue": "",
+				"options": [
+					"",
+					"NOVALIDATE"
 				]
 			},
 			{

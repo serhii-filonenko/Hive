@@ -338,7 +338,8 @@ module.exports = {
 										const extendedTableInfo = hiveHelper.getDetailInfoFromExtendedTable(extendedTable);
 										const sample = documentPackage.documents[0];
 										documentPackage.entityLevel = entityLevelHelper.getEntityLevelData(tableName, tableInfo, extendedTableInfo);
-										const { columnToConstraints, notNullColumns } = hiveHelper.getTableColumnsConstraints(extendedTable);
+										const { columnToConstraints, notNullColumns, tableToConstraints } = hiveHelper.getTableConstraints(extendedTable);
+										documentPackage.entityLevel.uniqueKey = tableToConstraints.uniqueKey || [];
 										return {
 											jsonSchema: hiveHelper.getJsonSchemaCreator(...cursor.getTCLIService(), tableInfo)({ columns: extendedTable, tableColumnsConstraints: columnToConstraints, tableSchema, sample, notNullColumns }),
 											relationships: convertForeignKeysToRelationships(dbName, tableName, tableInfo.foreignKeys || [], data.appVersion)

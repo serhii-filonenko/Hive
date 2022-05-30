@@ -14,39 +14,6 @@ const sortedKey = getNameByPath => (keys, paths) => {
 	});
 };
 
-const findName = (keyId, properties) => {
-	return Object.keys(properties).find(name => properties[name].GUID === keyId);
-};
-
-const checkIfActivated = (keyId, properties) => {
-	return (Object.values(properties).find(prop => prop.GUID === keyId) || {})['isActivated'] || true;
-};
-
-const getKeys = (keys, jsonSchema) => {
-	return (keys || []).map(key => {
-		return {
-			name: findName(key.keyId, jsonSchema.properties),
-			isActivated: checkIfActivated(key.keyId, jsonSchema.properties),
-		};
-	});
-};
-
-const hydrateUniqueKeys = jsonSchema => {
-	const hydrate = options => ({
-			keyType: 'UNIQUE',
-			name: options['constraintName'] || '',
-			rely: options['rely'] ? ` ${options['rely']}` : '',
-	});
-
-	return (jsonSchema.uniqueKey || [])
-		.filter(uniqueKey => Boolean((uniqueKey.compositeUniqueKey || []).length))
-		.map(uniqueKey => ({
-			...hydrate(uniqueKey),
-			columns: getKeys(uniqueKey.compositeUniqueKey, jsonSchema),
-		}));
-
-};
-
 const getKeyNames = (tableData, jsonSchema, definitions, areColumnConstraintsAvailable) => {
 	const compositeClusteringKey = tableData.compositeClusteringKey || [];
 	const compositePartitionKey = tableData.compositePartitionKey || [];
@@ -75,34 +42,6 @@ const getKeyNames = (tableData, jsonSchema, definitions, areColumnConstraintsAva
 	};
 };
 
-const getUniqueKeyStatement = (jsonSchema, isParentItemActivated) => {
-	const getStatement = ({ keys, rely, name, keyType }) => `CONSTRAINT ${name} ${keyType} (${keys}) DISABLE NOVALIDATE${rely}`;
-	const getColumnsName = columns => columns.map(column => column.name).join(', ');
-	const hydratedUniqueKeys = hydrateUniqueKeys(jsonSchema);
-	const constraintsStatement = hydratedUniqueKeys.map(uniqueKey => {
-		const columns = uniqueKey.columns;
-		if (!Array.isArray(columns) || !columns.length) {
-			return '';
-		}
-
-		const columnsName = getColumnsName(columns);
-	
-		if (!isParentItemActivated) {
-			return getStatement({ keys: columnsName, ...uniqueKey });
-		}
-
-		const isActivatedColumnsName = getColumnsName(columns.filter(column => column.isActivated));
-
-		if (!Boolean(isActivatedColumnsName.length)) {
-			return '-- ' + getStatement({ keys: columnsName, ...uniqueKey });
-		}
-		return getStatement({ keys: isActivatedColumnsName, ...uniqueKey });
-	});
-
-	return constraintsStatement.join(',\n');
-};
-
 module.exports = {
 	getKeyNames,
-	getUniqueKeyStatement,
 };

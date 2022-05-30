@@ -10,6 +10,7 @@ const {
 	commentDeactivatedStatements,
 	encodeStringLiteral,
 } = require('./generalHelper');
+const { getConstraintOpts } = require('./constraintHelper');
 
 const getStructChild = (name, type, comment) => `${prepareName(name)}: ${type}` + (comment ? ` COMMENT '${encodeStringLiteral(comment)}'` : '');
 
@@ -213,7 +214,7 @@ const getUnionFromAllOf = getTypeByProperty => property => {
 			{},
 			types,
 			getUnionFromOneOf(getTypeByProperty)(subschema)
-		);
+		);  
 	}, {});
 };
 
@@ -317,7 +318,8 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 					primaryKey: isPrimaryKey,
 					defaultValue: property.default,
 					rely: property.rely,
-					disableNoValidate: property.disableNoValidate,
+					noValidateSpecification: property.noValidateSpecification,
+					enableSpecification: property.enableSpecification,
 				} : {},
 				property.isActivated
 			)
@@ -364,15 +366,16 @@ const getColumnsStatement = (columns, isParentActivated) => {
 	}).join(',\n');
 };
 
-const getColumnConstraintsStaitment = ({ notNull, unique, check, defaultValue, primaryKey, rely, disableNoValidate }) => {
-	const noValidateStatement = (prefix, rely) => prefix ? ` ${prefix} NOVALIDATE${rely ? ` ${rely}` : ''}`: '';
+const getColumnConstraintsStaitment = (constraint) => {
+	const { notNull, unique, check, defaultValue, primaryKey, rely, noValidateSpecification, enableSpecification } = constraint;
+	const noValidateStatement = enableSpecification => getConstraintOpts({ rely, enableSpecification, noValidateSpecification });
 	const getColStatement = (statement, noValidateStatement) => statement ? ` ${statement}${noValidateStatement}` : '';
 	const constraints = [
-		(notNull && !unique) ? getColStatement('NOT NULL', noValidateStatement(disableNoValidate, rely)) : '',
-		unique ? getColStatement('UNIQUE', noValidateStatement('DISABLE', rely)) : '',
-		defaultValue ? getColStatement(`DEFAULT ${defaultValue}`, noValidateStatement(disableNoValidate, rely)) : '',
-		check ? getColStatement(`CHECK ${check}`, noValidateStatement(disableNoValidate, rely)) : '',
-		primaryKey ? getColStatement('PRIMARY KEY', noValidateStatement('DISABLE', rely)) : '',
+		(notNull && !unique) ? getColStatement('NOT NULL', noValidateStatement(enableSpecification)) : '',
+		unique ? getColStatement('UNIQUE', noValidateStatement('DISABLE')) : '',
+		defaultValue ? getColStatement(`DEFAULT ${defaultValue}`, noValidateStatement(enableSpecification)) : '',
+		check ? getColStatement(`CHECK ${check}`, noValidateStatement(enableSpecification)) : '',
+		primaryKey ? getColStatement('PRIMARY KEY', noValidateStatement('DISABLE')) : '',
 	].filter(Boolean);
 
 	return constraints[0] || '';
@@ -392,5 +395,5 @@ module.exports = {
 	getColumns,
 	getColumnsStatement,
 	getColumnStatement,
-	getTypeByProperty
+	getTypeByProperty,
 };

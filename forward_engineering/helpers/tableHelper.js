@@ -12,6 +12,7 @@ const {
 } = require('./generalHelper');
 const { getColumnsStatement, getColumnStatement, getColumns } = require('./columnHelper');
 const keyHelper = require('./keyHelper');
+const constraintHelper = require('./constraintHelper');
 const { dependencies } = require('./appDependencies');
 
 let _;
@@ -26,9 +27,10 @@ const getCreateStatement = ({
 	const external = isExternal ? 'EXTERNAL' : '';
 	const tempExtStatement = ' ' + [temporary, external].filter(d => d).map(item => item + ' ').join('');
 	const fullTableName = dbName ? `${dbName}.${tableName}` : tableName;
+	const hasConstraint = primaryKeyStatement || uniqueKeyStatement;
 
 	return buildStatement(`CREATE${tempExtStatement}TABLE ${ifNotExist ? 'IF NOT EXISTS ' : ''}${fullTableName} (`, isActivated)
-		(columnStatement, columnStatement + ((primaryKeyStatement || uniqueKeyStatement)  ? ',' : ''))
+		(columnStatement, columnStatement + (hasConstraint  ? ',' : ''))
 		(primaryKeyStatement, primaryKeyStatement + (uniqueKeyStatement ? ',' : ''))
 		(uniqueKeyStatement, uniqueKeyStatement)
 		(foreignKeyStatement, foreignKeyStatement)
@@ -49,22 +51,23 @@ const getCreateStatement = ({
 };
 
 const getPrimaryKeyStatement = (jsonSchema, keysNames, deactivatedColumnNames, isParentItemActivated) => {
-	const getStatement = (keys, rely) => `PRIMARY KEY (${keys}) DISABLE NOVALIDATE${rely}`;
+	const getStatement = (keys, constraintOptsStatement) => `PRIMARY KEY (${keys})${constraintOptsStatement}`;
 	const options = (jsonSchema.primaryKey || [])[0] || {};
-	const rely = options.rely ? ` ${options.rely}` : '';
+	const { rely, noValidateSpecification } = options;
+	const constraintOptsStatement = constraintHelper.getConstraintOpts({ noValidateSpecification, rely, enableSpecification: 'DISABLE' })
 
 	if (!Array.isArray(keysNames) || !keysNames.length) {
 		return '';
 	}
 	if (!isParentItemActivated) {
-		return getStatement(keysNames.join(', '), rely);
+		return getStatement(keysNames.join(', '), constraintOptsStatement);
 	}
 
 	const { isAllKeysDeactivated, keysString } = commentDeactivatedInlineKeys(keysNames, deactivatedColumnNames);
 	if (isAllKeysDeactivated) {
-		return '-- ' + getStatement(keysString, rely);
+		return '-- ' + getStatement(keysString, constraintOptsStatement);
 	}
-	return getStatement(keysString, rely);
+	return getStatement(keysString, constraintOptsStatement);
 };
 
 const getClusteringKeys = (clusteredKeys, deactivatedColumnNames, isParentItemActivated) => {
@@ -208,7 +211,7 @@ const getTableStatement = (containerData, entityData, jsonSchema, definitions, f
 		isExternal: tableData.externalTable,
 		columnStatement: getColumnsStatement(removePartitions(columns, keyNames.compositePartitionKey), isTableActivated),
 		primaryKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? getPrimaryKeyStatement(jsonSchema, keyNames.primaryKeys, deactivatedColumnNames, isTableActivated) : null,
-		uniqueKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? keyHelper.getUniqueKeyStatement(jsonSchema, deactivatedColumnNames, isTableActivated) : null,
+		uniqueKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? constraintHelper.getUniqueKeyStatement(jsonSchema, deactivatedColumnNames, isTableActivated) : null,
 		foreignKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? foreignKeyStatement : null,
 		comment: tableData.description,
 		partitionedByKeys: getPartitionKeyStatement(getPartitionsKeys(columns, keyNames.compositePartitionKey, isTableActivated)),

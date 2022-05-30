@@ -483,12 +483,30 @@ making sure that you maintain a proper JSON format.
 									"value": true
 								},
 								{
-									"key": "compositePrimaryKey",
-									"value": false
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
 								},
 								{
-									"key": "compositeUniqueKey",
-									"value": false
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
 								}
 							]
 						}
@@ -501,6 +519,16 @@ making sure that you maintain a proper JSON format.
 						"propertyType": "primaryKeySetter",
 						"abbr": "pk",
 						"attributeList": []
+					},
+					{
+						"propertyName": "No Validate",
+						"propertyKeyword": "noValidateSpecification",
+						"propertyType": "select",
+						"defaultValue": "",
+						"options": [
+							"",
+							"NOVALIDATE"
+						]
 					},
 					{
 						"propertyName": "Rely",
@@ -532,6 +560,16 @@ making sure that you maintain a proper JSON format.
 						"propertyKeyword": "compositeUniqueKey",
 						"propertyType": "primaryKeySetter",
 						"abbr": "uk"
+					},
+					{
+						"propertyName": "No Validate",
+						"propertyKeyword": "noValidateSpecification",
+						"propertyType": "select",
+						"defaultValue": "",
+						"options": [
+							"",
+							"NOVALIDATE"
+						]
 					},
 					{
 						"propertyName": "Rely",
