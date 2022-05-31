@@ -369,11 +369,6 @@ making sure that you maintain a proper JSON format.
 				"abbr": "pk"
 			}, 
 			{
-				"propertyName": "Disable No Validate",
-				"propertyKeyword": "disableNoValidate",
-				"propertyType": "checkbox"
-			},
-			{
 				"propertyName": "Clustering key",
 				"propertyKeyword": "compositeClusteringKey",
 				"propertyType": "primaryKeySetter",
@@ -436,6 +431,160 @@ making sure that you maintain a proper JSON format.
 			}
 		],
 		"columnsRatio": [4.1, 5]
+	},
+	{
+		"lowerTab": "Composite keys",
+		"structure": [
+			{
+				"propertyName": "Primary key",
+				"propertyType": "group",
+				"groupItemLimit": 1,
+				"propertyKeyword": "primaryKey",
+				"propertyTooltip": {
+					"disabled": [
+						{
+							"tooltip": "Remove the existing single column primary key definition prior to unlock the possibility to create a composite primary key definition for this table",
+							"dependency": {
+								"type": "and",
+								"values": [
+									{
+										"level": "children",
+										"key": "primaryKey",
+										"value": true
+									},
+									{
+										"type": "not",
+										"values": {
+											"level": "children",
+											"key": "compositePrimaryKey",
+											"value": true
+										}
+									}
+								]
+							}
+						}, 
+						{
+							"tooltip": "Remove or update the existing composite primary key definition prior to unlock the possibility to create a new composite primary key definition for this table",
+							"dependency": {
+								"key": "primaryKey",
+								"minLength": 1
+							}
+						}
+					]
+				},
+				"disabledOnCondition": [
+					{
+						"level": "children",
+						"value": {
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"structure": [
+					{
+						"propertyName": "Key",
+						"propertyKeyword": "compositePrimaryKey",
+						"propertyType": "primaryKeySetter",
+						"abbr": "pk",
+						"attributeList": []
+					},
+					{
+						"propertyName": "No Validate",
+						"propertyKeyword": "noValidateSpecification",
+						"propertyType": "select",
+						"defaultValue": "",
+						"options": [
+							"",
+							"NOVALIDATE"
+						]
+					},
+					{
+						"propertyName": "Rely",
+						"propertyKeyword": "rely",
+						"propertyType": "select",
+						"defaultValue": "",
+						"options": [
+							"",
+							"RELY",
+							"NORELY"
+						]
+					}
+				]
+			},
+			{
+				"propertyName": "Unique key",
+				"propertyType": "group",
+				"propertyKeyword": "uniqueKey",
+				"propertyTooltip": "",
+				"structure": [
+					{
+						"propertyName": "Constraint name",
+						"propertyKeyword": "constraintName",
+						"propertyTooltip": "",
+						"propertyType": "text"
+					},
+					{
+						"propertyName": "Key",
+						"propertyKeyword": "compositeUniqueKey",
+						"propertyType": "primaryKeySetter",
+						"abbr": "uk"
+					},
+					{
+						"propertyName": "No Validate",
+						"propertyKeyword": "noValidateSpecification",
+						"propertyType": "select",
+						"defaultValue": "",
+						"options": [
+							"",
+							"NOVALIDATE"
+						]
+					},
+					{
+						"propertyName": "Rely",
+						"propertyKeyword": "rely",
+						"propertyType": "select",
+						"defaultValue": "",
+						"options": [
+							"",
+							"RELY",
+							"NORELY"
+						]
+					}
+				]
+			}
+		]
 	},
 	{
 		"lowerTab": "Secondary Indexes",

@@ -10,6 +10,7 @@ const {
 	commentDeactivatedStatements,
 	encodeStringLiteral,
 } = require('./generalHelper');
+const { getConstraintOpts } = require('./constraintHelper');
 
 const getStructChild = (name, type, comment) => `${prepareName(name)}: ${type}` + (comment ? ` COMMENT '${encodeStringLiteral(comment)}'` : '');
 
@@ -213,7 +214,7 @@ const getUnionFromAllOf = getTypeByProperty => property => {
 			{},
 			types,
 			getUnionFromOneOf(getTypeByProperty)(subschema)
-		);
+		);  
 	}, {});
 };
 
@@ -295,6 +296,13 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 		if (!property.isActivated) {
 			deactivatedColumnNames.add(name);
 		}
+		const isPrimaryKey = property.primaryKey && 
+			!property.unique && 
+			!property.compositePrimaryKey && 
+			!property.compositeUniqueKey && 
+			!property.compositeClusteringKey;
+
+		const isUnique = property.unique && !property.compositeUniqueKey;
 		
 		return Object.assign(
 			{},
@@ -305,9 +313,13 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 				getDescription(definitions, property),
 				areColumnConstraintsAvailable ? {
 					notNull: isRequired,
-					unique: property.unique,
+					unique: isUnique,
 					check: property.check,
-					defaultValue: property.default
+					primaryKey: isPrimaryKey,
+					defaultValue: property.default,
+					rely: property.rely,
+					noValidateSpecification: property.noValidateSpecification,
+					enableSpecification: property.enableSpecification,
 				} : {},
 				property.isActivated
 			)
@@ -337,33 +349,36 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 	return { columns, deactivatedColumnNames };
 };
 
-const getColumnStatement = ({ name, type, comment, constraints, isActivated, isParentActivated, disableNoValidate }) => {
+const getColumnStatement = ({ name, type, comment, constraints, isActivated, isParentActivated }) => {
 	const commentStatement = comment ? ` COMMENT '${encodeStringLiteral(comment)}'` : '';
-	const constraintsStaitment = constraints ? getColumnConstraintsStaitment({ ...constraints, disableNoValidate }) : '';
+	const constraintsStaitment = constraints ? getColumnConstraintsStaitment(constraints) : '';
 	const isColumnActivated = isParentActivated ? isActivated : true;
 	return commentDeactivatedStatements(`${name} ${type}${constraintsStaitment}${commentStatement}`, isColumnActivated);
 };
 
-const getColumnsStatement = (columns, isParentActivated, disableNoValidate) => {
+const getColumnsStatement = (columns, isParentActivated) => {
 	return Object.keys(columns).map((name) => {
 		return getColumnStatement(Object.assign(
 			{},
 			columns[name],
-			{ name, isParentActivated, disableNoValidate }
+			{ name, isParentActivated }
 		))
 	}).join(',\n');
 };
 
-const getColumnConstraintsStaitment = ({ notNull, unique, check, defaultValue, disableNoValidate }) => {
+const getColumnConstraintsStaitment = (constraint) => {
+	const { notNull, unique, check, defaultValue, primaryKey, rely, noValidateSpecification, enableSpecification } = constraint;
+	const noValidateStatement = enableSpecification => getConstraintOpts({ rely, enableSpecification, noValidateSpecification });
+	const getColStatement = (statement, noValidateStatement) => statement ? ` ${statement}${noValidateStatement}` : '';
 	const constraints = [
-		(notNull && !unique) ? 'NOT NULL' : '',
-		unique ? 'UNIQUE' : '',
-		defaultValue ? `DEFAULT ${defaultValue}` : '',
-		check ? `CHECK ${check}` : ''
+		(notNull && !unique) ? getColStatement('NOT NULL', noValidateStatement(enableSpecification)) : '',
+		unique ? getColStatement('UNIQUE', noValidateStatement('DISABLE')) : '',
+		defaultValue ? getColStatement(`DEFAULT ${defaultValue}`, noValidateStatement(enableSpecification)) : '',
+		check ? getColStatement(`CHECK ${check}`, noValidateStatement(enableSpecification)) : '',
+		primaryKey ? getColStatement('PRIMARY KEY', noValidateStatement('DISABLE')) : '',
 	].filter(Boolean);
-	const constraintsStaitment = constraints.join(' ');
 
-	return ` ${constraintsStaitment}${disableNoValidate ? ' DISABLE NOVALIDATE' : ''}`;
+	return constraints[0] || '';
 };
 
 const getDescription = (definitions, property) => {
@@ -380,5 +395,5 @@ module.exports = {
 	getColumns,
 	getColumnsStatement,
 	getColumnStatement,
-	getTypeByProperty
+	getTypeByProperty,
 };

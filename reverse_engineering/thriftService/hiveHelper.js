@@ -500,48 +500,96 @@ const getDetailInfoFromExtendedTable = (extendedTable) => {
 	}
 };
 
-const getTableColumnsConstraints = (extendedTable = []) => {
+const findConstraint = (extendedTable, constraintStartWith) => {
+	const constraint = extendedTable.map(item => {
+		if (item.data_type.startsWith(constraintStartWith)) {
+			return item.data_type;
+		} else if (item.col_name.startsWith(constraintStartWith)) {
+			return item.col_name;
+		}
+		return '';
+	}).filter(Boolean);
+	return constraint[0];
+};
+
+const getTableConstraints = (extendedTable = []) => {
 	const columnToConstraints = {};
-	const uniqueConstraint = extendedTable.find(item => item.data_type.startsWith('Unique Constraints'));
+	const tableToConstraints = {};
+	const uniqueConstraint = findConstraint(extendedTable, 'Unique Constraints');
 	if (uniqueConstraint) {
-		setBooleanConstraint(uniqueConstraint.data_type, 'unique', columnToConstraints);
+		setConstraints({ 
+			constraintString: uniqueConstraint,
+			constraintKeyword: 'unique', 
+			columnToConstraints, 
+			tableConstraintKeyword: 'uniqueKey',
+			tableColumnKeyword: 'compositeUniqueKey',
+			tableToConstraints
+		});
 	}
 
-	const notNullConstraint = extendedTable.find(item => item.col_name.startsWith('Not Null Constraints'));
+	const notNullConstraint = findConstraint(extendedTable, 'Not Null Constraints');
 	let notNullColumns = [];
 	if (notNullConstraint) {
-		notNullColumns = getConstraintColumeNames(notNullConstraint.col_name);
+		notNullColumns = getConstraintColumnNames(notNullConstraint);
 	}
 
-	const checkConstraint = extendedTable.find(item => item.col_name.startsWith('Check Constraints'));
+	const checkConstraint = findConstraint(extendedTable, 'Check Constraints');
 	if (checkConstraint) {
 		setConstraintWithValue(
-			checkConstraint.col_name,
+			checkConstraint,
 			'check',
 			/Column Name: (.*?), Check Expression : (.*?)\)}/g,
 			columnToConstraints
 		);
 	}
 
-	const defaultConstraint = extendedTable.find(item => item.col_name.startsWith('Default Constraints'));
+	const defaultConstraint = findConstraint(extendedTable, 'Default Constraints');
 	if (defaultConstraint) {
 		setConstraintWithValue(
-			defaultConstraint.col_name,
+			defaultConstraint,
 			'default',
 			/Column Name: (.*?), Default Value: (.*?)\)}/g,
 			columnToConstraints
 		);
 	}
 
-	return { columnToConstraints, notNullColumns };
+	return { columnToConstraints, notNullColumns, tableToConstraints };
 }
 
-const getConstraintColumeNames = (constraintString) => {
+const getConstraintColumnNames = (constraintString) => {
 	return Array.from(constraintString.matchAll(/Column Name: (.*?)[,}]/g)).map(item => item[1]);
 }
 
+const getConstraints = constraintString => {
+	return Array.from(constraintString.matchAll(/{Constraint Name: (?<constraintName>\S+?),(?<columnsConstraint>[^}]+?)}/g))
+		.map(constraint => ({constraintName: constraint.groups.constraintName, columnsConstraint: constraint.groups.columnsConstraint}));
+};
+
+const setConstraints = ({ 
+	constraintString, 
+	constraintKeyword, 
+	columnToConstraints, 
+	tableToConstraints, 
+	tableConstraintKeyword, 
+	tableColumnKeyword 
+}) => {
+	const constraints = getConstraints(constraintString);
+	constraints.forEach(({ constraintName, columnsConstraint }) => {
+		const constraintColumnNames = getConstraintColumnNames(columnsConstraint);
+		if (constraintColumnNames.length > 1) {
+			const newConstraint = {
+				constraintName,
+				[tableColumnKeyword]: constraintColumnNames
+			}
+			tableToConstraints[tableConstraintKeyword] = [...(tableToConstraints?.[tableConstraintKeyword] || []), newConstraint];
+		} else {
+			setBooleanConstraint(columnsConstraint, constraintKeyword, columnToConstraints);
+		}
+	});
+};
+
 const setBooleanConstraint = (constraintString, constraintKeyword, columnToConstraints) => {
-	const columnsNames = getConstraintColumeNames(constraintString);
+	const columnsNames = getConstraintColumnNames(constraintString);
 	columnsNames.forEach(name => {
 		columnToConstraints[name] = Object.assign({}, columnToConstraints[name], { [constraintKeyword]: true });
 	});
@@ -561,5 +609,5 @@ module.exports = {
 	getJsonSchemaCreator,
 	getFormattedTable,
 	getDetailInfoFromExtendedTable,
-	getTableColumnsConstraints
+	getTableConstraints
 };

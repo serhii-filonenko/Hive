@@ -80,7 +80,7 @@ const hydrateAddIndexes = (entity, SecIndxs, properties, definitions) => {
 	const compMod = _.get(entity, 'role.compMod', {});
 	const entityData = _.get(entity, 'role', {});
 	const containerData = { name: getContainerName(compMod) };
-	return [[containerData], [entityData, { SecIndxs }], { ...entityData, properties }, definitions];
+	return [[containerData], [entityData, {}, { SecIndxs }], { ...entityData, properties }, definitions];
 };
 
 const hydrateIndex = (entity, properties, definitions) => {
