@@ -561,8 +561,8 @@ const getConstraintColumnNames = (constraintString) => {
 }
 
 const getConstraints = constraintString => {
-	return Array.from(constraintString.matchAll(/{Constraint Name: (?<constraintName>\S+?),(?<columnNames>[^}]+?)}/g))
-		.map(constraint => ({constraintName: constraint.groups.constraintName, columnNames: constraint.groups.columnNames}));
+	return Array.from(constraintString.matchAll(/{Constraint Name: (?<constraintName>\S+?),(?<columnsConstraint>[^}]+?)}/g))
+		.map(constraint => ({constraintName: constraint.groups.constraintName, columnsConstraint: constraint.groups.columnsConstraint}));
 };
 
 const setConstraints = ({ 
@@ -574,8 +574,8 @@ const setConstraints = ({
 	tableColumnKeyword 
 }) => {
 	const constraints = getConstraints(constraintString);
-	constraints.forEach(({ constraintName, columnNames }) => {
-		const constraintColumnNames = getConstraintColumnNames(columnNames);
+	constraints.forEach(({ constraintName, columnsConstraint }) => {
+		const constraintColumnNames = getConstraintColumnNames(columnsConstraint);
 		if (constraintColumnNames.length > 1) {
 			const newConstraint = {
 				constraintName,
@@ -583,7 +583,7 @@ const setConstraints = ({
 			}
 			tableToConstraints[tableConstraintKeyword] = [...(tableToConstraints?.[tableConstraintKeyword] || []), newConstraint];
 		} else {
-			setBooleanConstraint(columnNames, constraintKeyword, columnToConstraints);
+			setBooleanConstraint(columnsConstraint, constraintKeyword, columnToConstraints);
 		}
 	});
 };
