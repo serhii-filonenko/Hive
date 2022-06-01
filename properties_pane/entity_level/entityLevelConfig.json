@@ -666,5 +666,62 @@ making sure that you maintain a proper JSON format.
 				}
 			]
 		}]
+	},
+	{
+		"lowerTab": "Check Constraints",
+		"structure": [{
+			"propertyName": "Check Constraint",
+			"propertyType": "group",
+			"propertyKeyword": "chkConstr",
+			"propertyTooltip": "",
+			"structure": [
+				{
+					"propertyName": "Name",
+					"propertyKeyword": "constraintName",
+					"propertyTooltip": "",
+					"propertyType": "text"
+				},
+				{
+					"propertyName": "Expression",
+					"propertyKeyword": "checkExpression",
+					"propertyTooltip": "Expression",
+					"propertyType": "details",
+					"template": "textarea",
+					"markdown": false
+				},
+				{
+					"propertyName": "Disable / Enable",
+					"propertyKeyword": "enableSpecification",
+					"propertyType": "select",
+					"defaultValue": "",
+					"options": [
+						"",
+						"DISABLE",
+						"ENABLE"
+					]
+				},
+				{
+					"propertyName": "No Validate",
+					"propertyKeyword": "noValidateSpecification",
+					"propertyType": "select",
+					"defaultValue": "",
+					"options": [
+						"",
+						"NOVALIDATE"
+					]
+				},
+				{
+					"propertyName": "Rely",
+					"propertyKeyword": "rely",
+					"propertyType": "select",
+					"defaultValue": "",
+					"options": [
+						"",
+						"RELY",
+						"NORELY"
+					]
+				}
+			]
+		}]
 	}
 ]
