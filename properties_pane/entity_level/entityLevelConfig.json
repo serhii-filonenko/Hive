@@ -552,6 +552,7 @@ making sure that you maintain a proper JSON format.
 					{
 						"propertyName": "Constraint name",
 						"propertyKeyword": "constraintName",
+						"requiredProperty": true,
 						"propertyTooltip": "",
 						"propertyType": "text"
 					},
@@ -678,6 +679,7 @@ making sure that you maintain a proper JSON format.
 				{
 					"propertyName": "Name",
 					"propertyKeyword": "constraintName",
+					"requiredProperty": true,
 					"propertyTooltip": "",
 					"propertyType": "text"
 				},
@@ -685,6 +687,7 @@ making sure that you maintain a proper JSON format.
 					"propertyName": "Expression",
 					"propertyKeyword": "checkExpression",
 					"propertyTooltip": "Expression",
+					"requiredProperty": true,
 					"propertyType": "details",
 					"template": "textarea",
 					"markdown": false
