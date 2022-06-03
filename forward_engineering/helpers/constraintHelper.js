@@ -47,8 +47,8 @@ const getUniqueKeyStatement = (jsonSchema, isParentItemActivated) => {
 	const hydratedUniqueKeys = hydrateUniqueKeys(jsonSchema);
 
 	const constraintsStatement = hydratedUniqueKeys.map(uniqueKey => {
-		const { columns, rely, noValidateSpecification, name } = uniqueKey
-		if (!Array.isArray(columns) || !columns.length) {
+		const { columns, rely, noValidateSpecification, name } = uniqueKey;
+		if (!Array.isArray(columns) || !columns.length || !name) {
 			return '';
 		}
 		
@@ -67,7 +67,7 @@ const getUniqueKeyStatement = (jsonSchema, isParentItemActivated) => {
 		return getStatement({ keys: isActivatedColumnsName, name, constraintOptsStatement });
 	});
 
-	return constraintsStatement.join(',\n');
+	return constraintsStatement.filter(Boolean).join(',\n');
 };
 
 const getCheckConstraint = jsonSchema => {
@@ -77,11 +77,13 @@ const getCheckConstraint = jsonSchema => {
 	const checkConstraint = checks.map(check => {
 		const { constraintName, rely, noValidateSpecification, enableSpecification, checkExpression } = check || {};
 		const constraintOptsStatement = getConstraintOpts({ noValidateSpecification, enableSpecification, rely });
-
+		if (!constraintName || !checkExpression) {
+			return '';
+		}
 		return createCheckStatement({ constraintName, checkExpression, constraintOptsStatement });
 	});
 
-	return checkConstraint.join(',\n');
+	return checkConstraint.filter(Boolean).join(',\n');
 };
 
 module.exports = {

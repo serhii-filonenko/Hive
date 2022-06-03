@@ -31,7 +31,7 @@ const getCreateStatement = ({
 
 	return buildStatement(`CREATE${tempExtStatement}TABLE ${ifNotExist ? 'IF NOT EXISTS ' : ''}${fullTableName} (`, isActivated)
 		(columnStatement, columnStatement + (hasConstraint  ? ',' : ''))
-		(primaryKeyStatement, primaryKeyStatement + (uniqueKeyStatement ? ',' : ''))
+		(primaryKeyStatement, primaryKeyStatement + (uniqueKeyStatement || checkStatement ? ',' : ''))
 		(uniqueKeyStatement, uniqueKeyStatement + (checkStatement ? ',' : ''))
 		(checkStatement, checkStatement)
 		(foreignKeyStatement, foreignKeyStatement)
