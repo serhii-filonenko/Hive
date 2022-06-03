@@ -365,7 +365,48 @@ making sure that you maintain a proper JSON format.
 					"",
 					"DISABLE",
 					"ENABLE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "No Validate",
@@ -375,7 +416,118 @@ making sure that you maintain a proper JSON format.
 				"options": [
 					"",
 					"NOVALIDATE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "Rely",
@@ -386,7 +538,118 @@ making sure that you maintain a proper JSON format.
 					"",
 					"RELY",
 					"NORELY"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			"dependencies",
 			"foreignCollection",
@@ -681,7 +944,48 @@ making sure that you maintain a proper JSON format.
 					"",
 					"DISABLE",
 					"ENABLE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "No Validate",
@@ -691,7 +995,118 @@ making sure that you maintain a proper JSON format.
 				"options": [
 					"",
 					"NOVALIDATE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "Rely",
@@ -702,7 +1117,118 @@ making sure that you maintain a proper JSON format.
 					"",
 					"RELY",
 					"NORELY"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			"dependencies",
 			"foreignCollection",
@@ -755,7 +1281,48 @@ making sure that you maintain a proper JSON format.
 					"",
 					"DISABLE",
 					"ENABLE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "No Validate",
@@ -765,7 +1332,48 @@ making sure that you maintain a proper JSON format.
 				"options": [
 					"",
 					"NOVALIDATE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "Rely",
@@ -776,7 +1384,48 @@ making sure that you maintain a proper JSON format.
 					"",
 					"RELY",
 					"NORELY"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						}
+					]
+				}
 			},
 			"dependencies",
 			"sample",
@@ -1023,7 +1672,48 @@ making sure that you maintain a proper JSON format.
 					"",
 					"DISABLE",
 					"ENABLE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "No Validate",
@@ -1033,7 +1723,118 @@ making sure that you maintain a proper JSON format.
 				"options": [
 					"",
 					"NOVALIDATE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "Rely",
@@ -1044,7 +1845,118 @@ making sure that you maintain a proper JSON format.
 					"",
 					"RELY",
 					"NORELY"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			"dependencies",
 			{
@@ -1293,7 +2205,48 @@ making sure that you maintain a proper JSON format.
 					"",
 					"DISABLE",
 					"ENABLE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "No Validate",
@@ -1303,7 +2256,118 @@ making sure that you maintain a proper JSON format.
 				"options": [
 					"",
 					"NOVALIDATE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "Rely",
@@ -1314,7 +2378,118 @@ making sure that you maintain a proper JSON format.
 					"",
 					"RELY",
 					"NORELY"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			"dependencies",
 			"sample",
@@ -1563,7 +2738,48 @@ making sure that you maintain a proper JSON format.
 					"",
 					"DISABLE",
 					"ENABLE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "No Validate",
@@ -1573,7 +2789,118 @@ making sure that you maintain a proper JSON format.
 				"options": [
 					"",
 					"NOVALIDATE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "Rely",
@@ -1584,7 +2911,118 @@ making sure that you maintain a proper JSON format.
 					"",
 					"RELY",
 					"NORELY"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			"dependencies",
 			"sample",
@@ -1832,7 +3270,48 @@ making sure that you maintain a proper JSON format.
 					"",
 					"DISABLE",
 					"ENABLE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "No Validate",
@@ -1842,7 +3321,118 @@ making sure that you maintain a proper JSON format.
 				"options": [
 					"",
 					"NOVALIDATE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "Rely",
@@ -1853,7 +3443,118 @@ making sure that you maintain a proper JSON format.
 					"",
 					"RELY",
 					"NORELY"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "default",
+										"value": ""
+									}
+								},
+								{
+									"key": "default",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			"dependencies",
 			"sample",
@@ -2119,7 +3820,32 @@ making sure that you maintain a proper JSON format.
 					"",
 					"DISABLE",
 					"ENABLE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "No Validate",
@@ -2129,7 +3855,102 @@ making sure that you maintain a proper JSON format.
 				"options": [
 					"",
 					"NOVALIDATE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "Rely",
@@ -2140,7 +3961,102 @@ making sure that you maintain a proper JSON format.
 					"",
 					"RELY",
 					"NORELY"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			"dependencies",
 			"additionalItems",
@@ -2447,7 +4363,32 @@ making sure that you maintain a proper JSON format.
 					"",
 					"DISABLE",
 					"ENABLE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "No Validate",
@@ -2457,7 +4398,102 @@ making sure that you maintain a proper JSON format.
 				"options": [
 					"",
 					"NOVALIDATE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "Rely",
@@ -2468,7 +4504,102 @@ making sure that you maintain a proper JSON format.
 					"",
 					"RELY",
 					"NORELY"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			"dependencies",
 			"additionalProperties",
@@ -2717,7 +4848,32 @@ making sure that you maintain a proper JSON format.
 					"",
 					"DISABLE",
 					"ENABLE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "No Validate",
@@ -2727,7 +4883,102 @@ making sure that you maintain a proper JSON format.
 				"options": [
 					"",
 					"NOVALIDATE"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			{
 				"propertyName": "Rely",
@@ -2738,7 +4989,102 @@ making sure that you maintain a proper JSON format.
 					"",
 					"RELY",
 					"NORELY"
-				]
+				],
+				"dependency": {
+					"type": "or",
+					"values": [
+						{
+							"key": "required",
+							"value": true
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"type": "not",
+									"values": {
+										"key": "check",
+										"value": ""
+									}
+								},
+								{
+									"key": "check",
+									"exist": true
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "primaryKey",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "and",
+							"values": [
+								{
+									"key": "unique",
+									"value": true
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositePrimaryKey",
+											"value": false
+										},
+										{
+											"key": "compositePrimaryKey",
+											"exist": false
+										}
+									]
+								},
+								{
+									"type": "or",
+									"values": [
+										{
+											"key": "compositeUniqueKey",
+											"value": false
+										},
+										{
+											"key": "compositeUniqueKey",
+											"exist": false
+										}
+									]
+								}
+							]
+						}
+					]
+				}
 			},
 			"additionalProperties",
 			{
