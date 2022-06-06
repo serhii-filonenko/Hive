@@ -4,6 +4,7 @@
 	"namePrefix": "Hive",
 	"mode": "sql",
 	"hasUpdateScript": false,
+	"applyScriptToInstance": true,
 	"level": {
 		"entity": true,
 		"container": true
