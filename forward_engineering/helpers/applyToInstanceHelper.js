@@ -15,7 +15,8 @@ const applyToInstance = (connectionInfo, logger, app) => {
 			
 			try {
 				await async.mapSeries(queries, async query => {
-					const message = `Query: ${query}`;
+
+					const message = `Query: ${query.split('\n').shift().substring(0, 150)}`;
 					logger.progress({ message });
 					logger.log('info', { message }, 'Apply to instance');
 					
