@@ -523,7 +523,7 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 		username,
 		password
 	});
-	const cursor = {
+	let cursor = {
 		execute,
 		asyncExecute,
 		fetchResult,
@@ -549,7 +549,25 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 			logger.log('Connection established successfully');
 			logger.log('Starting session...');
 
+			
 			client.OpenSession(request, (err, session) => {
+				const closeSession = () => {
+					return new Promise((resolve, reject) => {
+						const request = new TCLIServiceTypes.TCloseSessionReq({ sessionHandle: session?.sessionHandle })
+						client.CloseSession(request, (err, res) => {
+							if (!err) {
+								logger.log('Session closed successfully');
+								resolve(res);
+							} else {
+								logger.log('Session was not closed');
+								logger.log(`Error: ${err?.message}`)
+								reject(err);
+							}
+						});
+
+					})
+				};
+
 				if (err) {
 					logger.log('Session was not started');
 				} else if (session && session.status.statusCode === TCLIServiceTypes.TStatusCode.ERROR_STATUS) {
@@ -560,6 +578,11 @@ const connect = ({ host, port, username, password, authMech, version, options, c
 					logger.log('Session started successfully');
 					logger.log('Status: ' + session.status.statusCode);
 				}
+
+				cursor = {
+					...cursor,
+					closeSession,
+				};
 
 				if (typeof handler === 'function') {
 					handler(err, session, cursor);

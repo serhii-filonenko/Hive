@@ -12,6 +12,7 @@ const foreignKeyHelper = require('./helpers/foreignKeyHelper');
 const sqlFormatter = require('sql-formatter');
 const { connect } = require('../reverse_engineering/api');
 const logHelper = require('../reverse_engineering/logHelper');
+const applyToInstanceHelper = require('./helpers/applyToInstanceHelper');
 let _;
 
 module.exports = {
@@ -220,28 +221,16 @@ module.exports = {
 		}, app);
 	},
 
-	applyToInstance(connectionInfo, logger, cb, app) {
+	async applyToInstance(connectionInfo, logger, callback, app) {
 		logger.clear();
 		logInfo('info', connectionInfo, logger);
-
-		const callback = async (err, session, cursor) => {
-			if (err) {
-				logger.log('error', err, 'Connection failed');
-
-				return cb(err);
-			}
-
-			const scripts = (connectionInfo.script || '').split(';').map(script => script.trim()).filter(Boolean);
-			try {
-				await Promise.all(scripts.map(script => cursor.asyncExecute(session.sessionHandle, script)));
-				cb()
-			} catch (err) {
-				logger.log('error', err, 'Apply to instance');
-				cb(err);
-			}
-		};
-
-		connect(connectionInfo, logger, callback, app);
+		
+		try {
+			await applyToInstanceHelper.applyToInstance(connectionInfo, logger, app)
+			callback();
+		} catch (error) {
+			callback(error);
+		}
 	},
 };
 
