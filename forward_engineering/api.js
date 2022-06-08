@@ -9,8 +9,11 @@ const { prepareName, replaceSpaceWithUnderscore, getName, getTab } = require('./
 const { getAlterScript } = require('./helpers/alterScriptFromDeltaHelper');
 const { DROP_STATEMENTS } = require('./helpers/constants');
 const foreignKeyHelper = require('./helpers/foreignKeyHelper');
-let _;
 const sqlFormatter = require('sql-formatter');
+const { connect } = require('../reverse_engineering/api');
+const logHelper = require('../reverse_engineering/logHelper');
+const applyToInstanceHelper = require('./helpers/applyToInstanceHelper');
+let _;
 
 module.exports = {
 	generateScript(data, logger, callback, app) {
@@ -204,6 +207,31 @@ module.exports = {
 			callback({ message: e.message, stack: e.stack });
 		}
 	},
+
+	testConnection: function(connectionInfo, logger, cb, app){
+		setDependencies(app);
+		_ = dependencies.lodash;
+		logInfo('Test connection', connectionInfo, logger);
+		connect(connectionInfo, logger, (err) => {
+			if (err) {
+				logger.log('error', { message: err.message, stack: err.stack, error: err }, 'Connection failed');
+			}
+
+			return cb(err);
+		}, app);
+	},
+
+	async applyToInstance(connectionInfo, logger, callback, app) {
+		logger.clear();
+		logInfo('info', connectionInfo, logger);
+		
+		try {
+			await applyToInstanceHelper.applyToInstance(connectionInfo, logger, app)
+			callback();
+		} catch (error) {
+			callback(error);
+		}
+	},
 };
 
 const buildScript = (needMinify) => (...statements) => {
@@ -320,3 +348,9 @@ const getMappingNameToPoolNameHashTable = pools => {
 		return mappings.map(mapping => [mapping.name, pool.name]);
 	})));
 }
+
+const logInfo = (step, connectionInfo, logger) => {
+	logger.clear();
+	logger.log('info', logHelper.getSystemInfo(connectionInfo.appVersion), step);
+	logger.log('info', connectionInfo, 'connectionInfo', connectionInfo.hiddenKeys);
+};
