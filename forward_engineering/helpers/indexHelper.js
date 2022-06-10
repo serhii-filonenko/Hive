@@ -52,7 +52,10 @@ const getIndexKeys = (keys, jsonSchema, definitions) => {
 	};
 };
 
-const getIndexes = (containerData, entityData, jsonSchema, definitions) => {
+const getIndexes = (containerData, entityData, jsonSchema, definitions, areColumnConstraintsAvailable) => {
+	if (areColumnConstraintsAvailable) {
+		return '';
+	}
 	setDependencies(dependencies);
 	const dbData = getTab(0, containerData);
 	const dbName = replaceSpaceWithUnderscore(getName(dbData));

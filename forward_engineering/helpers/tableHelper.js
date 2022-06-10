@@ -51,11 +51,15 @@ const getCreateStatement = ({
 		();
 };
 
-const getPrimaryKeyStatement = (jsonSchema, keysNames, deactivatedColumnNames, isParentItemActivated) => {
+const getPrimaryKeyStatement = (jsonSchema, keysNames, deactivatedColumnNames, isParentItemActivated, areColumnConstraintsAvailable) => {
 	const getStatement = (keys, constraintOptsStatement) => `PRIMARY KEY (${keys})${constraintOptsStatement}`;
 	const options = (jsonSchema.primaryKey || [])[0] || {};
 	const { rely, noValidateSpecification } = options;
-	const constraintOptsStatement = constraintHelper.getConstraintOpts({ noValidateSpecification, rely, enableSpecification: 'DISABLE' })
+	const constraintOptsStatement = constraintHelper.getConstraintOpts({ 
+		noValidateSpecification: areColumnConstraintsAvailable ? noValidateSpecification : 'NOVALIDATE', 
+		rely, 
+		enableSpecification: 'DISABLE' 
+	});
 
 	if (!Array.isArray(keysNames) || !keysNames.length) {
 		return '';
@@ -129,6 +133,11 @@ const removePartitions = (columns, partitions) => {
 
 		return columns;
 	}, Object.assign({}, columns));
+};
+
+const prepareTableProperties = (tableProperties = '') => {
+	const properties = tableProperties.match(/^\((?<properties>[\s\S]*)\)$/)?.groups.properties || '';
+	return properties.trim() ? tableProperties : '';
 };
 
 const getSkewedKeyStatement = (skewedKeys, skewedOn, asDirectories, deactivatedColumnNames, isParentItemActivated) => {
@@ -211,8 +220,8 @@ const getTableStatement = (containerData, entityData, jsonSchema, definitions, f
 		isTemporary: tableData.temporaryTable,
 		isExternal: tableData.externalTable,
 		columnStatement: getColumnsStatement(removePartitions(columns, keyNames.compositePartitionKey), isTableActivated),
-		primaryKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? getPrimaryKeyStatement(jsonSchema, keyNames.primaryKeys, deactivatedColumnNames, isTableActivated) : null,
-		uniqueKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? constraintHelper.getUniqueKeyStatement(jsonSchema, deactivatedColumnNames, isTableActivated) : null,
+		primaryKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? getPrimaryKeyStatement(jsonSchema, keyNames.primaryKeys, deactivatedColumnNames, isTableActivated, areColumnConstraintsAvailable) : null,
+		uniqueKeyStatement: areColumnConstraintsAvailable ? constraintHelper.getUniqueKeyStatement(jsonSchema, deactivatedColumnNames, isTableActivated) : null,
 		checkStatement: areColumnConstraintsAvailable ? constraintHelper.getCheckConstraint(jsonSchema) : null,
 		foreignKeyStatement: areForeignPrimaryKeyConstraintsAvailable ? foreignKeyStatement : null,
 		comment: tableData.description,
@@ -224,7 +233,7 @@ const getTableStatement = (containerData, entityData, jsonSchema, definitions, f
 		rowFormatStatement: getRowFormat(tableData),
 		storedAsStatement: getStoredAsStatement(tableData),
 		location: tableData.location,
-		tableProperties: tableData.tableProperties,
+		tableProperties: prepareTableProperties(tableData.tableProperties),
 		selectStatement: '',
 		isActivated: isTableActivated,
 		ifNotExist: tableData.ifNotExist,

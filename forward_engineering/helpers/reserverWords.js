@@ -14,7 +14,7 @@ const RESERVED_WORDS = [
 	'commit', 'only', 'regexp', 'rlike', 'rollback', 'start',
 	'cache', 'constraint', 'foreign', 'primary', 'references',
 	'dayofweek', 'extract', 'floor', 'integer', 'precision', 'views',
-	'time', 'numeric', 'sync',
+	'time', 'numeric', 'sync', 'dec'
 ];
 
 module.exports = RESERVED_WORDS;

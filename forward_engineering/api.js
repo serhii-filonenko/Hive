@@ -62,11 +62,16 @@ module.exports = {
 						areColumnConstraintsAvailable,
 						areForeignPrimaryKeyConstraintsAvailable
 					),
-					getIndexes(containerData, entityData, jsonSchema, [
-						modelDefinitions,
-						internalDefinitions,
-						externalDefinitions,
-					])
+					getIndexes(
+						containerData, 
+						entityData, 
+						jsonSchema, [
+							modelDefinitions,
+							internalDefinitions,
+							externalDefinitions,
+						],
+						areColumnConstraintsAvailable
+					)
 				)
 			);
 		} catch (e) {
@@ -157,7 +162,7 @@ module.exports = {
 						areColumnConstraintsAvailable,
 						areForeignPrimaryKeyConstraintsAvailable
 					),
-					getIndexes(...args),
+					getIndexes(...args, areColumnConstraintsAvailable),
 				]);
 			}, []);
 
