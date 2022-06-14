@@ -1,4 +1,6 @@
 const { connect } = require('../../reverse_engineering/api');
+const { getDeactivatedStatement } = require('./generalHelper');
+const { DROP_STATEMENTS } = require('./constants');
 
 const applyToInstance = (connectionInfo, logger, app) => {
 	const async = app.require('async');
@@ -11,7 +13,7 @@ const applyToInstance = (connectionInfo, logger, app) => {
 				return cb(err);
 			}
 		
-			const queries = (connectionInfo.script || '').split(';').map(script => script.trim()).filter(Boolean);
+			const queries = getQueries(connectionInfo.script);
 			
 			try {
 				await async.mapSeries(queries, async query => {
@@ -32,6 +34,19 @@ const applyToInstance = (connectionInfo, logger, app) => {
 		
 		connect(connectionInfo, logger, callback, app);
 	});
+};
+
+const getQueries = (script = '') => {
+	return script
+		.split(';')
+		.map(script => script.trim())
+		.filter(query => {
+			if (Boolean(query)) {
+				return !DROP_STATEMENTS.some(statement => query.includes(getDeactivatedStatement(statement)));
+			}
+
+			return false;
+		});
 };
 
 const prepareError = error => {
