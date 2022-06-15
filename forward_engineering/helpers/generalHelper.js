@@ -6,6 +6,8 @@ let _;
 
 const setDependencies = ({ lodash }) => _ = lodash;
 
+const BEFORE_DEACTIVATED_STATEMENT = '-- ';
+
 const buildStatement = (mainStatement, isActivated) => {
 	let composeStatements = (...statements) => {
 		return statements.reduce((result, statement) => result + statement, mainStatement);
@@ -83,7 +85,7 @@ const commentDeactivatedStatements = (statement, isActivated = true) => {
 			.map((line) => `${insertValue}${line}`)
 			.join('\n');
 
-	return insertBeforeEachLine(statement, '-- ');
+	return insertBeforeEachLine(statement, BEFORE_DEACTIVATED_STATEMENT);
 }
 
 const commentDeactivatedInlineKeys = (keys, deactivatedKeyNames) => {
@@ -130,6 +132,8 @@ const encodeStringLiteral = (str = '') => {
 	return str.replace(/(')/gi, '\\$1').replace(/\n/gi, '\\n');
 }
 
+const getDeactivatedStatement = statement => `${BEFORE_DEACTIVATED_STATEMENT}${statement}`;
+
 module.exports = {
 	buildStatement,
 	getName,
@@ -141,5 +145,6 @@ module.exports = {
 	commentDeactivatedStatements,
 	commentDeactivatedInlineKeys,
 	removeRedundantTrailingCommaFromStatement,
-	encodeStringLiteral
+	encodeStringLiteral,
+	getDeactivatedStatement
 };
