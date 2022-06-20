@@ -9,7 +9,7 @@ const applyToInstance = (connectionInfo, logger, app) => {
 			if (err) {
 				logger.log('error', err, 'Connection failed');
 		
-				return cb(err);
+				return reject(prepareError(err));
 			}
 		
 			const queries = getQueries(connectionInfo.script);
