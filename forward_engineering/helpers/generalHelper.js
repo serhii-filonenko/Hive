@@ -132,7 +132,7 @@ const encodeStringLiteral = (str = '') => {
 	return str.replace(/(')/gi, '\\$1').replace(/\n/gi, '\\n');
 }
 
-const getDeactivatedStatement = statement => `${BEFORE_DEACTIVATED_STATEMENT}${statement}`;
+const isDeactivatedStatement = statement => statement.startsWith(BEFORE_DEACTIVATED_STATEMENT);
 
 module.exports = {
 	buildStatement,
@@ -146,5 +146,5 @@ module.exports = {
 	commentDeactivatedInlineKeys,
 	removeRedundantTrailingCommaFromStatement,
 	encodeStringLiteral,
-	getDeactivatedStatement
+	isDeactivatedStatement
 };

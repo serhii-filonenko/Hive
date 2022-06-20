@@ -1,6 +1,5 @@
 const { connect } = require('../../reverse_engineering/api');
-const { getDeactivatedStatement } = require('./generalHelper');
-const { DROP_STATEMENTS } = require('./constants');
+const { isDeactivatedStatement } = require('./generalHelper');
 
 const applyToInstance = (connectionInfo, logger, app) => {
 	const async = app.require('async');
@@ -42,7 +41,7 @@ const getQueries = (script = '') => {
 		.map(script => script.trim())
 		.filter(query => {
 			if (Boolean(query)) {
-				return !DROP_STATEMENTS.some(statement => query.includes(getDeactivatedStatement(statement)));
+				return !isDeactivatedStatement(query);
 			}
 
 			return false;
