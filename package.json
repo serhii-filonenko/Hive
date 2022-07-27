@@ -44,7 +44,8 @@
 			"relationships": {
                 "compositeRelationships": true                
 			},
-			"FEScriptCommentsSupported": ["2.x", "3.x"]
+			"FEScriptCommentsSupported": ["2.x", "3.x"],
+			"discoverRelationships": true
 		}
 	},
 	"description": "Hackolade plugin for Apache Hive"
