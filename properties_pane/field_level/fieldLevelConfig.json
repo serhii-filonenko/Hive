@@ -695,12 +695,6 @@ making sure that you maintain a proper JSON format.
 				"data": "options",
 				"valueType": "string"
 			},
-			"minimum",
-			"exclusiveMinimum",
-			"maximum",
-			"exclusiveMaximum",
-			"multipleOf",
-			"divisibleBy",
 			{
 				"propertyName": "Precision",
 				"propertyKeyword": "precision",
@@ -723,6 +717,12 @@ making sure that you maintain a proper JSON format.
 					"value": "decimal"
 				}
 			},
+			"minimum",
+			"exclusiveMinimum",
+			"maximum",
+			"exclusiveMaximum",
+			"multipleOf",
+			"divisibleBy",
 			"pattern",
 			"unit",
 			"enum",
