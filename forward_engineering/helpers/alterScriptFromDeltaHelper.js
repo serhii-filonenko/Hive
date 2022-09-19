@@ -26,16 +26,20 @@ const getItems = (entity, nameProperty, modify) =>
 		.map(items => Object.values(items.properties)[0]);
 
 const getAlterContainersScripts = (schema, provider) => {
-	const addedScripts = getItems(schema, 'containers', 'added').map(
+	const addedContainerScripts = getItems(schema, 'containers', 'added').map(
 		getAddContainerScript
 	);
-	const deletedScripts = getItems(schema, 'containers', 'deleted').map(
+	const deletedContainerScripts = getItems(schema, 'containers', 'deleted').map(
 		getDeleteContainerScript(provider)
 	);
-	const modifiedScripts = getItems(schema, 'containers', 'modified').flatMap(
+	const modifiedContainerScripts = getItems(schema, 'containers', 'modified').flatMap(
 		getModifyContainerScript(provider)
 	);
-	return [...addedScripts, ...deletedScripts, ...modifiedScripts];
+	return {
+		addedContainerScripts, 
+		deletedContainerScripts, 
+		modifiedContainerScripts
+	};
 };
 
 const getAlterCollectionsScripts = (schema, definitions, provider) => {
@@ -73,14 +77,14 @@ const getAlterCollectionsScripts = (schema, definitions, provider) => {
 		getModifyColumnsScripts(definitions, provider)
 	);
 
-	return [
-		...addedCollectionsScripts,
-		...deletedCollectionsScripts,
-		...modifiedCollectionsScripts,
-		...addedColumnsScripts,
-		...deletedColumnsScripts,
-		...modifiedColumnsScripts,
-	];
+	return {
+		addedCollectionsScripts,
+		deletedCollectionsScripts,
+		modifiedCollectionsScripts,
+		addedColumnsScripts,
+		deletedColumnsScripts,
+		modifiedColumnsScripts,
+	};
 };
 
 const getAlterViewsScripts = (schema, provider) => {
@@ -108,19 +112,37 @@ const getAlterViewsScripts = (schema, provider) => {
 		getModifyViewsScripts(provider)
 	);
 
-	return [
-		...addedViewScripts,
-		...deletedViewScripts,
-		...modifiedViewScripts,
-	];
+	return {
+		addedViewScripts,
+		deletedViewScripts,
+		modifiedViewScripts,
+	};
 };
 
 const getAlterScript = (schema, definitions, data, app, needMinify, sqlFormatter) => {
 	const provider = require('./alterScriptHelpers/provider')(app);
-	const containersScripts = getAlterContainersScripts(schema, provider);
-	const collectionsScripts = getAlterCollectionsScripts(schema, definitions, provider);
-	const viewsScripts = getAlterViewsScripts(schema, provider);
-	let scripts = containersScripts.concat(collectionsScripts, viewsScripts).filter(Boolean).map(script => script.trim());
+	let scripts = {
+		...getAlterContainersScripts(schema, provider),
+		...getAlterCollectionsScripts(schema, definitions, provider),
+		...getAlterViewsScripts(schema, provider)
+	};
+
+	scripts = [
+		'addedContainerScripts',
+		'modifiedContainerScripts',
+		'deletedViewScripts',
+		'deletedCollectionsScripts',
+		'deletedColumnsScripts',
+		'addedCollectionsScripts',
+		'addedColumnsScripts',
+		'modifiedCollectionsScripts',
+		'modifiedColumnsScripts',
+		'addedViewScripts',
+		'modifiedViewScripts',
+		'deletedContainerScripts'
+	].flatMap(name => scripts[name] || [])
+		.filter(Boolean)
+		.map(script => script.trim());
 	scripts = getCommentedDropScript(scripts, data);
 	return builds(scripts, needMinify, sqlFormatter);
 };
