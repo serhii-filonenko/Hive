@@ -65,6 +65,10 @@ module.exports = {
 		let script = [];
 		const columns = schema.properties || {};
 		const view = _.first(viewData) || {};
+
+		if (!view.isActivated) {
+			return;
+		}
 		
 		const bucketName = prepareName(retrieveContainerName(containerData));
 		const viewName = prepareName(view.code || view.name);
