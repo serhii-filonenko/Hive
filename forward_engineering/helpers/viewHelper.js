@@ -75,9 +75,10 @@ module.exports = {
 		const isMaterialized = schema.materialized;
 		const ifNotExist = view.ifNotExist;
 		const orReplace = view.orReplace;
+		const ifNotExists = view.ifNotExist;
 		const fromStatement = getFromStatement(collectionRefsDefinitionsMap, columns);
 		const name = bucketName ? `${bucketName}.${viewName}` : `${viewName}`;
-		const createStatement = `CREATE ${orReplace ? 'OR REPLACE ' : ''}${isMaterialized ? 'MATERIALIZED ' : ''}VIEW ${ifNotExist ? 'IF NOT EXISTS ' : ''}${name}`;
+		const createStatement = `CREATE ${(orReplace && !ifNotExists) ? 'OR REPLACE ' : ''}${isMaterialized ? 'MATERIALIZED ' : ''}VIEW ${ifNotExist ? 'IF NOT EXISTS ' : ''}${name}`;
 
 		script.push(createStatement);
 
