@@ -2,7 +2,7 @@
 
 let _;
 const { dependencies } = require('./appDependencies');
-const { prepareName, commentDeactivatedStatements } = require('./generalHelper');
+const { prepareName, commentDeactivatedStatements, encodeStringLiteral } = require('./generalHelper');
 
 const setDependencies = ({ lodash }) => _ = lodash;
 
@@ -88,6 +88,7 @@ module.exports = {
 		const ifNotExist = view.ifNotExist;
 		const orReplace = view.orReplace;
 		const ifNotExists = view.ifNotExist;
+		const comment = view.description;
 		const fromStatement = getFromStatement(collectionRefsDefinitionsMap, columns);
 		const name = bucketName ? `${bucketName}.${viewName}` : `${viewName}`;
 		const createStatement = `CREATE ${(orReplace && !ifNotExists) ? 'OR REPLACE ' : ''}${isMaterialized ? 'MATERIALIZED ' : ''}VIEW ${ifNotExist ? 'IF NOT EXISTS ' : ''}${name}`;
@@ -95,7 +96,12 @@ module.exports = {
 		script.push(createStatement);
 
 		if (schema.selectStatement) {
-			return createStatement + ' ' + schema.selectStatement + ';\n\n';
+			let statement = schema.selectStatement;
+			if (!_.trim(statement).toLowerCase().startsWith('as')) {
+				statement = 'AS ' + statement;
+			}
+
+			return createStatement + (comment ? ' COMMENT \'' + encodeStringLiteral(comment) + '\' ' : ' ') + statement + ';\n\n';
 		}
 
 		if (_.isEmpty(columns)) {
@@ -107,6 +113,10 @@ module.exports = {
 	
 		if (allColumnsAreDeactivated) {
 			return;
+		}
+
+		if (comment) {
+			script.push(`COMMENT '${encodeStringLiteral(comment)}'`);
 		}
 	
 		const joinedColumns = joinLastDeactivatedItem(columnsNames).join(',\n');

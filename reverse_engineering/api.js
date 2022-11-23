@@ -245,7 +245,7 @@ module.exports = {
 
 										return { ...data, schema: {
 											...schema,
-											[item.col_name]: { comment: item.comment }
+											[item.col_name]: { description: item.comment }
 										}};
 									}, { schema: {}, isSchemaParsingFinished: false, additionalDescription: '' });
 

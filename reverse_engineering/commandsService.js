@@ -213,7 +213,7 @@ const updateField = (entitiesData, bucket, statementData) => {
 
 const createView = (entitiesData, bucket, statementData, originalScript) => {
     const { views } = entitiesData;
-    const selectStatement = `AS ${originalScript.substring(statementData.select.start, statementData.select.stop)}`;
+    const selectStatement = `${originalScript.substring(statementData.select.start, statementData.select.stop)}`;
 
     return {
         ...entitiesData,
