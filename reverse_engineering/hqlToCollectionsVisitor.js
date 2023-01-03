@@ -143,7 +143,7 @@ class Visitor extends HiveParserVisitor {
                         ...storedAsTable,
                         ...tableRowFormat,
                     },
-                    (prop) => _.isBoolean(prop) || !_.isEmpty(prop)
+                    (prop) => _.isNumber(prop) || _.isBoolean(prop) || !_.isEmpty(prop)
                 ),
             },
             ...tableForeignKeys.map((fkData) => ({

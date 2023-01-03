@@ -143,7 +143,7 @@ const prepareTableProperties = (tableProperties = '') => {
 const getSkewedKeyStatement = (skewedKeys, skewedOn, asDirectories, deactivatedColumnNames, isParentItemActivated) => {
 	const getStatement = (keysString) => `SKEWED BY (${keysString}) ON ${skewedOn} ${asDirectories ? 'STORED AS DIRECTORIES' : ''}`;
 	
-	if (!Array.isArray(skewedKeys) || !skewedKeys.length) {
+	if (!Array.isArray(skewedKeys) || !skewedKeys.length || !skewedOn) {
 		return '';
 	}
 
