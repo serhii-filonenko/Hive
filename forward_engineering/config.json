@@ -7,7 +7,8 @@
 	"applyScriptToInstance": true,
 	"level": {
 		"entity": true,
-		"container": true
+		"container": true,
+		"view": true
 	},
 	"additionalOptions": [
 		{

@@ -87,6 +87,34 @@ module.exports = {
 		}
 	},
 
+	generateViewScript(data, logger, callback, app) {
+		try {
+			setDependencies(app);
+			setAppDependencies(dependencies);
+			const viewSchema = JSON.parse(data.jsonSchema || '{}');
+			const needMinify = (
+				_.get(data, 'options.additionalOptions', []).find(option => option.id === 'minify') || {}
+			).value;
+
+			const databaseStatement = getDatabaseStatement(data.containerData);
+
+			const script = getViewScript({
+				schema: viewSchema,
+				viewData: data.viewData,
+				containerData: data.containerData,
+				collectionRefsDefinitionsMap: data.collectionRefsDefinitionsMap,
+				isKeyspaceActivated: true,
+			});
+
+			callback(null, buildScript(needMinify)(databaseStatement, script));
+		} catch (error) {
+			logger.log('error', { message: e.message, stack: e.stack }, 'Hive Forward-Engineering Error');
+
+			callback({ message: e.message, stack: e.stack });
+		}
+	},
+
+
 	generateContainerScript(data, logger, callback, app) {
 		try {
 			setDependencies(app);
