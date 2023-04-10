@@ -1,17 +1,26 @@
 [
-    {
-        "type": "file",
-        "menu_label": "HQL File",
-        "name": "hql",
-        "extensions": ["hql"]
-    },
+	{
+		"type": "file",
+		"menu_label": "HQL File",
+		"name": "hql",
+		"extensions": [
+			"hql"
+		],
+		"useMultipleFileReverse": true
+	},
 	{
 		"errors": {
 			"NO_DATABASES": "There is no databases in the Hive instance",
 			"WRONG_CONNECTION": "Can not connect to the Hive instance"
 		},
-		"excludeDocKind": ["id"],
-		"connectionList": [ "name", "host", "port" ],
+		"excludeDocKind": [
+			"id"
+		],
+		"connectionList": [
+			"name",
+			"host",
+			"port"
+		],
 		"helpUrl": "https://hackolade.com/help/ConnecttoaHiveinstance.html"
 	}
 ]
