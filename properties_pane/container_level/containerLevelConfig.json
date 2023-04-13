@@ -119,9 +119,23 @@ making sure that you maintain a proper JSON format.
 		"lowerTab": "Details",
 		"structure": [
 			{
+				"propertyKeyword": "name",
+				"validation": {
+					"regex": "^((?![()]+)\\S)*$"
+				}
+			},
+			{
 				"propertyName": "Technical name",
 				"propertyKeyword": "code",
-				"propertyType": "text"
+				"propertyType": "text",
+				"validation": {
+					"regex": "^((?![()]+)\\S)*$"
+				}
+			},
+			{
+				"propertyName": "If not exists",
+				"propertyKeyword": "ifNotExist",
+				"propertyType": "checkbox"
 			},
 			{
 				"propertyName": "Comments",

@@ -9,12 +9,12 @@
 		"indexes": []
 	},
 	"collection": {
-		"collectionName": "New table",
+		"collectionName": "New_table",
 		"collectionUsers": [],
 		"collation": {}
 	},
 	"field": {
-		"name": "New column"
+		"name": "New_column"
 	},
 	"patternField": {
 		"name": "^[a-zA-Z0-9_.-]+$"
@@ -32,6 +32,7 @@
 	},
 	"user": {},
 	"view": {
+		"name": "New_view",
 		"viewOn": "",
 		"pipeline": ""
 	},

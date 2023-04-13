@@ -1,10 +1,20 @@
 'use strict'
 
-const { buildStatement, getName, getTab, indentString, getTypeDescriptor, prepareName, commentDeactivatedStatements } = require('./generalHelper');
+const {
+	buildStatement,
+	getName,
+	getTab,
+	indentString,
+	getTypeDescriptor,
+	prepareName,
+	commentDeactivatedStatements,
+	encodeStringLiteral,
+} = require('./generalHelper');
+const { getConstraintOpts } = require('./constraintHelper');
 
-const getStructChild = (name, type, comment) => `${prepareName(name)}: ${type}` + (comment ? ` COMMENT '${comment}'` : '');
+const getStructChild = (name, type, comment) => `${prepareName(name)}: ${type}` + (comment ? ` COMMENT '${encodeStringLiteral(comment)}'` : '');
 
-const getStructChildProperties = getTypeByProperty => property => {
+const getStructChildProperties = (getTypeByProperty, definitions) => property => {
 	const childProperties = Object.keys(property.properties || {});
 	const activatedProps = [];
 	const deactivatedProps = [];
@@ -12,9 +22,13 @@ const getStructChildProperties = getTypeByProperty => property => {
 	if (childProperties.length) {
 		childProperties.forEach(propertyName => {
 			const childProperty = property.properties[propertyName];
-			const name = (getName(childProperty) || propertyName);
+			const name = getName(childProperty) || propertyName;
 			const isActivated = childProperty.isActivated !== false;
-			const structChild = getStructChild(name, getTypeByProperty(childProperty), childProperty.description);
+			const structChild = getStructChild(
+				name,
+				getTypeByProperty(childProperty),
+				getDescription(definitions, childProperty),
+			);
 			if (isActivated) {
 				activatedProps.push(structChild);
 			} else {
@@ -40,10 +54,10 @@ const getStructChildProperties = getTypeByProperty => property => {
 	return { activatedProps, deactivatedProps };
 };
 
-const getStruct = getTypeByProperty => property => {
+const getStruct = (getTypeByProperty, definitions) => property => {
 	const getStructStatement = (propertiesString) => `struct<${propertiesString}>`;
 	
-	const { activatedProps, deactivatedProps } = getStructChildProperties(getTypeByProperty)(property);
+	const { activatedProps, deactivatedProps } = getStructChildProperties(getTypeByProperty, definitions)(property);
 	if (deactivatedProps.length === 0) {
 		return getStructStatement(activatedProps.join(', '));
 	} else if (activatedProps.length === 0) {
@@ -200,7 +214,7 @@ const getUnionFromAllOf = getTypeByProperty => property => {
 			{},
 			types,
 			getUnionFromOneOf(getTypeByProperty)(subschema)
-		);
+		);  
 	}, {});
 };
 
@@ -257,7 +271,7 @@ const getTypeByProperty = (definitions = []) => property => {
 		case 'interval':
 			return 'string';
 		case 'struct':
-			return getStruct(getTypeByProperty(definitions))(property);
+			return getStruct(getTypeByProperty(definitions), definitions)(property);
 		case 'array':
 			return getArray(getTypeByProperty(definitions))(property);
 		case 'map':
@@ -282,6 +296,13 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 		if (!property.isActivated) {
 			deactivatedColumnNames.add(name);
 		}
+		const isPrimaryKey = property.primaryKey && 
+			!property.unique && 
+			!property.compositePrimaryKey && 
+			!property.compositeUniqueKey && 
+			!property.compositeClusteringKey;
+
+		const isUnique = property.unique && !property.compositeUniqueKey;
 		
 		return Object.assign(
 			{},
@@ -289,12 +310,16 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 			getColumn(
 				prepareName(name),
 				getTypeByProperty(definitions)(property),
-				property.description,
+				getDescription(definitions, property),
 				areColumnConstraintsAvailable ? {
 					notNull: isRequired,
-					unique: property.unique,
+					unique: isUnique,
 					check: property.check,
-					defaultValue: property.default
+					primaryKey: isPrimaryKey,
+					defaultValue: property.default,
+					rely: property.rely,
+					noValidateSpecification: property.noValidateSpecification,
+					enableSpecification: property.enableSpecification,
 				} : {},
 				property.isActivated
 			)
@@ -325,7 +350,7 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 };
 
 const getColumnStatement = ({ name, type, comment, constraints, isActivated, isParentActivated }) => {
-	const commentStatement = comment ? ` COMMENT '${comment}'` : '';
+	const commentStatement = comment ? ` COMMENT '${encodeStringLiteral(comment)}'` : '';
 	const constraintsStaitment = constraints ? getColumnConstraintsStaitment(constraints) : '';
 	const isColumnActivated = isParentActivated ? isActivated : true;
 	return commentDeactivatedStatements(`${name} ${type}${constraintsStaitment}${commentStatement}`, isColumnActivated);
@@ -341,20 +366,34 @@ const getColumnsStatement = (columns, isParentActivated) => {
 	}).join(',\n');
 };
 
-const getColumnConstraintsStaitment = ({ notNull, unique, check, defaultValue }) => {
+const getColumnConstraintsStaitment = (constraint) => {
+	const { notNull, unique, check, defaultValue, primaryKey, rely, noValidateSpecification, enableSpecification } = constraint;
+	const noValidateStatement = enableSpecification => getConstraintOpts({ rely, enableSpecification, noValidateSpecification });
+	const getColStatement = (statement, noValidateStatement) => statement ? ` ${statement}${noValidateStatement}` : '';
 	const constraints = [
-		(notNull && !unique) ? 'NOT NULL' : '',
-		unique ? 'UNIQUE' : '',
-		defaultValue ? `DEFAULT ${defaultValue}` : '',
-		check ? `CHECK ${check}` : ''
+		(notNull && !unique) ? getColStatement('NOT NULL', noValidateStatement(enableSpecification)) : '',
+		unique ? getColStatement('UNIQUE', noValidateStatement('DISABLE')) : '',
+		defaultValue ? getColStatement(`DEFAULT ${defaultValue}`, noValidateStatement(enableSpecification)) : '',
+		check ? getColStatement(`CHECK ${check}`, noValidateStatement(enableSpecification)) : '',
+		primaryKey ? getColStatement('PRIMARY KEY', noValidateStatement('DISABLE')) : '',
 	].filter(Boolean);
-	const constraintsStaitment = constraints.join(' ');
 
-	return constraintsStaitment ? ` ${constraintsStaitment} DISABLE NOVALIDATE` : '';
+	return constraints[0] || '';
 };
+
+const getDescription = (definitions, property) => {
+	if(!property.$ref) {
+		return property.description;
+	}
+
+	const definitionDescription = getDefinitionByReference(definitions, property)?.description;
+
+	return property.refDescription || property.description || definitionDescription
+}
 
 module.exports = {
 	getColumns,
 	getColumnsStatement,
-	getColumnStatement
+	getColumnStatement,
+	getTypeByProperty,
 };

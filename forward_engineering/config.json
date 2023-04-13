@@ -2,16 +2,30 @@
 	"extension": "hql",
 	"filterName": "Hive Query Language",
 	"namePrefix": "Hive",
+	"mode": "sql",
 	"hasUpdateScript": false,
+	"applyScriptToInstance": true,
 	"level": {
 		"entity": true,
-		"container": true
+		"container": true,
+		"view": true
 	},
 	"additionalOptions": [
 		{
 			"id": "minify",
 			"value": false,
 			"name": "Minify"
+		},
+		{
+			"id": "applyDropStatements",
+			"value": false,
+			"forUpdate": true,
+			"name": "Apply Drop Statements",
+			"isDropInStatements": true
 		}
-	]
+	],
+	"compMode": {
+		"entity": true,
+		"container": true
+	}
 }

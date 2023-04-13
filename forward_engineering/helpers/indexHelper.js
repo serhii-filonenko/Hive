@@ -1,6 +1,6 @@
 'use strict'
 
-const { getTab, buildStatement, getName, replaceSpaceWithUnderscore } = require('./generalHelper');
+const { getTab, buildStatement, getName, replaceSpaceWithUnderscore, encodeStringLiteral } = require('./generalHelper');
 const schemaHelper = require('./jsonSchemaHelper');
 const { getItemByPath } = require('./jsonSchemaHelper');
 const { dependencies } = require('./appDependencies');
@@ -16,7 +16,7 @@ const getIndexStatement = ({
 		(withDeferredRebuild, 'WITH DEFERRED REBUILD')
 		(idxProperties, `IDXPROPERTIES ${idxProperties}`)
 		(inTable, inTable)
-		(comment, `COMMENT '${comment}'`)
+		(comment, `COMMENT '${encodeStringLiteral(comment)}'`)
 		(true, ';')
 		();
 };
@@ -52,12 +52,15 @@ const getIndexKeys = (keys, jsonSchema, definitions) => {
 	};
 };
 
-const getIndexes = (containerData, entityData, jsonSchema, definitions) => {
+const getIndexes = (containerData, entityData, jsonSchema, definitions, areColumnConstraintsAvailable) => {
+	if (areColumnConstraintsAvailable) {
+		return '';
+	}
 	setDependencies(dependencies);
 	const dbData = getTab(0, containerData);
 	const dbName = replaceSpaceWithUnderscore(getName(dbData));
 	const tableData = getTab(0, entityData);
-	const indexesData = getTab(1, entityData).SecIndxs || [];
+	const indexesData = getTab(2, entityData).SecIndxs || [];
 	const tableName = replaceSpaceWithUnderscore(getName(tableData));
 
 	return indexesData
@@ -78,6 +81,7 @@ const getIndexes = (containerData, entityData, jsonSchema, definitions) => {
 				comment: indexData.SecIndxComments,
 				withDeferredRebuild: indexData.SecIndxWithDeferredRebuild,
 				isActivated:
+					indexData.isActivated !== false &&
 					isIndexActivated &&
 					tableData.isActivated &&
 					dbData.isActivated,

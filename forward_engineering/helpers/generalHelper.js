@@ -6,6 +6,8 @@ let _;
 
 const setDependencies = ({ lodash }) => _ = lodash;
 
+const BEFORE_DEACTIVATED_STATEMENT = '-- ';
+
 const buildStatement = (mainStatement, isActivated) => {
 	let composeStatements = (...statements) => {
 		return statements.reduce((result, statement) => result + statement, mainStatement);
@@ -43,7 +45,7 @@ const isEscaped = (name) => /\`[\s\S]*\`/.test(name);
 
 const checkNameNeedBackticks = (name) => !/^[a-zA-Z0-9_]*$/.test(name) || name.startsWith('_');
 
-const prepareName = name => {
+const prepareName = (name = '') => {
 	if (checkNameNeedBackticks(name) && !isEscaped(name)) {
 		return `\`${name}\``;
 	} else if (RESERVED_WORDS.includes(name.toLowerCase())) {
@@ -83,7 +85,7 @@ const commentDeactivatedStatements = (statement, isActivated = true) => {
 			.map((line) => `${insertValue}${line}`)
 			.join('\n');
 
-	return insertBeforeEachLine(statement, '-- ');
+	return insertBeforeEachLine(statement, BEFORE_DEACTIVATED_STATEMENT);
 }
 
 const commentDeactivatedInlineKeys = (keys, deactivatedKeyNames) => {
@@ -126,6 +128,12 @@ const removeRedundantTrailingCommaFromStatement = (statement) => {
 	return statement;
 } 
 
+const encodeStringLiteral = (str = '') => {
+	return str.replace(/(')/gi, '\\$1').replace(/\n/gi, '\\n');
+}
+
+const isDeactivatedStatement = statement => statement.startsWith(BEFORE_DEACTIVATED_STATEMENT);
+
 module.exports = {
 	buildStatement,
 	getName,
@@ -137,4 +145,6 @@ module.exports = {
 	commentDeactivatedStatements,
 	commentDeactivatedInlineKeys,
 	removeRedundantTrailingCommaFromStatement,
+	encodeStringLiteral,
+	isDeactivatedStatement
 };

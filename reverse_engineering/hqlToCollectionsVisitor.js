@@ -74,10 +74,20 @@ class Visitor extends HiveParserVisitor {
         return;
     }
 
+    visitIfExists(ctx, defaultValue = '') {
+        const _ = dependencies.lodash
+		if (ctx && !_.isEmpty(ctx)) {
+			return this.visit(ctx);
+		} else {
+			return defaultValue;
+		}
+	}
+
     visitCreateTableStatement(ctx) {
         const _ = dependencies.lodash
         const [tableName, tableLikeName] = this.visit(ctx.tableName());
         const compositePartitionKey = this.visitWhenExists(ctx, 'tablePartition', []);
+        const ifNotExist = Boolean(ctx.ifNotExists());
         const { compositeClusteringKey, numBuckets, sortedByKey } = this.visitWhenExists(ctx, 'tableBuckets', {});
         const { skewedby, skewedOn, skewStoredAsDir } = this.visitWhenExists(ctx, 'tableSkewed', {});
         const tableRowFormat = this.visitWhenExists(ctx, 'tableRowFormat', {});
@@ -88,9 +98,12 @@ class Visitor extends HiveParserVisitor {
         const externalTable = Boolean(ctx.KW_EXTERNAL());
         const storedAsTable = this.visitWhenExists(ctx, 'tableFileFormat', {});
         const { database, table } = tableName;
-        const { properties, foreignKeys } = this.visitWhenExists(ctx, 'columnNameTypeOrConstraintList', {
+        const { properties, foreignKeys, tablePrimaryKeys, tableUniqueKeys, tableChecks } = this.visitWhenExists(ctx, 'columnNameTypeOrConstraintList', {
             properties: {},
             foreignKeys: [],
+            tablePrimaryKeys: [],
+            tableUniqueKeys: [],
+            tableChecks: [],
         });
         const tableForeignKeys = foreignKeys.map((constraint) => ({
             ...constraint,
@@ -123,10 +136,14 @@ class Visitor extends HiveParserVisitor {
                         skewStoredAsDir,
                         location,
                         tableProperties,
+                        ifNotExist,
+                        primaryKey: tablePrimaryKeys,
+                        uniqueKey: tableUniqueKeys,
+                        chkConstr: tableChecks,
                         ...storedAsTable,
                         ...tableRowFormat,
                     },
-                    (prop) => _.isBoolean(prop) || !_.isEmpty(prop)
+                    (prop) => _.isNumber(prop) || _.isBoolean(prop) || !_.isEmpty(prop)
                 ),
             },
             ...tableForeignKeys.map((fkData) => ({
@@ -175,6 +192,7 @@ class Visitor extends HiveParserVisitor {
     visitTablePartition(ctx) {
         return this.visit(ctx.columnNameTypeConstraint());
     }
+    
 
     visitTableComment(ctx) {
         return getTextFromStringLiteral(ctx);
@@ -296,6 +314,8 @@ class Visitor extends HiveParserVisitor {
             stop: ctx.selectStatementWithCTE().stop.stop + 1,
         };
         const { table } = this.visitWhenExists(ctx, 'selectStatementWithCTE', {});
+        const ifNotExist = Boolean(ctx.ifNotExists());
+        const orReplace = Boolean(ctx.orReplace());
 
         return {
             type: CREATE_VIEW_COMMAND,
@@ -306,6 +326,8 @@ class Visitor extends HiveParserVisitor {
             select,
             data: {
                 description,
+                ifNotExist,
+                orReplace,
             },
         };
     }
@@ -449,7 +471,7 @@ class Visitor extends HiveParserVisitor {
         return {
             type: UPDATE_ENTITY_LEVEL_DATA_COMMAND,
             data: {
-                numBuckets: ctx.Number().getText(),
+                numBuckets: Number(ctx.Number().getText()),
             },
         };
     }
@@ -597,27 +619,57 @@ class Visitor extends HiveParserVisitor {
 
     visitColumnNameTypeOrConstraintList(ctx) {
         return this.visit(ctx.columnNameTypeOrConstraint()).reduce(
-            ({ properties, foreignKeys }, column) => {
+            (propertiesList, column) => {
+                const { properties, foreignKeys, tableUniqueKeys, tableChecks, } = propertiesList;
                 if (!column) {
-                    return { properties, foreignKeys };
+                    return propertiesList;
                 }
                 if (column.isForeignKey) {
                     return {
+                        ...propertiesList,
                         foreignKeys: [...foreignKeys, column],
-                        properties,
                     };
                 }
 
                 if (column.isConstraint) {
-                    return {
-                        foreignKeys,
-                        properties,
-                    };
+                    const { type, fields, constraintName, constraintOpts, checkExpression } = column || {};
+                    if (type === 'primary') {
+                        return {
+                            ...propertiesList,
+                            tablePrimaryKeys: [{
+                                compositePrimaryKey: [...(fields || [])],
+                                ...constraintOpts,
+                            }]
+                        }
+                    } else if (type === 'unique') {
+                        const newTableUniqueKey = {
+                            constraintName,
+                            compositeUniqueKey: [...(tableUniqueKeys.compositeUniqueKey || []), ...(fields || [])],
+                            ...constraintOpts,
+                        }
+                        return {
+                            ...propertiesList,
+                            tableUniqueKeys: [...tableUniqueKeys, newTableUniqueKey],
+                        }
+                    } else if (type === 'check') {
+                        const newTableCheck = {
+                            constraintName,
+                            checkExpression,
+                            ...constraintOpts,
+                        }
+                        return {
+                            ...propertiesList,
+                            tableChecks: [...tableChecks, newTableCheck],
+                        }
+                    }
+
+                    return propertiesList;
                 }
 
                 const columnForeignKeys = column.foreignKey ? [column.foreignKey] : [];
 
                 return {
+                    ...propertiesList,
                     properties: {
                         ...properties,
                         [column.name]: column.type,
@@ -625,7 +677,7 @@ class Visitor extends HiveParserVisitor {
                     foreignKeys: [...foreignKeys, ...columnForeignKeys],
                 };
             },
-            { properties: {}, foreignKeys: [] }
+            { properties: {}, foreignKeys: [], tablePrimaryKeys: [], tableUniqueKeys: [], tableChecks: [] }
         );
     }
 
@@ -650,16 +702,61 @@ class Visitor extends HiveParserVisitor {
     visitCreateConstraint(ctx) {
         const nameContext = ctx.identifier();
         const constraintName = nameContext ? this.visit(nameContext) : '';
+        const constraintOpts = this.visitIfExists(ctx.constraintOptsCreate(), {});
         return {
             constraintName,
             ...this.visit(ctx.tableLevelConstraint()),
             isConstraint: true,
+            constraintOpts,
         };
     }
 
+    visitConstraintOptsCreate(ctx) {
+        const enableValidateSpecification = this.visitIfExists(ctx.enableValidateSpecification());
+        const rely = this.visitIfExists(ctx.relySpecification())
+        return { ...enableValidateSpecification, rely }
+    }
+
+    visitEnableValidateSpecification(ctx) {
+        const enableSpecification = this.visitIfExists(ctx.enableSpecification());
+        const noValidateSpecification = this.visitIfExists(ctx.validateSpecification());
+        return { enableSpecification, noValidateSpecification };
+    }
+
+    visitEnableSpecification(ctx) {
+        const disable = ctx.KW_DISABLE();
+        const enable = ctx.KW_ENABLE();
+        if (!enable && !disable) {
+            return '';
+        }
+        
+        return disable ? 'DISABLE' : "ENABLE";
+    }
+
+    visitValidateSpecification(ctx) {
+        const validate = ctx.KW_VALIDATE();
+        const noValidate = ctx.KW_NOVALIDATE();
+        if (!noValidate && !validate) {
+            return '';
+        }
+
+        return validate ? 'VALIDATE' : 'NOVALIDATE';
+    }
+
+    visitRelySpecification(ctx) {
+        const noRely = ctx.KW_NORELY();
+        const rely = ctx.KW_RELY();
+        if (!noRely && !rely) {
+            return '';
+        }
+        return noRely ? 'NORELY' : 'RELY';
+    }
+
     visitTableLevelConstraint(ctx) {
-        const pkUkConstraint = ctx.pkUkConstraint();
-        return pkUkConstraint ? this.visit(pkUkConstraint) : {};
+        const pkUkConstraint = this.visitIfExists(ctx.pkUkConstraint(), {});
+        const checkExpression = this.visitIfExists(ctx.checkConstraint());
+        const checkConstraint = checkExpression ? { checkExpression, type: 'check' } : {};
+        return { ...pkUkConstraint, ...checkConstraint };
     }
 
     visitPkUkConstraint(ctx) {
@@ -705,7 +802,7 @@ class Visitor extends HiveParserVisitor {
         const name = this.visit(ctx.identifier());
         const type = this.visit(ctx.colType());
         const constraintContext = ctx.columnConstraint();
-        const constraints = constraintContext && this.visit(constraintContext);
+        const { constraints, constraintOpts } = (constraintContext && this.visit(constraintContext)) || {};
         const description = ctx.KW_COMMENT() ? getTextFromStringLiteral(ctx) : '';
 
         return {
@@ -713,6 +810,7 @@ class Visitor extends HiveParserVisitor {
             type: {
                 ...type,
                 description,
+                ...(constraintOpts || {}),
                 ...mergeConstraints(constraints),
             },
         };
@@ -811,11 +909,12 @@ class Visitor extends HiveParserVisitor {
         const isUnion = !items.type || Array.isArray(items.type);
         const itemType = isUnion ? 'union' : items.type;
         const key = this.visit(ctx.primitiveType());
+        const properties = Boolean(items?.properties) || Boolean(items?.items) ? { 'new_column': items } : {};
 
         return {
             type: 'map',
             subtype: schemaHelper.getMapSubtype(itemType),
-            properties: items.oneOf ? {} : { 'New column': items },
+            properties: items.oneOf ? {} : properties,
             ...(items.oneOf && { oneOf: getOneOf(items.oneOf, 'New column') }),
             ...schemaHelper.getMapKeyType(key),
         };
@@ -893,7 +992,9 @@ class Visitor extends HiveParserVisitor {
     }
 
     visitColConstraint(ctx) {
-        return this.visit(ctx.columnConstraintType());
+        const constraintOpts = this.visitIfExists(ctx.constraintOptsCreate(), {});
+        const constraints = this.visit(ctx.columnConstraintType());
+        return { constraints, constraintOpts };
     }
 
     visitDefaultVal(ctx) {
@@ -901,10 +1002,11 @@ class Visitor extends HiveParserVisitor {
     }
 
     visitColumnConstraintType(ctx) {
+        const test = this.visitIfExists(ctx.tableConstraintType())
         return {
             ...(Boolean(ctx.KW_NOT() && ctx.KW_NULL()) ? { required: true } : {}),
-            ...(Boolean((ctx.tableConstraintType() || {}).KW_UNIQUE) ? { unique: true } : {}),
-            ...(Boolean((ctx.tableConstraintType() || {}).KW_PRIMARY) ? { primaryKey: true } : {}),
+            ...(this.visitIfExists(ctx.tableConstraintType()) === 'unique' ? { unique: true } : {}),
+            ...(this.visitIfExists(ctx.tableConstraintType()) === 'primary' ? { primaryKey: true } : {}),
             ...(Boolean(ctx.KW_DEFAULT()) ? { default: this.visit(ctx.defaultVal()) } : {}),
             ...(Boolean(ctx.checkConstraint()) ? { check: this.visitWhenExists(ctx, 'checkConstraint', '') } : {}),
         };
@@ -1013,12 +1115,14 @@ class Visitor extends HiveParserVisitor {
     visitCreateDatabaseStatement(ctx) {
         const name = this.visit(ctx.identifier());
         const description = this.visitWhenExists(ctx, 'databaseComment');
+        const ifNotExist = Boolean(ctx.ifNotExists());
 
         return {
             type: CREATE_BUCKET_COMMAND,
             name,
             data: {
                 description,
+                ifNotExist,
             },
         };
     }

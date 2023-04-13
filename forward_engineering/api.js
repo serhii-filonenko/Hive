@@ -6,9 +6,14 @@ const { getTableStatement } = require('./helpers/tableHelper');
 const { getIndexes } = require('./helpers/indexHelper');
 const { getViewScript } = require('./helpers/viewHelper');
 const { prepareName, replaceSpaceWithUnderscore, getName, getTab } = require('./helpers/generalHelper');
+const { getAlterScript } = require('./helpers/alterScriptFromDeltaHelper');
+const { DROP_STATEMENTS } = require('./helpers/constants');
 const foreignKeyHelper = require('./helpers/foreignKeyHelper');
-let _;
 const sqlFormatter = require('sql-formatter');
+const { connect } = require('../reverse_engineering/api');
+const logHelper = require('../reverse_engineering/logHelper');
+const applyToInstanceHelper = require('./helpers/applyToInstanceHelper');
+let _;
 
 module.exports = {
 	generateScript(data, logger, callback, app) {
@@ -33,6 +38,13 @@ module.exports = {
 				) || {}
 			).value;
 
+			if (data.isUpdateScript) {
+				const definitions = [modelDefinitions, internalDefinitions, externalDefinitions];
+				const scripts = getAlterScript(jsonSchema, definitions, data, app, needMinify, sqlFormatter);
+				callback(null, scripts);
+				return;
+			}
+
 			callback(
 				null,
 				buildScript(needMinify)(
@@ -50,11 +62,16 @@ module.exports = {
 						areColumnConstraintsAvailable,
 						areForeignPrimaryKeyConstraintsAvailable
 					),
-					getIndexes(containerData, entityData, jsonSchema, [
-						modelDefinitions,
-						internalDefinitions,
-						externalDefinitions,
-					])
+					getIndexes(
+						containerData, 
+						entityData, 
+						jsonSchema, [
+							modelDefinitions,
+							internalDefinitions,
+							externalDefinitions,
+						],
+						areColumnConstraintsAvailable
+					)
 				)
 			);
 		} catch (e) {
@@ -69,6 +86,34 @@ module.exports = {
 			}, 150);
 		}
 	},
+
+	generateViewScript(data, logger, callback, app) {
+		try {
+			setDependencies(app);
+			setAppDependencies(dependencies);
+			const viewSchema = JSON.parse(data.jsonSchema || '{}');
+			const needMinify = (
+				_.get(data, 'options.additionalOptions', []).find(option => option.id === 'minify') || {}
+			).value;
+
+			const databaseStatement = getDatabaseStatement(data.containerData);
+
+			const script = getViewScript({
+				schema: viewSchema,
+				viewData: data.viewData,
+				containerData: data.containerData,
+				collectionRefsDefinitionsMap: data.collectionRefsDefinitionsMap,
+				isKeyspaceActivated: true,
+			});
+
+			callback(null, buildScript(needMinify)(databaseStatement, script));
+		} catch (error) {
+			logger.log('error', { message: e.message, stack: e.stack }, 'Hive Forward-Engineering Error');
+
+			callback({ message: e.message, stack: e.stack });
+		}
+	},
+
 
 	generateContainerScript(data, logger, callback, app) {
 		try {
@@ -95,6 +140,15 @@ module.exports = {
 					(option) => option.id === 'minify'
 				) || {}
 			).value;
+
+			if (data.isUpdateScript) {
+				const deltaModelSchema = _.first(Object.values(jsonSchema)) || {};
+				const definitions = [modelDefinitions, internalDefinitions, externalDefinitions];
+				const scripts = getAlterScript(deltaModelSchema, definitions, data, app, needMinify, sqlFormatter);
+				callback(null, scripts);
+				return;
+			}
+
 			const viewsScripts = data.views.map(viewId => {
 				const viewSchema = JSON.parse(data.jsonSchema[viewId] || '{}');
 
@@ -136,7 +190,7 @@ module.exports = {
 						areColumnConstraintsAvailable,
 						areForeignPrimaryKeyConstraintsAvailable
 					),
-					getIndexes(...args),
+					getIndexes(...args, areColumnConstraintsAvailable),
 				]);
 			}, []);
 
@@ -168,6 +222,49 @@ module.exports = {
 			}, 150);
 		}
 	},
+
+	isDropInStatements(data, logger, cb, app) {
+		try {
+			setDependencies(app);
+			
+			const callback = (error, script = '') => {
+				cb(error, DROP_STATEMENTS.some(statement => script.includes(statement)));
+			};
+			
+			if (data.level === 'container') {
+				this.generateContainerScript(data, logger, callback, app);
+			} else if (data.level === 'entity') {
+				this.generateScript(data, logger, callback, app);
+			}
+		}	catch (e) {
+			callback({ message: e.message, stack: e.stack });
+		}
+	},
+
+	testConnection: function(connectionInfo, logger, cb, app){
+		setDependencies(app);
+		_ = dependencies.lodash;
+		logInfo('Test connection', connectionInfo, logger);
+		connect(connectionInfo, logger, (err) => {
+			if (err) {
+				logger.log('error', { message: err.message, stack: err.stack, error: err }, 'Connection failed');
+			}
+
+			return cb(err);
+		}, app);
+	},
+
+	async applyToInstance(connectionInfo, logger, callback, app) {
+		logger.clear();
+		logInfo('info', connectionInfo, logger);
+		
+		try {
+			await applyToInstanceHelper.applyToInstance(connectionInfo, logger, app)
+			callback();
+		} catch (error) {
+			callback(error);
+		}
+	},
 };
 
 const buildScript = (needMinify) => (...statements) => {
@@ -176,7 +273,7 @@ const buildScript = (needMinify) => (...statements) => {
 		return script;
 	}
 
-	return sqlFormatter.format(script, { indent: '    ' });
+	return sqlFormatter.format(script, { language: 'spark', indent: '    ', linesBetweenQueries: 2 }) + '\n';
 };
 
 const parseEntities = (entities, serializedItems) => {
@@ -284,3 +381,9 @@ const getMappingNameToPoolNameHashTable = pools => {
 		return mappings.map(mapping => [mapping.name, pool.name]);
 	})));
 }
+
+const logInfo = (step, connectionInfo, logger) => {
+	logger.clear();
+	logger.log('info', logHelper.getSystemInfo(connectionInfo.appVersion), step);
+	logger.log('info', connectionInfo, 'connectionInfo', connectionInfo.hiddenKeys);
+};

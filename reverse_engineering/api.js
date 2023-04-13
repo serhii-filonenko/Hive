@@ -160,6 +160,16 @@ module.exports = {
 							cb(err, result);
 						}, 1000);
 					});
+				}).catch(error => {
+					if (typeof error === 'string') {
+						error = new Error(error);
+					}
+
+					logger.log('error', { message: error.message, stack: error.stack, error: error }, 'Retrieving databases and tables information');
+					cb({
+						message: error.message,
+						stack: error.stack,
+					});
 				});
 		}, app);
 	},
@@ -235,7 +245,7 @@ module.exports = {
 
 										return { ...data, schema: {
 											...schema,
-											[item.col_name]: { comment: item.comment }
+											[item.col_name]: { description: item.comment }
 										}};
 									}, { schema: {}, isSchemaParsingFinished: false, additionalDescription: '' });
 
@@ -253,7 +263,8 @@ module.exports = {
 										ddl: {
 											script: `CREATE VIEW ${viewName} AS ${selectStatement};`,
 											type: 'teradata'
-										}
+										},
+										dbName,
 									});
 									return nextTable(null, { documentPackage: false, relationships: [] });
 								}).catch(err => {
@@ -285,7 +296,15 @@ module.exports = {
 									const documentPackage = {
 										dbName,
 										collectionName: tableName,
-										documents: filterNullValues(documents),
+										documents: mapDocument(filterNullValues(documents), (value) => {
+											if (typeof value === 'string') {
+												if (value.length >= 1000) {
+													return value.slice(0, 1000);
+												}
+											}
+
+											return value;
+										}),
 										indexes: [],
 										bucketIndexes: [],
 										views: [],
@@ -319,7 +338,11 @@ module.exports = {
 										const extendedTableInfo = hiveHelper.getDetailInfoFromExtendedTable(extendedTable);
 										const sample = documentPackage.documents[0];
 										documentPackage.entityLevel = entityLevelHelper.getEntityLevelData(tableName, tableInfo, extendedTableInfo);
-										const { columnToConstraints, notNullColumns } = hiveHelper.getTableColumnsConstraints(extendedTable);
+										const { columnToConstraints, notNullColumns, tableToConstraints } = hiveHelper.getTableConstraints(tableSchema, extendedTable);
+										documentPackage.entityLevel = {
+											...documentPackage.entityLevel,
+											...tableToConstraints,
+										};
 										return {
 											jsonSchema: hiveHelper.getJsonSchemaCreator(...cursor.getTCLIService(), tableInfo)({ columns: extendedTable, tableColumnsConstraints: columnToConstraints, tableSchema, sample, notNullColumns }),
 											relationships: convertForeignKeysToRelationships(dbName, tableName, tableInfo.foreignKeys || [], data.appVersion)
@@ -329,9 +352,14 @@ module.exports = {
 										
 										return getPrimaryKeys(dbName, tableName)
 											.then(keys => {
-												keys.forEach(key => {
-													jsonSchema.properties[key.COLUMN_NAME].primaryKey = true;
-												});
+												keys = keys.map(key => key.COLUMN_NAME);
+												if (keys.length > 1) {
+													documentPackage.entityLevel.primaryKey = [{ compositePrimaryKey: keys }];
+												} else {
+													keys.forEach(key => {
+														jsonSchema.properties[key].primaryKey = true;
+													});
+												}
 
 												return jsonSchema;
 											})
@@ -415,6 +443,11 @@ module.exports = {
 						...schema,
 						type: noNullType.length === 1 ? noNullType[0] : noNullType,
 					};
+				} else if (schema.type === 'array' && !schema.subtype) {
+					return {
+						...schema,
+						subtype: getArraySubtypeByChildren(_, schema),
+					};
 				} else if (schema.type === 'null') {
 					clearOutRequired(parentJsonSchema, key);
 
@@ -491,6 +524,21 @@ const filterNullValues = (doc) => {
 		return '';
 	} else {
 		return doc;
+	}
+};
+
+const mapDocument = (doc, callback) => {
+	if (Array.isArray(doc)) {
+		return doc.map((item) => mapDocument(item, callback));
+	} else if (doc && typeof doc === 'object') {
+		return Object.entries(doc).reduce((result, [ key, value ]) => {
+			return {
+				...result,
+				[key]: mapDocument(value, callback),
+			};
+		}, {});
+	} else {
+		return callback(doc);
 	}
 };
 
@@ -899,22 +947,20 @@ const handleErrorObject = (error, title) => {
 	return { title , ...errorProperties };
 };
 
-const addViews = (data, views) => {
-	const packageIndex = _.findLastIndex(data, item => !_.isEmpty(item.documentPackage));
-	if (packageIndex === -1) {
-		return data;
-	}
+const addViews = (data, views = []) => {
+	return data.map(dataItem => {
+		if (_.isEmpty(dataItem?.documentPackage)) {
+			return dataItem;
+		}
+		const nonEmptyEntityPackageIndex = _.findLastIndex(dataItem.documentPackage, entityItem => !_.isEmpty(entityItem));
+		if (nonEmptyEntityPackageIndex === -1) {
+			return dataItem;
+		}
+		const containerName = dataItem.documentPackage[nonEmptyEntityPackageIndex].dbName;
+		const dbViews = views.filter(view => view.dbName === containerName);
 
-	const packageWithDocument = data[packageIndex];
-
-	return _.set(data, packageIndex, {
-		...packageWithDocument,
-		documentPackage: _.set(
-			packageWithDocument.documentPackage,
-			packageWithDocument.documentPackage.length - 1,
-			{ ..._.last(packageWithDocument.documentPackage), views }
-		)
-	})
+		return _.set(dataItem, ['documentPackage', nonEmptyEntityPackageIndex, 'views'], dbViews);
+	});
 };
 
 const adjustSelectStatement = statement => (statement || '').replace(/\\n/g, '\n');
@@ -947,3 +993,53 @@ const setViewsReferences = (views, columnsMap) => {
 		};
 	});
 }
+
+const getArraySubtypeByChildren = (_, arraySchema) => {
+	const subtype = (type) => `array<${type}>`;
+
+	if (!arraySchema.items) {
+		return;
+	}
+
+	if (Array.isArray(arraySchema.items) && _.uniq(arraySchema.items.map(item => item.type)).length > 1) {
+		return subtype("union");
+	}
+
+	let item = Array.isArray(arraySchema.items) ? arraySchema.items[0] : arraySchema.items;
+
+	if (!item) {
+		return;
+	}
+
+	switch(item.type) {
+		case 'string':
+		case 'text':
+			return subtype("txt");
+		case 'number':
+		case 'numeric':
+			return subtype("num");
+		case 'interval':
+			return subtype("intrvl");
+		case 'object':
+		case 'struct':
+			return subtype("struct");
+		case 'array':
+			return subtype("array");
+		case 'map':
+			return subtype("map");
+		case "union":
+			return subtype("union");
+		case "timestamp":
+			return subtype("ts");
+		case "date":
+			return subtype("date");
+	}
+
+	if (item.items) {
+		return subtype("array");
+	}
+
+	if (item.properties) {
+		return subtype("struct");
+	}
+};

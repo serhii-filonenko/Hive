@@ -33,10 +33,15 @@ var VERSION_MASK = -65536,   // 0xffff0000
     VERSION_1 = -2147418112, // 0x80010000
     TYPE_MASK = 0x000000ff;
 
+TBinaryProtocol.VERSION_MASK = VERSION_MASK;
+TBinaryProtocol.VERSION_1 = VERSION_1;
+TBinaryProtocol.TYPE_MASK = TYPE_MASK
+
 function TBinaryProtocol(trans, strictRead, strictWrite) {
   this.trans = trans;
   this.strictRead = (strictRead !== undefined ? strictRead : false);
   this.strictWrite = (strictWrite !== undefined ? strictWrite : true);
+  this._seqid = null;
 };
 
 TBinaryProtocol.prototype.flush = function() {
@@ -54,7 +59,7 @@ TBinaryProtocol.prototype.writeMessageBegin = function(name, type, seqid) {
       this.writeI32(seqid);
     }
     // Record client seqid to find callback again
-    if (this._seqid) {
+    if (this._seqid !== null) {
       log.warning('SeqId already set', { 'name': name });
     } else {
       this._seqid = seqid;
@@ -63,7 +68,7 @@ TBinaryProtocol.prototype.writeMessageBegin = function(name, type, seqid) {
 };
 
 TBinaryProtocol.prototype.writeMessageEnd = function() {
-    if (this._seqid) {
+    if (this._seqid !== null) {
         this._seqid = null;
     } else {
         log.warning('No seqid to unset');
@@ -301,8 +306,6 @@ TBinaryProtocol.prototype.getTransport = function() {
 
 TBinaryProtocol.prototype.skip = function(type) {
   switch (type) {
-    case Type.STOP:
-      return;
     case Type.BOOL:
       this.readBool();
       break;

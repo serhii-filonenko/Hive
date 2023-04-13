@@ -1,10 +1,10 @@
 {
 	"name": "Hive",
-	"version": "0.1.54",
-	"versionDate": "2021-04-23",
+	"version": "0.1.88",
+	"versionDate": "2023-02-04",
 	"author": "hackolade",
 	"engines": {
-		"hackolade": "4.3.9",
+		"hackolade": "6.1.2",
 		"hackoladePlugin": "1.2.0"
 	},
 	"contributes": {
@@ -38,12 +38,14 @@
 			"enableForwardEngineering": true,
 			"disableMultipleTypes": false,
 			"enableReverseEngineering": true,
+			"enableComplexTypesNormalization": true,
 			"disableChoices": false,
 			"enableJsonType": true,
 			"relationships": {
                 "compositeRelationships": true                
 			},
-			"FEScriptCommentsSupported": ["2.x", "3.x"]
+			"FEScriptCommentsSupported": ["2.x", "3.x"],
+			"discoverRelationships": true
 		}
 	},
 	"description": "Hackolade plugin for Apache Hive"
