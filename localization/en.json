@@ -9,7 +9,7 @@
 	"MAIN_MENU___APPEND_FIELD": "Append Column",
 	"MAIN_MENU___REVERSE_DB_COLLECTIONS": "Hive tables...",
 	"MAIN_MENU___FORWARD_DB_COLLECTIONS": "HiveQL of Table",
-	"MAIN_MENU___FORWARD_DB_BUCKETS": "HiveQL of database",
+	"MAIN_MENU___FORWARD_DB_BUCKETS": "HiveQL of database...",
 	"MAIN_MENU___FORWARD_CHANGE_COLLECTIONS": "HiveQL Alter Table",
 	"TOOLBAR___ADD_BUCKET": "Add database",
 	"TOOLBAR___ADD_COLLECTION": "Add table",
