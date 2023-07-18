@@ -186,7 +186,6 @@ module.exports = {
 		const tables = data.collectionData.collections;
 		const databases = data.collectionData.dataBaseNames;
 		const pagination = data.pagination;
-		const includeEmptyCollection = data.includeEmptyCollection;
 		let modelData = null;
 		const recordSamplingSettings = data.recordSamplingSettings;
 		const fieldInference = data.fieldInference;
@@ -580,6 +579,16 @@ const expandFinalPackages = (modelData, packages) => {
 	}, [[], modelData, []])
 };
 
+const getSampleDocSize = (count, recordSamplingSettings) => {
+	if (recordSamplingSettings.active === 'absolute') {
+		return Number(recordSamplingSettings.absolute.value);
+	}
+
+	const limit = Math.ceil((count * recordSamplingSettings.relative.value) / 100);
+
+	return Math.min(limit, recordSamplingSettings.maxValue);
+};
+
 const getLimitByCount = (recordSamplingSettings, getCount) => new Promise((resolve, reject) => {
 	if (recordSamplingSettings.active !== 'relative') {
 		const absolute = Number(recordSamplingSettings.absolute.value);
@@ -589,7 +598,7 @@ const getLimitByCount = (recordSamplingSettings, getCount) => new Promise((resol
 
 	getCount().then((data) => {
 		const count = data[0].count;
-		const limit = Math.ceil((count * Number(recordSamplingSettings.relative.value)) / 100);
+		const limit = getSampleDocSize(count, recordSamplingSettings)
 	
 		resolve(limit);
 	}).catch(reject);
