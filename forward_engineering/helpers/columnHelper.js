@@ -296,13 +296,11 @@ const getColumns = (jsonSchema, areColumnConstraintsAvailable, definitions) => {
 		if (!property.isActivated) {
 			deactivatedColumnNames.add(name);
 		}
-		const isPrimaryKey = property.primaryKey && 
-			!property.unique && 
+		const isPrimaryKey = property.primaryKey &&
 			!property.compositePrimaryKey && 
-			!property.compositeUniqueKey && 
 			!property.compositeClusteringKey;
 
-		const isUnique = property.unique && !property.compositeUniqueKey;
+		const isUnique = property.unique && !property.compositeUniqueKey && !isPrimaryKey;
 		
 		return Object.assign(
 			{},
