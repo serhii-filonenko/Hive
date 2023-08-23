@@ -72,6 +72,7 @@ const getArraySubtypeByChildren = (_, arraySchema) => {
 			return subtype('txt');
 		case 'number':
 		case 'numeric':
+		case 'integer':
 			return subtype('num');
 		case 'interval':
 			return subtype('intrvl');
